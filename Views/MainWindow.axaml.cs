@@ -19,6 +19,8 @@ public partial class MainWindow : Window
 {
     private MapOverlayManager? _mapManager;
     private TrayIcon? _trayIcon;
+    private NativeMenuItem? _trayOpenItem;
+    private NativeMenuItem? _trayExitItem;
     private bool _forceExit;
     private bool _closeDialogOpen;
     private bool _petFarmLoaded;
@@ -27,10 +29,14 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        this.FindControl<Button>("DeveloperNavButton")!.IsVisible = Program.DeveloperMode;
+        this.FindControl<TextBlock>("DeveloperSectionLabel")!.IsVisible = Program.DeveloperMode;
+
         Opened += MainWindowOpened;
         Closing += MainWindowClosing;
         Closed += MainWindowClosed;
         CompanionSettings.MapHelperEnabledChanged += MapHelperEnabledChanged;
+        LocalizationService.LanguageChanged += LanguageChanged;
 
         ShowPage("Dashboard");
     }
@@ -104,15 +110,15 @@ public partial class MainWindow : Window
         if (_trayIcon is not null)
             return;
 
-        var openItem = new NativeMenuItem("Companion megnyitása");
-        openItem.Click += (_, _) => RestoreFromTray();
+        _trayOpenItem = new NativeMenuItem(LocalizationService.Get("TrayOpen"));
+        _trayOpenItem.Click += (_, _) => RestoreFromTray();
 
-        var exitItem = new NativeMenuItem("Kilépés");
-        exitItem.Click += (_, _) => ExitApplication();
+        _trayExitItem = new NativeMenuItem(LocalizationService.Get("TrayExit"));
+        _trayExitItem.Click += (_, _) => ExitApplication();
 
         var menu = new NativeMenu();
-        menu.Items.Add(openItem);
-        menu.Items.Add(exitItem);
+        menu.Items.Add(_trayOpenItem);
+        menu.Items.Add(_trayExitItem);
 
         using var iconStream = AssetLoader.Open(
             new Uri("avares://AION 2 Companion/Assets/nexforge-companion.ico"));
@@ -132,6 +138,14 @@ public partial class MainWindow : Window
         Show();
         WindowState = WindowState.Normal;
         Activate();
+    }
+
+    private void LanguageChanged(object? sender, EventArgs e)
+    {
+        if (_trayOpenItem is not null)
+            _trayOpenItem.Header = LocalizationService.Get("TrayOpen");
+        if (_trayExitItem is not null)
+            _trayExitItem.Header = LocalizationService.Get("TrayExit");
     }
 
     private void ExitApplication()
@@ -206,6 +220,7 @@ public partial class MainWindow : Window
     private void MainWindowClosed(object? sender, EventArgs e)
     {
         CompanionSettings.MapHelperEnabledChanged -= MapHelperEnabledChanged;
+        LocalizationService.LanguageChanged -= LanguageChanged;
         _mapManager?.Dispose();
         _mapManager = null;
         _trayIcon?.Dispose();
@@ -225,7 +240,8 @@ public partial class MainWindow : Window
             "Boss" => new BossAssistantView(),
             "Guides" => new GuidesView(),
             "Settings" => new SettingsView(),
-            "Debug" => new CaptureMonitorView(),
+            "Support" => new DiagnosticsView(),
+            "Debug" when Program.DeveloperMode => new CaptureMonitorView(),
             _ => new DashboardView(),
         };
 

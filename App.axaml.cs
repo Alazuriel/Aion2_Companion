@@ -26,6 +26,9 @@ public partial class App : Application
             // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
             DisableAvaloniaDataAnnotationValidation();
             desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            if (Program.RequestedLanguage is { } requestedLanguage)
+                CompanionSettings.LanguageCode = requestedLanguage;
+            LocalizationService.Apply(CompanionSettings.LanguageCode);
             bool fileLoggingRequested = CompanionSettings.FileLoggingEnabled;
             DebugConsole.ConfigureFileLogging(fileLoggingRequested);
             if (fileLoggingRequested && !DebugConsole.FileLoggingEnabled)
@@ -33,7 +36,9 @@ public partial class App : Application
 
             CombatLogStore.Shared.StartSession();
             CombatLogStore.Shared.ApplyRetentionLimit();
-            var mainViewModel = new MainWindowViewModel(Program.AutoCaptureRequested);
+            bool autoStartCapture = !Program.AutoCaptureDisabled &&
+                (Program.AutoCaptureRequested || CompanionSettings.AutoCaptureEnabled);
+            var mainViewModel = new MainWindowViewModel(autoStartCapture);
             desktop.Exit += (_, _) =>
             {
                 mainViewModel.SaveActiveFightForShutdown();

@@ -167,8 +167,8 @@
             <Border Classes="rowline"/>
             <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,11">
               <Ellipse Width="8" Height="8" Fill="#FF9B52" VerticalAlignment="Center" Margin="0,0,11,0"/>
-              <TextBlock Grid.Column="1" Text="Auto capture" Classes="body"/>
-              <TextBlock Grid.Column="2" Text="FORGING" Classes="warn" FontSize="11" FontWeight="SemiBold"/>
+              <TextBlock Grid.Column="1" Text="{DynamicResource BackgroundMonitoring}" Classes="body"/>
+              <TextBlock Grid.Column="2" Text="{DynamicResource AutomaticMode}" Classes="ok" FontSize="11" FontWeight="SemiBold"/>
             </Grid>
 
             <Border Classes="inset" Padding="12" Margin="0,12,0,0">

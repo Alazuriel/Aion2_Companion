@@ -1,0 +1,47 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AION_2_Companion.Views.DiagnosticsView"
+             x:CompileBindings="False">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="18" MaxWidth="780" HorizontalAlignment="Left">
+      <StackPanel Spacing="4">
+        <TextBlock Text="{DynamicResource SupportTitle}" Classes="h1"/>
+        <TextBlock Text="{DynamicResource SupportSubtitle}" Classes="body"/>
+      </StackPanel>
+
+      <Border Classes="hero" Padding="22">
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="15">
+          <Border Width="42" Height="42" Classes="badge" BorderBrush="#3C91A8">
+            <TextBlock Text="?" FontSize="20" FontWeight="SemiBold" Foreground="#45DFFF"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+          <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+            <TextBlock x:Name="MonitoringStatusText" FontSize="14" FontWeight="SemiBold"/>
+            <TextBlock Text="{DynamicResource SupportWhatText}" Classes="hint" TextWrapping="Wrap"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <Border Classes="panel" Padding="20">
+        <StackPanel Spacing="14">
+          <TextBlock Text="{DynamicResource SupportWhatTitle}" Classes="section"/>
+          <CheckBox x:Name="IncludeCombatRecordsToggle"
+                    Content="{DynamicResource SupportCombatToggle}"
+                    IsChecked="True"/>
+          <Border Classes="inset" Padding="13">
+            <StackPanel Spacing="4">
+              <TextBlock Text="{DynamicResource SupportPrivacyTitle}" Classes="eyebrow"/>
+              <TextBlock Text="{DynamicResource SupportPrivacyText}" Classes="hint" TextWrapping="Wrap"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Border>
+
+      <StackPanel Orientation="Horizontal" Spacing="14">
+        <Button x:Name="ExportButton" Classes="ui primary"
+                Content="{DynamicResource SupportExport}" Click="ExportClick"/>
+        <TextBlock x:Name="ExportStatusText" Classes="body" VerticalAlignment="Center" TextWrapping="Wrap"/>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

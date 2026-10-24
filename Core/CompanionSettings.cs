@@ -128,6 +128,49 @@ public static class CompanionSettings
         }
     }
 
+    public static bool AutoCaptureEnabled
+    {
+        get
+        {
+            lock (Sync)
+                return Load().AutoCaptureEnabled;
+        }
+        set
+        {
+            lock (Sync)
+            {
+                SettingsData data = Load();
+                if (data.AutoCaptureEnabled == value)
+                    return;
+
+                data.AutoCaptureEnabled = value;
+                Save(data);
+            }
+        }
+    }
+
+    public static string LanguageCode
+    {
+        get
+        {
+            lock (Sync)
+                return Load().LanguageCode;
+        }
+        set
+        {
+            string normalized = LocalizationService.NormalizeLanguageCode(value);
+            lock (Sync)
+            {
+                SettingsData data = Load();
+                if (string.Equals(data.LanguageCode, normalized, StringComparison.OrdinalIgnoreCase))
+                    return;
+
+                data.LanguageCode = normalized;
+                Save(data);
+            }
+        }
+    }
+
     public static int CombatLogLimit
     {
         get
@@ -224,6 +267,8 @@ public static class CompanionSettings
         public bool MapHelperEnabled { get; set; }
         public bool FileLoggingEnabled { get; set; }
         public bool AutoManageDpsOverlay { get; set; } = true;
+        public bool AutoCaptureEnabled { get; set; } = true;
+        public string LanguageCode { get; set; } = "en";
         public int CombatLogLimit { get; set; } = 500;
         public MainWindowCloseAction CloseAction { get; set; } = MainWindowCloseAction.Ask;
         public Dictionary<string, OverlayPlacement> OverlayPlacements { get; set; }

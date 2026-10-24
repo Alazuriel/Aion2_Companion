@@ -61,7 +61,7 @@
             <Border Classes="pill" Margin="0,0,8,8"><TextBlock Text="Templar" Classes="accent" FontSize="13"/></Border>
             <Border Classes="pill" Margin="0,0,8,8"><TextBlock Text="Cleric" Classes="accent" FontSize="13"/></Border>
           </WrapPanel>
-          <TextBlock Text="Statikus példa. Az élő party összetétel a fejlesztői nézetben követhető." Classes="hint"/>
+          <TextBlock Text="{DynamicResource PartyGuideHint}" Classes="hint"/>
         </StackPanel>
       </Border>
     </StackPanel>

@@ -4,33 +4,46 @@
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <StackPanel Spacing="18" MaxWidth="760" HorizontalAlignment="Left">
       <StackPanel Spacing="4">
-        <TextBlock Text="Settings" Classes="h1"/>
-        <TextBlock Text="Overlay ablakok és a companion viselkedése." Classes="body"/>
+        <TextBlock Text="{DynamicResource SettingsTitle}" Classes="h1"/>
+        <TextBlock Text="{DynamicResource SettingsSubtitle}" Classes="body"/>
       </StackPanel>
 
       <Border Classes="panel" Padding="18">
+        <StackPanel Spacing="12">
+          <TextBlock Text="{DynamicResource LanguageSection}" Classes="eyebrow"/>
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="3">
+              <TextBlock Text="{DynamicResource LanguageLabel}" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="{DynamicResource LanguageHint}" Classes="hint"/>
+            </StackPanel>
+            <ComboBox x:Name="LanguageCombo" Grid.Column="1" Width="210"/>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel" Padding="18">
         <StackPanel Spacing="0">
-          <TextBlock Text="Overlays" Classes="eyebrow" Margin="0,0,0,6"/>
+          <TextBlock Text="{DynamicResource OverlaySection}" Classes="eyebrow" Margin="0,0,0,6"/>
           <Grid ColumnDefinitions="*,Auto" Margin="0,10">
             <StackPanel Spacing="3">
-              <TextBlock Text="DPS meter" FontWeight="Medium" FontSize="14"/>
-              <TextBlock Text="Kis lebegő ablak. A felső sávval húzható." Classes="hint"/>
+              <TextBlock Text="{DynamicResource DpsMeter}" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="{DynamicResource DpsOverlayHint}" Classes="hint"/>
             </StackPanel>
-            <Button Grid.Column="1" Classes="ui" Content="Open" Click="OpenDpsClick" VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Classes="ui" Content="{DynamicResource Open}" Click="OpenDpsClick" VerticalAlignment="Center"/>
           </Grid>
           <Border Classes="rowline" Margin="0,4"/>
           <Grid ColumnDefinitions="*,Auto" Margin="0,10">
             <StackPanel Spacing="3">
-              <TextBlock Text="DBM / boss assistant" FontWeight="Medium" FontSize="14"/>
-              <TextBlock Text="Kompakt időzítő. A felső sávval húzható." Classes="hint"/>
+              <TextBlock Text="{DynamicResource BossAssistant}" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="{DynamicResource BossOverlayHint}" Classes="hint"/>
             </StackPanel>
-            <Button Grid.Column="1" Classes="ui" Content="Open" Click="OpenDbmClick" VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Classes="ui" Content="{DynamicResource Open}" Click="OpenDbmClick" VerticalAlignment="Center"/>
           </Grid>
           <Border Classes="rowline" Margin="0,4"/>
           <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto" Margin="0,10">
             <StackPanel Grid.Row="0" Spacing="3">
-              <TextBlock Text="Map helper" FontWeight="Medium" FontSize="14"/>
-              <TextBlock Text="Engedélyezve az M billentyűvel nyitható meg a térképes segéd." Classes="hint"/>
+              <TextBlock Text="{DynamicResource MapHelper}" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="{DynamicResource MapHelperHint}" Classes="hint"/>
             </StackPanel>
             <Button Grid.Row="0"
                     Grid.Column="1"
@@ -40,11 +53,11 @@
                     Height="32"
                     Margin="0,0,10,0"
                     VerticalAlignment="Center"
-                    ToolTip.Tip="A Map Helper csak borderless fullscreen módban működik megbízhatóan. Más megjelenítési módban előfordulhat, hogy nem jelenik meg vagy pontatlanul igazodik."/>
+                    ToolTip.Tip="{DynamicResource MapHelperTooltip}"/>
             <CheckBox x:Name="MapHelperToggle"
                       Grid.Row="0"
                       Grid.Column="2"
-                      Content="Engedélyezve"
+                      Content="{DynamicResource Enabled}"
                       VerticalAlignment="Center"/>
             <Border x:Name="MapAdminWarning"
                     Grid.Row="1"
@@ -67,7 +80,7 @@
                              HorizontalAlignment="Center"
                              VerticalAlignment="Center"/>
                 </Border>
-                <TextBlock Text="A Map Helper használatához rendszergazdaként kell elindítani az AION 2 Companiont."
+                <TextBlock Text="{DynamicResource MapAdminWarning}"
                            Foreground="#FBBF24"
                            TextWrapping="Wrap"
                            VerticalAlignment="Center"/>
@@ -81,8 +94,8 @@
         <StackPanel Spacing="14">
           <Grid ColumnDefinitions="*,Auto">
             <StackPanel Spacing="3">
-              <TextBlock Text="Pet collection" Classes="eyebrow"/>
-              <TextBlock Text="Tulajdonosi adatok állapota" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="{DynamicResource PetCollection}" Classes="eyebrow"/>
+              <TextBlock Text="{DynamicResource PetCollectionStatus}" FontWeight="Medium" FontSize="14"/>
             </StackPanel>
             <Border Grid.Column="1" Classes="pill" VerticalAlignment="Center">
               <StackPanel Orientation="Horizontal" Spacing="8">
@@ -97,11 +110,11 @@
           <Border Classes="inset" Padding="13,11">
             <Grid ColumnDefinitions="92,*" ColumnSpacing="12">
               <StackPanel Spacing="2">
-                <TextBlock Text="UNKNOWN" Classes="kicker" FontSize="9" Foreground="#FFB454"/>
-                <TextBlock Text="Teljes lista nélkül" FontSize="11" FontWeight="SemiBold"/>
+                <TextBlock Text="{DynamicResource PetUnknown}" Classes="kicker" FontSize="9" Foreground="#FFB454"/>
+                <TextBlock Text="{DynamicResource PetUnknownTitle}" FontSize="11" FontWeight="SemiBold"/>
               </StackPanel>
               <TextBlock Grid.Column="1"
-                         Text="A petek tulajdonosi állapota nem ismert. Az ismeretleneket ideiglenesen mutatjuk."
+                         Text="{DynamicResource PetUnknownText}"
                          Classes="hint" VerticalAlignment="Center"/>
             </Grid>
           </Border>
@@ -109,11 +122,11 @@
           <Border Classes="inset" Padding="13,11">
             <Grid ColumnDefinitions="92,*" ColumnSpacing="12">
               <StackPanel Spacing="2">
-                <TextBlock Text="PARTIAL" Classes="kicker" FontSize="9"/>
-                <TextBlock Text="Részleges adat" FontSize="11" FontWeight="SemiBold"/>
+                <TextBlock Text="{DynamicResource PetPartial}" Classes="kicker" FontSize="9"/>
+                <TextBlock Text="{DynamicResource PetPartialTitle}" FontSize="11" FontWeight="SemiBold"/>
               </StackPanel>
               <TextBlock Grid.Column="1"
-                         Text="Megszereztél egy petet, és a 09 90-ből már tudjuk, hogy megvan, de a többiek továbbra is ismeretlenek."
+                         Text="{DynamicResource PetPartialText}"
                          Classes="hint" VerticalAlignment="Center"/>
             </Grid>
           </Border>
@@ -121,11 +134,11 @@
           <Border Classes="inset" Padding="13,11">
             <Grid ColumnDefinitions="92,*" ColumnSpacing="12">
               <StackPanel Spacing="2">
-                <TextBlock Text="READY" Classes="kicker" FontSize="9" Foreground="#58E0B2"/>
-                <TextBlock Text="Teljes lista" FontSize="11" FontWeight="SemiBold"/>
+                <TextBlock Text="{DynamicResource PetReady}" Classes="kicker" FontSize="9" Foreground="#58E0B2"/>
+                <TextBlock Text="{DynamicResource PetReadyTitle}" FontSize="11" FontWeight="SemiBold"/>
               </StackPanel>
               <TextBlock Grid.Column="1"
-                         Text="Megérkezett a 00 90; a Hiányzó / Lv. 1 / Lv. 2 / Lv. 3 szűrés teljesen használható."
+                         Text="{DynamicResource PetReadyText}"
                          Classes="hint" VerticalAlignment="Center"/>
             </Grid>
           </Border>
@@ -134,16 +147,19 @@
 
       <Border Classes="panel" Padding="18">
         <StackPanel Spacing="12">
-          <TextBlock Text="Application" Classes="eyebrow"/>
+          <TextBlock Text="{DynamicResource ApplicationSection}" Classes="eyebrow"/>
+          <CheckBox x:Name="AutoCaptureToggle" Content="{DynamicResource AutoCapture}"/>
+          <TextBlock Text="{DynamicResource AutoCaptureHint}" Classes="hint" Margin="24,-7,0,4"/>
+          <Border Classes="rowline"/>
           <Grid ColumnDefinitions="*,Auto">
             <StackPanel Spacing="3">
-              <TextBlock Text="Főablak bezárása" FontWeight="Medium" FontSize="14"/>
-              <TextBlock Text="A háttérben futó mód megtartja a capture-t, a DPS-t és a Map Helpert." Classes="hint"/>
+              <TextBlock Text="{DynamicResource CloseBehavior}" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="{DynamicResource CloseBehaviorHint}" Classes="hint"/>
             </StackPanel>
             <ComboBox x:Name="CloseActionCombo" Grid.Column="1" Width="190">
-              <ComboBoxItem Content="Első alkalommal kérdez" Tag="0"/>
-              <ComboBoxItem Content="Háttérben marad" Tag="1"/>
-              <ComboBoxItem Content="Kilép az alkalmazásból" Tag="2"/>
+              <ComboBoxItem Content="{DynamicResource CloseAsk}" Tag="0"/>
+              <ComboBoxItem Content="{DynamicResource CloseTray}" Tag="1"/>
+              <ComboBoxItem Content="{DynamicResource CloseExit}" Tag="2"/>
             </ComboBox>
           </Grid>
         </StackPanel>
@@ -151,8 +167,8 @@
 
       <Border Classes="panel" Padding="18">
         <StackPanel Spacing="12">
-          <TextBlock Text="Logging" Classes="eyebrow"/>
-          <CheckBox x:Name="FileLoggingToggle" Content="Diagnosztikai naplófájlok írása"/>
+          <TextBlock Text="{DynamicResource LoggingSection}" Classes="eyebrow"/>
+          <CheckBox x:Name="FileLoggingToggle" Content="{DynamicResource LoggingToggle}"/>
           <TextBlock x:Name="FileLoggingHint"
                      TextWrapping="Wrap"
                      Classes="hint"/>
@@ -161,19 +177,19 @@
 
       <Border Classes="panel" Padding="18">
         <StackPanel Spacing="12">
-          <TextBlock Text="Combat Log" Classes="eyebrow"/>
+          <TextBlock Text="{DynamicResource CombatLogSection}" Classes="eyebrow"/>
           <CheckBox x:Name="AutoDpsOverlayToggle"
-                    Content="A DPS overlay automatikusan jelenjen meg és tűnjön el a fighttal"/>
+                    Content="{DynamicResource AutoDps}"/>
           <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
             <StackPanel Spacing="3">
-              <TextBlock Text="Megtartott fightok" FontWeight="Medium" FontSize="14"/>
-              <TextBlock Text="A kedvencek nem törlődnek automatikusan a limit elérésekor." Classes="hint"/>
+              <TextBlock Text="{DynamicResource SavedFights}" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="{DynamicResource SavedFightsHint}" Classes="hint"/>
             </StackPanel>
             <ComboBox x:Name="CombatLogLimitCombo" Grid.Column="1" Width="170">
-              <ComboBoxItem Content="100 fight" Tag="100"/>
-              <ComboBoxItem Content="500 fight" Tag="500"/>
-              <ComboBoxItem Content="1000 fight" Tag="1000"/>
-              <ComboBoxItem Content="Korlátlan" Tag="0"/>
+              <ComboBoxItem Content="{DynamicResource Fights100}" Tag="100"/>
+              <ComboBoxItem Content="{DynamicResource Fights500}" Tag="500"/>
+              <ComboBoxItem Content="{DynamicResource Fights1000}" Tag="1000"/>
+              <ComboBoxItem Content="{DynamicResource Unlimited}" Tag="0"/>
             </ComboBox>
           </Grid>
         </StackPanel>
@@ -186,7 +202,7 @@
         </StackPanel>
       </Border>
 
-      <Border Classes="panel" Padding="18">
+      <Border x:Name="DeveloperSettingsPanel" Classes="panel" Padding="18">
         <StackPanel Spacing="8">
           <TextBlock Text="Developer tools" Classes="eyebrow"/>
           <TextBlock Text="A capture pipeline a Capture monitor lapon marad. Ez a felület nem cseréli le a packet parsert és a capture szolgáltatást."

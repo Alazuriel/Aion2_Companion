@@ -1,6 +1,6 @@
 # AION 2 Companion – feature TODO
 
-Utolsó kutatás: 2026-10-22
+Utolsó kutatás: 2026-10-24
 
 Ez a lista a Companion hosszú távú ötlettára. Nem hibajegyzék; a technikai hibák külön a `PROJECT_ISSUES.md` fájlban vannak.
 
@@ -262,6 +262,54 @@ Jelölések:
 - [ ] **Közösségi adatbizalom** – Megosztott marker vagy taktika mellett látszik a verzió, ellenőrzöttség és pontosság.
 - [ ] **Offline-first működés** – Minden alapfunkció internet nélkül is használható, a sync csak opcionális extra.
 
+## 11. AionCoreUpdate inspiráció – még hiányzó vagy pontosítandó ötletek
+
+Forrás: [filvoch/AionCoreUpdate](https://github.com/filvoch/AionCoreUpdate), publikus README, release note-ok, fordítások és automatizálási fájlok. A tényleges alkalmazás forrása zárt, ezért az alábbi lista csak a látható funkciókból és működési elvekből indul ki.
+
+### Meter és combat history
+
+- [ ] **APS nézet** – Hits per second játékosonként és skillenként, a damage/heal nézetektől külön.
+- [ ] **Meter scope** – Me / Party / Raid / Automatikus mód, hogy mindig csak a releváns szereplők kerüljenek a listába.
+- [ ] **Felfelé növő meter** – Az overlay választhatóan lefelé vagy felfelé bővüljön.
+- [ ] **Boss run csoportosítás** – Azonos boss egymást követő próbái egy session/run blokkban, gyors összehasonlítással.
+- [ ] **Meter-only screenshot és PNG export** – Csak az overlay tartalma kerüljön képre, az asztal és a játék nélkül.
+- [ ] **Nem érintett PvP fightok eldobása** – Más játékosok egymás közötti harca ne árassza el a historyt, ha a saját karakter nem vett részt benne.
+- [ ] **Nagy history nem blokkolhatja a capture-t** – Lapozott/asynchronous betöltés külön feldolgozási útvonalon.
+
+### Overlay és játék közbeni használat
+
+- [ ] **Egységes felső HUD-sáv** – Meter, party, timerek, pet radar, DBM és guide egy kompakt, összecsukható sávból kapcsolható.
+- [ ] **Globális overlay-zár** – Egyetlen lakat kapcsolja minden overlay click-through állapotát.
+- [ ] **UI skálázás 75–200%** – Gyorsbillentyűkkel és reset lehetőséggel, a Windows DPI-től függetlenül.
+- [ ] **Kontextusfüggő automatikus elrejtés** – Az overlayek tűnjenek el másik alkalmazás, inventory vagy egyéb játékmenu előtt, majd álljanak vissza.
+- [ ] **Hotkey ütközésvizsgálat** – Jelezze, ha egy globális gyorsbillentyűt más alkalmazás használ, és ajánljon másikat.
+- [ ] **Parancskereső** – Ctrl+K jellegű kereső minden oldalhoz, beállításhoz és parancshoz.
+- [ ] **Lebegő party HP** – Külön minimalista party-életerő ablak healer/támogató használathoz.
+
+### Party és értesítések
+
+- [?] **Háttérben érkező party/expedition meghívás** – Windows-értesítés, ha a játék nincs előtérben; csak fókuszálja a játékot, ne fogadjon el semmit automatikusan.
+- [?] **Room ready panel** – Tagok, class, level, GS/CP és ready állapot egy kompakt panelen.
+- [web] **Jelentkező-kártya** – Partyba jelentkező játékos alapadatai és a vele korábban mentett közös fightok.
+
+### Stabilitás és terjesztés
+
+- [ ] **Képernyőszintű hibahatár** – Egy hibás oldal ne állítsa le a capture-t vagy az egész alkalmazást; helyben jelenjen meg újrapróbálás.
+- [ ] **Folyamatban lévő fight vészmentése** – Crash esetén az aktuális fight, settings és collection progress következő indításkor helyreállítható legyen.
+- [ ] **Capture-prioritás** – Export, history, rDPS és más nehéz számítás soha ne tartsa fel a packetfeldolgozást.
+- [ ] **Biztonságos updater manifest** – Verzió, letöltési URL, méret és SHA-256; csak hitelesített csomagot telepítsen, és játék közben ne frissítsen.
+- [ ] **Felhasználónkénti installer** – Adminjog nélkül telepíthető, frissítés és eltávolítás közben megőrzi a settings/history adatokat.
+- [ ] **JSON-alapú lokalizáció validátorral** – Kulcs-, placeholder-, plural/select- és linkellenőrzés CI-ben minden fordításváltozásnál.
+
+### A publikus repóból biztosan látható technikai döntések
+
+- **Npcap-alapú passzív hálózati capture**, játékfájl- és memóriaírás nélkül.
+- **Borderless/Windowed overlay működés**; exclusive fullscreen fölött nem ígér megjelenést.
+- **Helyi fight history és opt-in online funkciók**; account nélkül a fightok helyben maradnak.
+- **Automatikus frissítés külön release manifesttel, hash-ellenőrzéssel és installerrel.**
+- **JSON fordítási katalógusok**, Node.js validátor és GitHub Actions ellenőrzés.
+- **A belső UI framework, packet parser és adattárolási technológia nem állapítható meg**, mert az alkalmazás forráskódja nem publikus.
+
 ## Ajánlott megvalósítási sorrend
 
 1. Stabil capture, party/combat state és pontos damage/heal.
@@ -284,5 +332,6 @@ Jelölések:
 - [Aion2.gg – kliensből frissített adatbázis és interaktív map](https://aion2.gg/database)
 - [Aion2 Atlas – map rétegek, progress, útvonalak és értesítések](https://aion2atlas.app/map/)
 - [InteractiveMap – route planning, progress és közösségi útvonalak](https://www.reddit.com/r/Aion2/comments/1wh1y5x/aion_2_interactive_map_database_full_rundown/)
+- [AionCoreUpdate – meter, history, HUD, radar, updater és lokalizáció](https://github.com/filvoch/AionCoreUpdate)
 
 Megjegyzés: a külső projektek funkciólistája inspiráció. Nem kell a kódjukat vagy assetjeiket átvenni; a Nexforge Companion saját implementációt és saját adatforrást használjon.

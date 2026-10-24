@@ -11,19 +11,19 @@ riderModule.iml
 /ViewModels.zip
 /BACKUPS/
 
-# Private Nexforge data packs. Public releases will use encoded data files.
+# Nexforge data packs are ignored by default; only the encrypted runtime packs
+# stored directly under Data are published.
 *.nfg
 *.nfg*.bak
-!/Data/Opcode.nfg
+!/Data/*.nfg
 /Data/.nexforge/
 /Private/
 
-# Opcode research data stays private. The encrypted runtime catalog is the
-# only opcode dataset published with the project.
+# Raw opcode research data stays private. The encrypted runtime catalog may be
+# published with the other Data packs.
 /Core/Wire/OpcodeRegistry.cs
 /Data/*Opcode*.json
 /Data/*Opcode*.csv
-/Data/AION2_Opcodes.nfg
 
 # Local research and data tools are private, including compiled executables.
 /Tools/*

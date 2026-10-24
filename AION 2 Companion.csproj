@@ -16,19 +16,7 @@
         <AvaloniaResource Include="Assets\**" />
     </ItemGroup>
     <ItemGroup>
-        <None Update="Data\AION2_Class.nfg" CopyToOutputDirectory="PreserveNewest" />
-        <None Update="Data\AION2_Assassin.nfg" CopyToOutputDirectory="PreserveNewest" />
-        <None Update="Data\AION2_Chanter.nfg" CopyToOutputDirectory="PreserveNewest" />
-        <None Update="Data\AION2_Cleric.nfg" CopyToOutputDirectory="PreserveNewest" />
-        <None Update="Data\AION2_Elementalist.nfg" CopyToOutputDirectory="PreserveNewest" />
-        <None Update="Data\AION2_Gladiator.nfg" CopyToOutputDirectory="PreserveNewest" />
-        <None Update="Data\AION2_Ranger.nfg" CopyToOutputDirectory="PreserveNewest" />
-        <None Update="Data\AION2_Sorcerer.nfg" CopyToOutputDirectory="PreserveNewest" />
-        <None Update="Data\AION2_Templar.nfg" CopyToOutputDirectory="PreserveNewest" />
-        <None Update="Data\AION2_Mobs.nfg" CopyToOutputDirectory="PreserveNewest" />
-        <None Update="Data\AION2_Pets.nfg" CopyToOutputDirectory="PreserveNewest" />
-        <None Update="Data\AION2_Pets.nfg" CopyToOutputDirectory="PreserveNewest" />
-        <None Update="Data\Opcode.nfg" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="Data\*.nfg" CopyToOutputDirectory="PreserveNewest" />
         <Content Include="Data\Assets\Maps\*.jpg" CopyToOutputDirectory="PreserveNewest" />
 
     </ItemGroup>

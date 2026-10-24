@@ -20,7 +20,7 @@ Jelölések:
 
 4. **A LeaveCombat eseményt a dispatcher nem küldi a combat-end feldolgozásra.** A `CombatEndCheck` ismeri, de az `OnFrameDecoded` csak HP és Disengage esetén hívja közvetlenül. **Biztos.**
 
-5. **Megoldva: megszűnt a registry és az enum közötti endian-eltérés.** A wire-értékek egyetlen forrása most a titkosított `Opcode.nfg`, ezért a név, ismertségi állapot és parser-dispatch ugyanazt az adatot használja. **Megoldva 2026-10-24.**
+5. **Megoldva: megszűnt a registry és az enum közötti endian-eltérés.** A wire-értékek egyetlen forrása most a titkosított `AION2_Opcodes.nfg`, ezért a név, ismertségi állapot és parser-dispatch ugyanazt az adatot használja. **Megoldva 2026-10-24.**
 
 6. **Party leave/kick esetén a party nem törlődik.** Az esemény csak logolva van, majd a metódus visszatér. A név, tagok, ID-k és classadatok beragadhatnak. **Biztos.**
 

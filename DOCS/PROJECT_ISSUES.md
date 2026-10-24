@@ -1,6 +1,6 @@
 # AION 2 Companion – feltárt hibák és kockázatok
 
-Állapot: 2026-10-22
+Állapot: 2026-10-24
 
 Ez egy első, statikus projektáttekintés eredménye. A forráskód nem lett javítva. A `dotnet build --no-restore` sikeres volt: **0 warning, 0 error**. Emiatt az alábbiak többsége futásidejű, integrációs, protokoll-értelmezési vagy karbantarthatósági probléma.
 
@@ -9,6 +9,11 @@ Jelölések:
 - **Biztos:** a jelenlegi kódból közvetlenül látható.
 - **Valószínű:** erős gyanú, de valódi capture-rel/UI-teszttel kell megerősíteni.
 - **Protokollkockázat:** a hálózati formátum még részben reverse engineering alatt áll.
+
+## Aktuálisan jelentett ismert hibák
+
+- [ ] **A combat néha véletlenszerűen lezárul egy folyamatban lévő fight közben.** Az esemény pontos kiváltó oka még nincs azonosítva; elsőként a Death, LeaveCombat, Disengage, HP és reset ágakat kell valódi capture-rel összevetni.
+- [ ] **A Map Helper néha akkor is megnyílik, amikor nem a játék térképe látható.** Fals pozitív map-felismerés; a detektálást több stabil UI-jelhez és egymást követő pozitív frame-hez kell kötni.
 
 ## Kritikus / hibás eredményt adhat
 

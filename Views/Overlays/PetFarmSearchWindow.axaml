@@ -1,0 +1,164 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AION_2_Companion.Views.Overlays.PetFarmSearchWindow"
+        x:CompileBindings="False"
+        Width="1040" Height="760" MinWidth="820" MinHeight="620"
+        Title="Nexforge // Pet Intelligence"
+        WindowStartupLocation="CenterOwner"
+        SystemDecorations="None"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        Topmost="True" ShowInTaskbar="False" CanResize="True"
+        FontFamily="Inter, Segoe UI Variable Text, Segoe UI"
+        Foreground="#EAF7FF">
+  <Window.Styles>
+    <StyleInclude Source="avares://AION 2 Companion/Styles/Theme.axaml"/>
+  </Window.Styles>
+
+  <Border BorderBrush="#45677F" BorderThickness="1" CornerRadius="18"
+          BoxShadow="0 22 58 0 #99000000" ClipToBounds="True">
+    <Border.Background>
+      <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#F5091321" Offset="0"/>
+        <GradientStop Color="#EE10243A" Offset="0.62"/>
+        <GradientStop Color="#F31A1018" Offset="1"/>
+      </LinearGradientBrush>
+    </Border.Background>
+
+    <Grid RowDefinitions="3,Auto,Auto,*,Auto">
+      <Border Grid.Row="0">
+        <Border.Background>
+          <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+            <GradientStop Color="#45DFFF" Offset="0"/>
+            <GradientStop Color="#5477FF" Offset="0.56"/>
+            <GradientStop Color="#FF8E4F" Offset="1"/>
+          </LinearGradientBrush>
+        </Border.Background>
+      </Border>
+
+      <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="24,18,18,14"
+            PointerPressed="HeaderDrag">
+        <Border Width="42" Height="42" CornerRadius="12" Background="#203B54"
+                BorderBrush="#4C7798" BorderThickness="1">
+          <TextBlock Text="P" FontSize="18" FontWeight="Bold" Foreground="#45DFFF"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+        <StackPanel Grid.Column="1" Margin="13,0,0,0" Spacing="2" VerticalAlignment="Center">
+          <TextBlock Text="NEXFORGE // PET INTELLIGENCE" Classes="kicker" FontSize="10"/>
+          <TextBlock Text="Collection &amp; Spawn Atlas" FontSize="23" FontWeight="SemiBold"/>
+          <TextBlock Text="Külön térképek, pethelyek, tulajdonosi állapot és célzott szűrés." Classes="hint"/>
+        </StackPanel>
+        <Button x:Name="CloseSearch" Grid.Column="2" Classes="ui quiet" Content="×"
+                FontSize="21" VerticalAlignment="Top"/>
+      </Grid>
+
+      <Border Grid.Row="2" Classes="inset" Margin="24,0,24,14" Padding="14,11">
+        <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="11">
+          <Ellipse x:Name="CollectionStatusDot" Width="9" Height="9" Fill="#FFB454"
+                   VerticalAlignment="Center"/>
+          <StackPanel Grid.Column="1" Spacing="1" MinWidth="150">
+            <TextBlock x:Name="CollectionStatusCode" Text="UNKNOWN" Classes="kicker" FontSize="9"/>
+            <TextBlock x:Name="CollectionStatusTitle" Text="Teljes lista nélkül"
+                       FontSize="13" FontWeight="SemiBold"/>
+          </StackPanel>
+          <TextBlock x:Name="CollectionStatus" Grid.Column="2" Classes="hint"
+                     VerticalAlignment="Center" TextWrapping="Wrap"/>
+        </Grid>
+      </Border>
+
+      <Grid Grid.Row="3" ColumnDefinitions="1.35*,0.85*" ColumnSpacing="16" Margin="24,0">
+        <Border Classes="glass" Padding="16">
+          <Grid RowDefinitions="Auto,Auto,*" RowSpacing="12">
+            <Grid ColumnDefinitions="*,190" ColumnSpacing="10">
+              <TextBox x:Name="PetSearchText" Watermark="Petnév vagy Pet ID keresése..."
+                       FontSize="13" MinHeight="40"/>
+              <ComboBox x:Name="CategorySelect" Grid.Column="1" HorizontalAlignment="Stretch"/>
+            </Grid>
+            <Grid Grid.Row="1" ColumnDefinitions="*,Auto">
+              <TextBlock Text="PET CATALOG" Classes="kicker" FontSize="9"/>
+              <TextBlock x:Name="SearchCount" Grid.Column="1" Classes="eyebrow" FontSize="10"/>
+            </Grid>
+            <ListBox Grid.Row="2" x:Name="PetItems" Background="Transparent"
+                     BorderThickness="0" Padding="0">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="inset" Padding="11,9" Margin="0,0,0,7" CornerRadius="10">
+                    <Grid ColumnDefinitions="40,*,Auto" ColumnSpacing="11">
+                      <Border Width="40" Height="40" CornerRadius="10" Background="#17283B"
+                              BorderBrush="#365775" BorderThickness="1" ClipToBounds="True">
+                        <Image Source="{Binding Icon}" Stretch="UniformToFill"/>
+                      </Border>
+                      <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{Binding Meta}" Classes="hint" FontSize="10"/>
+                      </StackPanel>
+                      <Border Grid.Column="2" Classes="pill" BorderBrush="{Binding StatusColor}"
+                              Padding="9,4" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Status}" Foreground="{Binding StatusColor}"
+                                   FontSize="10" FontWeight="SemiBold"/>
+                      </Border>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </Grid>
+        </Border>
+
+        <Grid Grid.Column="1" RowDefinitions="Auto,*" RowSpacing="14">
+          <Border Classes="glass" Padding="16">
+            <StackPanel Spacing="11">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="2">
+                  <TextBlock Text="MAP FILTERS" Classes="kicker" FontSize="9"/>
+                  <TextBlock Text="Mit mutassunk?" FontSize="17" FontWeight="SemiBold"/>
+                </StackPanel>
+                <CheckBox x:Name="ShowMarkers" Grid.Column="1" Content="MARKERS" VerticalAlignment="Center"/>
+              </Grid>
+              <ComboBox x:Name="MapSelect" HorizontalAlignment="Stretch"/>
+              <WrapPanel Orientation="Horizontal">
+                <CheckBox x:Name="ShowMissing" Content="Hiányzó" Margin="0,0,15,8"/>
+                <CheckBox x:Name="ShowLevel1" Content="Lv. 1" Margin="0,0,15,8"/>
+                <CheckBox x:Name="ShowLevel2" Content="Lv. 2" Margin="0,0,15,8"/>
+                <CheckBox x:Name="ShowLevel3" Content="Lv. 3" Margin="0,0,0,8"/>
+              </WrapPanel>
+              <TextBlock x:Name="ActiveFilterText" Classes="hint" TextWrapping="Wrap"/>
+            </StackPanel>
+          </Border>
+
+          <Border Grid.Row="1" Classes="glass" Padding="17">
+            <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" RowSpacing="12">
+              <TextBlock Text="SELECTED PET" Classes="kicker" FontSize="9"/>
+              <Grid Grid.Row="1" ColumnDefinitions="64,*" ColumnSpacing="13">
+                <Border Width="64" Height="64" CornerRadius="15" Background="#17283B"
+                        BorderBrush="#466B88" BorderThickness="1" ClipToBounds="True">
+                  <Image x:Name="SelectedPetIcon" Stretch="UniformToFill"/>
+                </Border>
+                <TextBlock x:Name="SelectedPetDetails" Grid.Column="1"
+                           Text="Válassz egy petet a listából."
+                           Foreground="#EAF7FF" TextWrapping="Wrap" FontSize="13"
+                           VerticalAlignment="Center"/>
+              </Grid>
+              <Border Grid.Row="2" Classes="inset" Padding="12" VerticalAlignment="Stretch">
+                <TextBlock Text="A kiválasztott pet összes ismert spawnpontját külön kiemelheted a térképen."
+                           Classes="hint" VerticalAlignment="Center"/>
+              </Border>
+              <Button x:Name="OnlyThisPet" Grid.Row="3" Classes="ui primary"
+                      Content="CSAK EZT MUTASD" IsEnabled="False" HorizontalAlignment="Stretch"/>
+              <Button x:Name="ClearPetSelection" Grid.Row="4" Classes="ui"
+                      Content="SZŰRÉS VISSZAÁLLÍTÁSA" HorizontalAlignment="Stretch"/>
+            </Grid>
+          </Border>
+        </Grid>
+      </Grid>
+
+      <Grid Grid.Row="4" ColumnDefinitions="*,Auto" Margin="24,14,24,20">
+        <TextBlock Text="LIVE FILTER // A módosítások azonnal megjelennek a térképen."
+                   Classes="kicker" FontSize="9" VerticalAlignment="Center"/>
+        <Button x:Name="ApplyAndClose" Grid.Column="1" Classes="ui primary"
+                Content="KÉSZ  ✓" Padding="24,10"/>
+      </Grid>
+    </Grid>
+  </Border>
+</Window>

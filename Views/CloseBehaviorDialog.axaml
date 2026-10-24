@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AION_2_Companion.Views.CloseBehaviorDialog"
+        Width="470" Height="245"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Title="AION 2 Companion"
+        Icon="/Assets/nexforge-companion.ico"
+        Background="#090B0F" Foreground="#ECEAE6"
+        FontFamily="Segoe UI Variable Text, Segoe UI"
+        WindowStartupLocation="CenterOwner">
+  <Window.Styles>
+    <StyleInclude Source="avares://AION 2 Companion/Styles/Theme.axaml"/>
+  </Window.Styles>
+
+  <Border Classes="panel" Margin="18" Padding="22">
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+      <TextBlock Text="Ablak bezárása" Classes="h1"/>
+      <TextBlock Grid.Row="1"
+                 Margin="0,8,0,0"
+                 Text="A Companion futhat tovább a háttérben, vagy teljesen leállhat. A választás a Settings oldalon később módosítható."
+                 Classes="body"/>
+      <TextBlock Grid.Row="2"
+                 Text="NEXFORGE · still hot from the forge"
+                 Classes="hint"
+                 FontStyle="Italic"
+                 VerticalAlignment="Center"/>
+      <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+        <Button Classes="ui" Content="Mégse" Click="CancelClick"/>
+        <Button Classes="ui" Content="Háttérben marad" Click="TrayClick"/>
+        <Button Classes="ui primary" Content="Kilépés" Click="ExitClick"/>
+      </StackPanel>
+    </Grid>
+  </Border>
+</Window>

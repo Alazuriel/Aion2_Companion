@@ -1,0 +1,80 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AION_2_Companion.Views.Overlays.DbmOverlayWindow"
+        Width="280"
+        Height="176"
+        MinWidth="230"
+        MinHeight="120"
+        Title="AION 2 · Boss időzítő"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        ExtendClientAreaToDecorationsHint="True"
+        SystemDecorations="None"
+        Topmost="True"
+        ShowInTaskbar="False"
+        CanResize="True"
+        FontFamily="Inter, Segoe UI Variable Text, Segoe UI"
+        Foreground="#EAF7FF">
+  <Window.Styles>
+    <StyleInclude Source="avares://AION 2 Companion/Styles/Theme.axaml"/>
+  </Window.Styles>
+
+  <Border Background="#F00B1624"
+          BorderBrush="#45677F"
+          BorderThickness="1"
+          CornerRadius="14"
+          BoxShadow="0 14 38 0 #85000000">
+    <Grid RowDefinitions="Auto,*">
+
+      <!-- Fejléc (húzható) -->
+      <Grid ColumnDefinitions="*,Auto">
+        <Border Classes="dragbar" Padding="12,9" PointerPressed="HeaderDrag">
+          <StackPanel Orientation="Horizontal" Spacing="9">
+            <Border Width="8" Height="12" VerticalAlignment="Center">
+              <StackPanel Spacing="2" VerticalAlignment="Center">
+                <Border Height="1" Background="#6C717C"/>
+                <Border Height="1" Background="#6C717C"/>
+                <Border Height="1" Background="#6C717C"/>
+              </StackPanel>
+            </Border>
+            <Ellipse Width="6" Height="6" Fill="#FF9B52" VerticalAlignment="Center"/>
+            <TextBlock Text="BOSS // LIVE" Classes="kicker" FontSize="10" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Border>
+        <Button Grid.Column="1"
+                Classes="ui quiet"
+                Content="×"
+                Margin="0,4,6,4"
+                VerticalAlignment="Center"
+                Click="CloseClick"/>
+      </Grid>
+
+      <StackPanel Grid.Row="1" Margin="14,2,14,12" Spacing="8">
+
+        <!-- Következő esemény -->
+        <Border Classes="inset" Padding="12,10">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="2" VerticalAlignment="Center">
+              <TextBlock Text="Következő" Classes="eyebrow"/>
+              <TextBlock Text="Készülj a mozgásra" FontSize="13" FontWeight="Medium"/>
+            </StackPanel>
+            <TextBlock Grid.Column="1"
+                       Text="00:05"
+                       Classes="mono accent"
+                       FontSize="24"
+                       FontWeight="Medium"
+                       VerticalAlignment="Center"/>
+          </Grid>
+        </Border>
+
+        <!-- Következő lépések -->
+        <Grid ColumnDefinitions="48,*" RowDefinitions="Auto,Auto" RowSpacing="6">
+          <TextBlock Text="00:12" Classes="mono warn" FontSize="12"/>
+          <TextBlock Grid.Column="1" Text="Erős támadás · lépj el" FontSize="12"/>
+          <TextBlock Grid.Row="1" Text="00:20" Classes="mono" Foreground="#9A9EA8" FontSize="12"/>
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="Területi mechanika · szóródj" FontSize="12"/>
+        </Grid>
+      </StackPanel>
+    </Grid>
+  </Border>
+</Window>

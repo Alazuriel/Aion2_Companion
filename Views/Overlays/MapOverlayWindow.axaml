@@ -1,0 +1,207 @@
+
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AION_2_Companion.Views.Overlays.MapOverlayWindow"
+        Title="AION 2 Companion | Map Overlay"
+        WindowStartupLocation="Manual"
+        SystemDecorations="None"
+        TransparencyLevelHint="Transparent"
+        Background="Transparent"
+        Topmost="True"
+        ShowActivated="False"
+        Focusable="False"
+        ShowInTaskbar="False"
+        CanResize="False">
+
+    <Grid IsHitTestVisible="False">
+
+        <!-- MEGLÉVŐ TÉRKÉPRÉTEG -->
+        <Canvas x:Name="MarkerCanvas"
+                ClipToBounds="True"
+                IsHitTestVisible="False"/>
+
+        <!-- PET FARM MENÜ -->
+        <Border x:Name="PetMenuPanel"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Margin="0,155,24,0"
+                Width="292"
+                Height="610"
+                ZIndex="900"
+                Opacity="0"
+                IsHitTestVisible="False"
+                Background="#F20A1422"
+                BorderBrush="#45677F"
+                BorderThickness="1"
+                CornerRadius="16"
+                BoxShadow="0 18 48 0 #85000000">
+
+            <Border.Transitions>
+                <Transitions>
+                    <DoubleTransition
+                        Property="Opacity"
+                        Duration="0:0:0.25"/>
+                </Transitions>
+            </Border.Transitions>
+
+            <StackPanel Margin="18" Spacing="13">
+
+                <Border Height="2" CornerRadius="1">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                            <GradientStop Color="#45DFFF" Offset="0"/>
+                            <GradientStop Color="#5477FF" Offset="0.58"/>
+                            <GradientStop Color="#FF8E4F" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+
+                <!-- FEJLÉC -->
+                <StackPanel Spacing="5">
+                    <TextBlock
+                        Text="PET INTELLIGENCE"
+                        FontSize="19"
+                        FontWeight="Bold"
+                        Foreground="#F4F7FF"/>
+
+                    <TextBlock
+                        Text="NEXFORGE // FIELD MODULE"
+                        FontSize="10"
+                        Foreground="#38C9FF"/>
+                </StackPanel>
+
+                <Border Height="1"
+                        Background="#34445F"/>
+
+                <!-- TULAJDONOSI ADATOK SZINKRONÁLLAPOTA -->
+                <Border Background="#98101A29"
+                        BorderBrush="#36506A"
+                        BorderThickness="1"
+                        CornerRadius="11"
+                        Padding="12,10">
+                    <StackPanel Spacing="5">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Ellipse x:Name="PetSyncDot"
+                                     Width="8" Height="8"
+                                     Fill="#FFB454"
+                                     VerticalAlignment="Center"/>
+                            <TextBlock x:Name="PetSyncCode"
+                                       Text="UNKNOWN"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Foreground="#FFB454"/>
+                        </StackPanel>
+                        <TextBlock x:Name="PetSyncTitle"
+                                   Text="Teljes lista nélkül"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Foreground="#F4F7FF"/>
+                        <TextBlock x:Name="PetSyncDescription"
+                                   Text="A petek tulajdonosi állapota nem ismert. Az ismeretleneket ideiglenesen mutatjuk."
+                                   FontSize="10"
+                                   TextWrapping="Wrap"
+                                   Foreground="#8EA3B8"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- MEGJELENÍTÉS -->
+                <StackPanel Spacing="6">
+
+                    <TextBlock
+                        Text="Megjelenítés"
+                        FontSize="12"
+                        Foreground="#8E9DB7"/>
+
+                    <TextBlock
+                        Text="Összes pet"
+                        FontSize="16"
+                        FontWeight="SemiBold"
+                        Foreground="White"/>
+
+                    <TextBlock
+                        Text="Minden kategória aktív"
+                        FontSize="11"
+                        Foreground="#38C9FF"/>
+                </StackPanel>
+
+                <!-- PETEK BE/KI -->
+                <Border x:Name="PetVisibilityToggle"
+                        Height="48"
+                        Background="#B319364B"
+                        BorderBrush="#43C9FF"
+                        BorderThickness="1"
+                        CornerRadius="9"
+                        IsHitTestVisible="False">
+
+                    <Grid ColumnDefinitions="*,Auto"
+                          Margin="12,0">
+
+                        <TextBlock
+                            Text="Petek megjelenítése"
+                            VerticalAlignment="Center"
+                            Foreground="White"
+                            FontSize="12"
+                            FontWeight="SemiBold"/>
+
+                        <TextBlock
+                            x:Name="PetVisibilityState"
+                            Grid.Column="1"
+                            Text="BE"
+                            VerticalAlignment="Center"
+                            Foreground="#43C9FF"
+                            FontWeight="Bold"
+                            FontSize="12"/>
+                    </Grid>
+                </Border>
+
+                <!-- NAGY KERESŐ / SZŰRŐ ABLAK MEGNYITÁSA -->
+                <Border x:Name="PetSearchOpenToggle"
+                        Height="46"
+                        Background="#C4174B66"
+                        BorderBrush="#43C9FF"
+                        BorderThickness="1"
+                        CornerRadius="9"
+                        IsHitTestVisible="False">
+                    <Grid ColumnDefinitions="*,Auto" Margin="12,0">
+                        <TextBlock Text="SZŰRŐK / KERESÉS"
+                                   FontSize="12" FontWeight="Bold"
+                                   Foreground="White" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="⌕"
+                                   Foreground="#43C9FF"
+                                   FontSize="21" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- STATISZTIKA -->
+                <Border Background="#9818243A"
+                        BorderBrush="#344E67"
+                        BorderThickness="1"
+                        CornerRadius="9"
+                        Padding="12">
+
+                    <StackPanel Spacing="5">
+
+                        <TextBlock
+                            Text="VERTERON"
+                            FontSize="11"
+                            Foreground="#A5B7D4"/>
+
+                        <TextBlock
+                            Text="5 269 spawnpont"
+                            FontSize="19"
+                            FontWeight="Bold"
+                            Foreground="White"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- KÉSŐBBI FUNKCIÓK -->
+                <TextBlock
+                    Text="Alapból csak a hiányzók. A keresőben módosíthatod a szűrést."
+                    FontSize="12"
+                    TextWrapping="Wrap"
+                    Foreground="#A5B7D4"/>
+
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

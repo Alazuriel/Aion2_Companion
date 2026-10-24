@@ -1,0 +1,69 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AION_2_Companion.Views.GuidesView">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="18">
+      <StackPanel Spacing="4">
+        <TextBlock Text="Class guide" Classes="h1"/>
+        <TextBlock Text="Osztályonkénti szerep, build és party összetétel." Classes="body"/>
+      </StackPanel>
+
+      <Border Classes="panel" Padding="0">
+        <StackPanel>
+          <Grid ColumnDefinitions="200,*,Auto" Margin="18,16">
+            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+              <Ellipse Width="7" Height="7" Fill="#9EB8C4" VerticalAlignment="Center"/>
+              <TextBlock Text="Assassin" Classes="accent" FontWeight="Medium"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="3" Margin="8,0">
+              <TextBlock Text="Burst / egy célpont" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="Uptime, tiszta burst ablak, célpont elérése." Classes="body" FontSize="12"/>
+            </StackPanel>
+            <Button Grid.Column="2" Classes="ui" Content="Jegyzet" VerticalAlignment="Center"/>
+          </Grid>
+          <Border Classes="rowline"/>
+          <Grid ColumnDefinitions="200,*,Auto" Margin="18,16">
+            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+              <Ellipse Width="7" Height="7" Fill="#9EB8C4" VerticalAlignment="Center"/>
+              <TextBlock Text="Aether Sorcerer" Classes="accent" FontWeight="Medium"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="3" Margin="8,0">
+              <TextBlock Text="Mágia / távolsági" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="Rotáció és build helye. Később a közösségi buildek kerülnek ide." Classes="body" FontSize="12"/>
+            </StackPanel>
+            <Button Grid.Column="2" Classes="ui" Content="Jegyzet" VerticalAlignment="Center"/>
+          </Grid>
+          <Border Classes="rowline"/>
+          <Grid ColumnDefinitions="200,*,Auto" Margin="18,16">
+            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+              <Ellipse Width="7" Height="7" Fill="#9EB8C4" VerticalAlignment="Center"/>
+              <TextBlock Text="Templar" Classes="accent" FontWeight="Medium"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="3" Margin="8,0">
+              <TextBlock Text="Első vonal / védelem" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="Szerep, gear prioritás és encounter jegyzet." Classes="body" FontSize="12"/>
+            </StackPanel>
+            <Button Grid.Column="2" Classes="ui" Content="Jegyzet" VerticalAlignment="Center"/>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel" Padding="18">
+        <StackPanel Spacing="12">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="Party összetétel" Classes="section"/>
+            <TextBlock Grid.Column="1" Text="minta" Classes="eyebrow" VerticalAlignment="Center"/>
+          </Grid>
+          <WrapPanel Orientation="Horizontal">
+            <Border Classes="pill" Margin="0,0,8,8"><TextBlock Text="Assassin" Classes="accent" FontSize="13"/></Border>
+            <Border Classes="pill" Margin="0,0,8,8"><TextBlock Text="Shadow Ranger" Classes="accent" FontSize="13"/></Border>
+            <Border Classes="pill" Margin="0,0,8,8"><TextBlock Text="Aether Sorcerer" Classes="accent" FontSize="13"/></Border>
+            <Border Classes="pill" Margin="0,0,8,8"><TextBlock Text="Templar" Classes="accent" FontSize="13"/></Border>
+            <Border Classes="pill" Margin="0,0,8,8"><TextBlock Text="Cleric" Classes="accent" FontSize="13"/></Border>
+          </WrapPanel>
+          <TextBlock Text="Statikus példa. Az élő party összetétel a fejlesztői nézetben követhető." Classes="hint"/>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,100 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AION_2_Companion.Views.CombatAnalyticsView"
+             x:CompileBindings="False">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="18">
+      <StackPanel Spacing="4">
+        <TextBlock Text="DPS mérő" Classes="h1"/>
+        <TextBlock Text="Harc közbeni sebzés, DPS és HPS. Amíg a mérés nincs rákötve, a számok minta adatok." Classes="body"/>
+      </StackPanel>
+
+      <!-- Összesítő sáv -->
+      <Border Classes="panel" Padding="0">
+        <Grid ColumnDefinitions="*,*,*,*">
+          <StackPanel Margin="20,16" Spacing="6">
+            <TextBlock Text="Összes sebzés" Classes="eyebrow"/>
+            <TextBlock Text="2.84M" Classes="metric" FontSize="26"/>
+            <TextBlock Text="minta" Classes="hint"/>
+          </StackPanel>
+          <Border Grid.Column="1" BorderBrush="#242A34" BorderThickness="1,0,0,0">
+            <StackPanel Margin="20,16" Spacing="6">
+              <TextBlock Text="DPS" Classes="eyebrow"/>
+              <TextBlock Text="18,420" Classes="metric accent" FontSize="26"/>
+              <TextBlock Text="minta" Classes="hint"/>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="2" BorderBrush="#242A34" BorderThickness="1,0,0,0">
+            <StackPanel Margin="20,16" Spacing="6">
+              <TextBlock Text="Összes gyógyítás" Classes="eyebrow"/>
+              <TextBlock Text="624K" Classes="metric" FontSize="26"/>
+              <TextBlock Text="minta" Classes="hint"/>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="3" BorderBrush="#242A34" BorderThickness="1,0,0,0">
+            <StackPanel Margin="20,16" Spacing="6">
+              <TextBlock Text="HPS" Classes="eyebrow"/>
+              <TextBlock Text="4,050" Classes="metric" FontSize="26"/>
+              <TextBlock Text="minta" Classes="hint"/>
+            </StackPanel>
+          </Border>
+        </Grid>
+      </Border>
+
+      <!-- Sebzéstábla -->
+      <Border Classes="panel" Padding="18">
+        <StackPanel Spacing="12">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="Sebzésrangsor" Classes="section"/>
+            <TextBlock Grid.Column="1" Text="Jelenlegi harc" Classes="eyebrow" VerticalAlignment="Center"/>
+          </Grid>
+
+          <Grid ColumnDefinitions="40,200,*,84" Margin="0,4,0,0">
+            <TextBlock Text="#" Classes="eyebrow"/>
+            <TextBlock Grid.Column="1" Text="Játékos" Classes="eyebrow"/>
+            <TextBlock Grid.Column="2" Text="Damage" Classes="eyebrow"/>
+            <TextBlock Grid.Column="3" Text="DPS" Classes="eyebrow" HorizontalAlignment="Right"/>
+          </Grid>
+
+          <ItemsControl ItemsSource="{Binding CombatRows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border BorderBrush="#1C2230" BorderThickness="0,1,0,0" Padding="0,12">
+                  <Grid ColumnDefinitions="40,200,*,84">
+                    <Border Classes="badge" VerticalAlignment="Center" HorizontalAlignment="Left">
+                      <TextBlock Text="{Binding Rank}"
+                                 Classes="mono"
+                                 Foreground="#9A9EA8"
+                                 FontSize="11"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Name}" FontWeight="Medium" FontSize="13"/>
+                      <TextBlock Text="{Binding Class}" Classes="hint"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Spacing="6" VerticalAlignment="Center" Margin="0,0,20,0">
+                      <TextBlock Text="{Binding Damage}" FontSize="13"/>
+                      <ProgressBar Value="{Binding Percent}" Maximum="100"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="3"
+                               Text="{Binding Dps}"
+                               Classes="mono accent"
+                               FontSize="13"
+                               HorizontalAlignment="Right"
+                               VerticalAlignment="Center"/>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <Button Content="DPS mérő lebegő ablak megnyitása"
+              HorizontalAlignment="Left"
+              Classes="ui primary"
+              Click="OpenOverlayClick"/>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

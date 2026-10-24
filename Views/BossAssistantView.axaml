@@ -1,0 +1,78 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AION_2_Companion.Views.BossAssistantView">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="18">
+      <StackPanel Spacing="4">
+        <TextBlock Text="Boss időzítő" Classes="h1"/>
+        <TextBlock Text="DBM-szerű időzítő: pull visszaszámlálás, következő mechanikák és figyelmeztetések." Classes="body"/>
+      </StackPanel>
+
+      <Grid ColumnDefinitions="1.35*,*" ColumnSpacing="16">
+
+        <!-- Idővonal -->
+        <Border Classes="panel" Padding="18">
+          <StackPanel Spacing="14">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="4">
+                <TextBlock Text="Encounter idővonal" Classes="eyebrow"/>
+                <TextBlock Text="Várakozás encounter adatra" Classes="section"/>
+              </StackPanel>
+              <Border Grid.Column="1" Classes="pill" VerticalAlignment="Top">
+                <TextBlock Text="minta" Classes="hint" FontSize="11"/>
+              </Border>
+            </Grid>
+
+            <StackPanel Spacing="8">
+              <Grid ColumnDefinitions="64,20,*">
+                <TextBlock Text="00:05" Classes="mono accent" FontSize="13" VerticalAlignment="Top" Margin="0,11,0,0"/>
+                <Ellipse Grid.Column="1" Width="8" Height="8" Fill="#9EB8C4"
+                         HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,14,0,0"/>
+                <Border Grid.Column="2" Classes="inset" Padding="12,10">
+                  <TextBlock Text="Példa mechanika · előkészülés" FontSize="13"/>
+                </Border>
+              </Grid>
+              <Grid ColumnDefinitions="64,20,*">
+                <TextBlock Text="00:12" Classes="mono warn" FontSize="13" VerticalAlignment="Top" Margin="0,11,0,0"/>
+                <Ellipse Grid.Column="1" Width="8" Height="8" Fill="#C4A574"
+                         HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,14,0,0"/>
+                <Border Grid.Column="2" Classes="inset" Padding="12,10">
+                  <TextBlock Text="Erős támadás · lépj el" FontSize="13"/>
+                </Border>
+              </Grid>
+              <Grid ColumnDefinitions="64,20,*">
+                <TextBlock Text="00:20" Classes="mono" Foreground="#9A9EA8" FontSize="13" VerticalAlignment="Top" Margin="0,11,0,0"/>
+                <Ellipse Grid.Column="1" Width="8" Height="8" Fill="#9A9EA8"
+                         HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,14,0,0"/>
+                <Border Grid.Column="2" Classes="inset" Padding="12,10">
+                  <TextBlock Text="Területi mechanika · szóródj" FontSize="13"/>
+                </Border>
+              </Grid>
+            </StackPanel>
+
+            <TextBlock Text="Minta idővonal. A valódi boss adatok a parser bekötése után jelennek meg." Classes="hint"/>
+          </StackPanel>
+        </Border>
+
+        <!-- Pull timer + beállítások -->
+        <Border Grid.Column="1" Classes="panel" Padding="18">
+          <StackPanel Spacing="12">
+            <TextBlock Text="Pull visszaszámlálás" Classes="eyebrow"/>
+            <TextBlock Text="00:05" Classes="metric accent" FontSize="44"/>
+            <TextBlock Text="Ready check szükséges" Classes="hint"/>
+            <Button Content="Boss időzítő lebegő ablak"
+                    Classes="ui primary"
+                    Click="OpenOverlayClick"
+                    HorizontalAlignment="Left"
+                    Margin="0,4,0,0"/>
+            <Border Classes="rowline" Margin="0,8,0,0"/>
+            <TextBlock Text="Figyelmeztetések" Classes="section" FontSize="14"/>
+            <CheckBox Content="Vizuális figyelmeztetés" IsChecked="True"/>
+            <CheckBox Content="Hangjelzés" IsChecked="False"/>
+            <CheckBox Content="Visszaszámlálás a pull előtt" IsChecked="True"/>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

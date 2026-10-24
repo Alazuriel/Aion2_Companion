@@ -1,0 +1,34 @@
+AION 2 Companion — Nexforge attribution notice
+Copyright (C) 2026 Nexforge
+
+This project is licensed under the GNU General Public License, version 3 or
+(at your option) any later version (GPL-3.0-or-later), together with the
+following additional term permitted by section 7(b) of GPL version 3.
+
+Required Nexforge attribution
+-----------------------------
+
+When conveying an unmodified or modified covered work, you must preserve this
+NOTICE file and the following reasonable author attribution in the distributed
+source documentation:
+
+    Originally developed as Nexforge AION 2 Companion.
+
+If the covered work has an interactive user interface containing an About,
+Credits, Legal Notices, or equivalent view, that view must display the same
+attribution in a reasonably prominent and readable manner. A modified version
+must also identify itself as modified and must not imply that it is an official
+or endorsed Nexforge release.
+
+This attribution requirement does not grant permission to use Nexforge names,
+logos, or other branding to market a modified version as an official Nexforge
+product. It requires preservation of authorship credit, not false endorsement.
+
+Third-party names and assets
+----------------------------
+
+AION, AION 2, and related names, game content, and trademarks belong to their
+respective owners. Files under Data/Assets/icons and Data/Assets/Classes may
+depict third-party game content. Nexforge does not claim ownership of such
+third-party material, and the GPL grant applies only to rights that Nexforge is
+legally able to license.

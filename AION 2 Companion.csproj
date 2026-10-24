@@ -1,0 +1,67 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <ApplicationIcon>Assets\nexforge-companion.ico</ApplicationIcon>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <NfgLocalKeyFile Condition="'$(NfgLocalKeyFile)' == '' and Exists('Private\NfgMaster.key')">Private\NfgMaster.key</NfgLocalKeyFile>
+        <NfgLocalKeyFile Condition="'$(NfgLocalKeyFile)' == '' and '$(NEXFORGE_NFG_MASTER_KEY)' != ''">$(IntermediateOutputPath)NfgMaster.key</NfgLocalKeyFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Folder Include="Data\" />
+        <Folder Include="Models\" />
+        <AvaloniaResource Include="Assets\**" />
+    </ItemGroup>
+    <ItemGroup>
+        <None Update="Data\AION2_Class.nfg" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="Data\AION2_Assassin.nfg" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="Data\AION2_Chanter.nfg" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="Data\AION2_Cleric.nfg" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="Data\AION2_Elementalist.nfg" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="Data\AION2_Gladiator.nfg" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="Data\AION2_Ranger.nfg" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="Data\AION2_Sorcerer.nfg" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="Data\AION2_Templar.nfg" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="Data\AION2_Mobs.nfg" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="Data\AION2_Pets.nfg" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="Data\AION2_Pets.nfg" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="Data\Opcode.nfg" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="Data\Assets\Maps\*.jpg" CopyToOutputDirectory="PreserveNewest" />
+
+    </ItemGroup>
+    <ItemGroup>
+        <AvaloniaResource Include="Data\Assets\**\*" />
+        <AvaloniaResource Include="Data\Assets\Icons\**\*" />
+        <Content Include="Data\Assets\Pets\*.webp" CopyToOutputDirectory="PreserveNewest" />
+        <EmbeddedResource Include="$(NfgLocalKeyFile)" LogicalName="Nexforge.NfgMasterKey" Condition="'$(NfgLocalKeyFile)' != ''" />
+        <Compile Remove="Core\Wire\OpcodeRegistry.cs" />
+    </ItemGroup>
+    <Target Name="PrepareNfgEnvironmentKey"
+            BeforeTargets="PrepareResources"
+            Condition="'$(NEXFORGE_NFG_MASTER_KEY)' != '' and !Exists('Private\NfgMaster.key')">
+        <WriteLinesToFile File="$(IntermediateOutputPath)NfgMaster.key"
+                          Lines="$(NEXFORGE_NFG_MASTER_KEY)"
+                          Overwrite="true" />
+    </Target>
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="11.3.10" />
+        <PackageReference Include="Avalonia.Desktop" Version="11.3.10" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.10" />
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.10" />
+        <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+        <PackageReference Include="Avalonia.Diagnostics" Version="11.3.10">
+            <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+            <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
+        <PackageReference Include="OpenCvSharp4.Windows" Version="4.13.0.20260627" />
+        <PackageReference Include="PacketDotNet" Version="1.4.8" />
+        <PackageReference Include="SharpPcap" Version="6.3.1" />
+        <PackageReference Include="K4os.Compression.LZ4" Version="1.3.8" />
+        <PackageReference Include="System.Drawing.Common" Version="10.0.9" />
+        <PackageReference Include="WgcSharp" Version="1.1.1" />
+    </ItemGroup>
+</Project>

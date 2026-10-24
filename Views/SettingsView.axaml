@@ -1,0 +1,198 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AION_2_Companion.Views.SettingsView">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="18" MaxWidth="760" HorizontalAlignment="Left">
+      <StackPanel Spacing="4">
+        <TextBlock Text="Settings" Classes="h1"/>
+        <TextBlock Text="Overlay ablakok és a companion viselkedése." Classes="body"/>
+      </StackPanel>
+
+      <Border Classes="panel" Padding="18">
+        <StackPanel Spacing="0">
+          <TextBlock Text="Overlays" Classes="eyebrow" Margin="0,0,0,6"/>
+          <Grid ColumnDefinitions="*,Auto" Margin="0,10">
+            <StackPanel Spacing="3">
+              <TextBlock Text="DPS meter" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="Kis lebegő ablak. A felső sávval húzható." Classes="hint"/>
+            </StackPanel>
+            <Button Grid.Column="1" Classes="ui" Content="Open" Click="OpenDpsClick" VerticalAlignment="Center"/>
+          </Grid>
+          <Border Classes="rowline" Margin="0,4"/>
+          <Grid ColumnDefinitions="*,Auto" Margin="0,10">
+            <StackPanel Spacing="3">
+              <TextBlock Text="DBM / boss assistant" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="Kompakt időzítő. A felső sávval húzható." Classes="hint"/>
+            </StackPanel>
+            <Button Grid.Column="1" Classes="ui" Content="Open" Click="OpenDbmClick" VerticalAlignment="Center"/>
+          </Grid>
+          <Border Classes="rowline" Margin="0,4"/>
+          <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto" Margin="0,10">
+            <StackPanel Grid.Row="0" Spacing="3">
+              <TextBlock Text="Map helper" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="Engedélyezve az M billentyűvel nyitható meg a térképes segéd." Classes="hint"/>
+            </StackPanel>
+            <Button Grid.Row="0"
+                    Grid.Column="1"
+                    Classes="ui"
+                    Content="i"
+                    Width="32"
+                    Height="32"
+                    Margin="0,0,10,0"
+                    VerticalAlignment="Center"
+                    ToolTip.Tip="A Map Helper csak borderless fullscreen módban működik megbízhatóan. Más megjelenítési módban előfordulhat, hogy nem jelenik meg vagy pontatlanul igazodik."/>
+            <CheckBox x:Name="MapHelperToggle"
+                      Grid.Row="0"
+                      Grid.Column="2"
+                      Content="Engedélyezve"
+                      VerticalAlignment="Center"/>
+            <Border x:Name="MapAdminWarning"
+                    Grid.Row="1"
+                    Grid.ColumnSpan="3"
+                    IsVisible="False"
+                    Margin="0,12,0,0"
+                    Padding="10,8"
+                    CornerRadius="8"
+                    Background="#1AF59E0B"
+                    BorderBrush="#99F59E0B"
+                    BorderThickness="1">
+              <StackPanel Orientation="Horizontal" Spacing="9">
+                <Border Width="20"
+                        Height="20"
+                        CornerRadius="10"
+                        Background="#F59E0B">
+                  <TextBlock Text="!"
+                             Foreground="#17120A"
+                             FontWeight="Bold"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="A Map Helper használatához rendszergazdaként kell elindítani az AION 2 Companiont."
+                           Foreground="#FBBF24"
+                           TextWrapping="Wrap"
+                           VerticalAlignment="Center"/>
+              </StackPanel>
+            </Border>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel" Padding="18">
+        <StackPanel Spacing="14">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="3">
+              <TextBlock Text="Pet collection" Classes="eyebrow"/>
+              <TextBlock Text="Tulajdonosi adatok állapota" FontWeight="Medium" FontSize="14"/>
+            </StackPanel>
+            <Border Grid.Column="1" Classes="pill" VerticalAlignment="Center">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Ellipse x:Name="PetCollectionStatusDot" Width="7" Height="7"
+                         Fill="#FFB454" VerticalAlignment="Center"/>
+                <TextBlock x:Name="PetCollectionStatusText" Text="UNKNOWN"
+                           FontSize="10" FontWeight="SemiBold" Foreground="#FFB454"/>
+              </StackPanel>
+            </Border>
+          </Grid>
+
+          <Border Classes="inset" Padding="13,11">
+            <Grid ColumnDefinitions="92,*" ColumnSpacing="12">
+              <StackPanel Spacing="2">
+                <TextBlock Text="UNKNOWN" Classes="kicker" FontSize="9" Foreground="#FFB454"/>
+                <TextBlock Text="Teljes lista nélkül" FontSize="11" FontWeight="SemiBold"/>
+              </StackPanel>
+              <TextBlock Grid.Column="1"
+                         Text="A petek tulajdonosi állapota nem ismert. Az ismeretleneket ideiglenesen mutatjuk."
+                         Classes="hint" VerticalAlignment="Center"/>
+            </Grid>
+          </Border>
+
+          <Border Classes="inset" Padding="13,11">
+            <Grid ColumnDefinitions="92,*" ColumnSpacing="12">
+              <StackPanel Spacing="2">
+                <TextBlock Text="PARTIAL" Classes="kicker" FontSize="9"/>
+                <TextBlock Text="Részleges adat" FontSize="11" FontWeight="SemiBold"/>
+              </StackPanel>
+              <TextBlock Grid.Column="1"
+                         Text="Megszereztél egy petet, és a 09 90-ből már tudjuk, hogy megvan, de a többiek továbbra is ismeretlenek."
+                         Classes="hint" VerticalAlignment="Center"/>
+            </Grid>
+          </Border>
+
+          <Border Classes="inset" Padding="13,11">
+            <Grid ColumnDefinitions="92,*" ColumnSpacing="12">
+              <StackPanel Spacing="2">
+                <TextBlock Text="READY" Classes="kicker" FontSize="9" Foreground="#58E0B2"/>
+                <TextBlock Text="Teljes lista" FontSize="11" FontWeight="SemiBold"/>
+              </StackPanel>
+              <TextBlock Grid.Column="1"
+                         Text="Megérkezett a 00 90; a Hiányzó / Lv. 1 / Lv. 2 / Lv. 3 szűrés teljesen használható."
+                         Classes="hint" VerticalAlignment="Center"/>
+            </Grid>
+          </Border>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel" Padding="18">
+        <StackPanel Spacing="12">
+          <TextBlock Text="Application" Classes="eyebrow"/>
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="3">
+              <TextBlock Text="Főablak bezárása" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="A háttérben futó mód megtartja a capture-t, a DPS-t és a Map Helpert." Classes="hint"/>
+            </StackPanel>
+            <ComboBox x:Name="CloseActionCombo" Grid.Column="1" Width="190">
+              <ComboBoxItem Content="Első alkalommal kérdez" Tag="0"/>
+              <ComboBoxItem Content="Háttérben marad" Tag="1"/>
+              <ComboBoxItem Content="Kilép az alkalmazásból" Tag="2"/>
+            </ComboBox>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel" Padding="18">
+        <StackPanel Spacing="12">
+          <TextBlock Text="Logging" Classes="eyebrow"/>
+          <CheckBox x:Name="FileLoggingToggle" Content="Diagnosztikai naplófájlok írása"/>
+          <TextBlock x:Name="FileLoggingHint"
+                     TextWrapping="Wrap"
+                     Classes="hint"/>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel" Padding="18">
+        <StackPanel Spacing="12">
+          <TextBlock Text="Combat Log" Classes="eyebrow"/>
+          <CheckBox x:Name="AutoDpsOverlayToggle"
+                    Content="A DPS overlay automatikusan jelenjen meg és tűnjön el a fighttal"/>
+          <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <StackPanel Spacing="3">
+              <TextBlock Text="Megtartott fightok" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="A kedvencek nem törlődnek automatikusan a limit elérésekor." Classes="hint"/>
+            </StackPanel>
+            <ComboBox x:Name="CombatLogLimitCombo" Grid.Column="1" Width="170">
+              <ComboBoxItem Content="100 fight" Tag="100"/>
+              <ComboBoxItem Content="500 fight" Tag="500"/>
+              <ComboBoxItem Content="1000 fight" Tag="1000"/>
+              <ComboBoxItem Content="Korlátlan" Tag="0"/>
+            </ComboBox>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel" Padding="18">
+        <StackPanel Spacing="4" HorizontalAlignment="Center">
+          <TextBlock Text="NEXFORGE" Classes="eyebrow" HorizontalAlignment="Center"/>
+          <TextBlock Text="Still under the forge." Classes="hint" FontStyle="Italic"/>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel" Padding="18">
+        <StackPanel Spacing="8">
+          <TextBlock Text="Developer tools" Classes="eyebrow"/>
+          <TextBlock Text="A capture pipeline a Capture monitor lapon marad. Ez a felület nem cseréli le a packet parsert és a capture szolgáltatást."
+                     Classes="body"/>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

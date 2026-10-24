@@ -1,0 +1,144 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AION_2_Companion.Views.Overlays.PlayerDetailsWindow"
+        x:CompileBindings="False"
+        Width="560" Height="580"
+        MinWidth="440" MinHeight="360"
+        Title="AION 2 · Játékos"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        ExtendClientAreaToDecorationsHint="True"
+        SystemDecorations="None"
+        ShowInTaskbar="False"
+        CanResize="True"
+        FontFamily="Inter, Segoe UI Variable Text, Segoe UI"
+        Foreground="#EAF7FF">
+  <Window.Styles>
+    <StyleInclude Source="avares://AION 2 Companion/Styles/Theme.axaml"/>
+  </Window.Styles>
+
+  <Border BorderBrush="#45677F" BorderThickness="1" CornerRadius="16" Padding="18,14"
+          BoxShadow="0 18 48 0 #85000000">
+    <Border.Background>
+      <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#F20A1422" Offset="0"/>
+        <GradientStop Color="#E8142638" Offset="0.72"/>
+        <GradientStop Color="#F2181118" Offset="1"/>
+      </LinearGradientBrush>
+    </Border.Background>
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+      <!-- 0. Fejléc -->
+      <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Background="Transparent" PointerPressed="HeaderDrag">
+        <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+          <Border Name="DetailBadge" Width="32" Height="32" CornerRadius="9">
+            <TextBlock Name="DetailBadgeText" FontSize="12" FontWeight="Bold" Foreground="#0B0E13"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+          <StackPanel Spacing="1">
+            <TextBlock Text="PLAYER ANALYSIS" Classes="kicker" FontSize="9"/>
+            <TextBlock Name="DetailName" FontSize="17" FontWeight="SemiBold"/>
+            <TextBlock Name="DetailMeta" FontSize="11" Foreground="#71879B"/>
+          </StackPanel>
+        </StackPanel>
+        <Button Grid.Column="1" Classes="ui quiet" Content="×" Padding="8,2" Click="CloseClick"/>
+      </Grid>
+
+      <!-- 1. Számok: 4 kártya -->
+      <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*" Margin="0,14,0,0">
+        <Border Classes="inset" CornerRadius="10" Padding="12,9" Margin="0,0,6,0">
+          <StackPanel Spacing="2">
+            <TextBlock Text="DPS" FontSize="9" FontWeight="SemiBold" Foreground="#71879B"/>
+            <TextBlock Name="DetailDps" FontSize="18" FontWeight="SemiBold" Foreground="#45DFFF"/>
+          </StackPanel>
+        </Border>
+        <Border Grid.Column="1" Classes="inset" CornerRadius="10" Padding="12,9" Margin="0,0,6,0">
+          <StackPanel Spacing="2">
+            <TextBlock Text="ÖSSZES SEBZÉS" FontSize="9" FontWeight="SemiBold" Foreground="#71879B"/>
+            <TextBlock Name="DetailDamage" FontSize="18" FontWeight="SemiBold"/>
+          </StackPanel>
+        </Border>
+        <Border Grid.Column="2" Classes="inset" CornerRadius="10" Padding="12,9" Margin="0,0,6,0">
+          <StackPanel Spacing="2">
+            <TextBlock Text="A MOB HP-JÁBÓL" FontSize="9" FontWeight="SemiBold" Foreground="#71879B"/>
+            <TextBlock Name="DetailPercent" FontSize="18" FontWeight="SemiBold"/>
+          </StackPanel>
+        </Border>
+        <Border Grid.Column="3" Classes="inset" CornerRadius="10" Padding="12,9">
+          <StackPanel Spacing="2">
+            <TextBlock Text="GYÓGYÍTÁS" FontSize="9" FontWeight="SemiBold" Foreground="#71879B"/>
+            <TextBlock Name="DetailHeal" FontSize="18" FontWeight="SemiBold" Foreground="#6BCB8B"/>
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <!-- 2. Skill lista -->
+      <Border Grid.Row="2" Classes="inset" CornerRadius="12" Padding="12,10" Margin="0,12">
+        <Grid RowDefinitions="Auto,*">
+          <Grid ColumnDefinitions="*,70,74,50,46,50" Margin="8,0,8,6">
+            <TextBlock Text="SKILL" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496"/>
+            <TextBlock Grid.Column="1" Text="DPS" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
+            <TextBlock Grid.Column="2" Text="ÖSSZES" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
+            <TextBlock Grid.Column="3" Text="RÉSZ" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
+            <TextBlock Grid.Column="4" Text="KRIT" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
+            <TextBlock Grid.Column="5" Text="TALÁLAT" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
+          </Grid>
+
+          <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Skills}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Grid Margin="0,0,0,4">
+                    <ProgressBar Value="{Binding Percent}" Maximum="100" Height="40" MinHeight="40"
+                                 Background="Transparent" Foreground="{Binding Brush}" Opacity="0.16"/>
+                    <Grid ColumnDefinitions="*,70,74,50,46,50" Height="40" Margin="8,0">
+                      <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
+                        <Border Width="22" Height="22" CornerRadius="6"
+                                Background="{Binding Brush}"
+                                ClipToBounds="True"
+                                VerticalAlignment="Center">
+                          <!-- Ha van ikon, azt mutatjuk; ha nincs, a kezdőbetűt -->
+                          <Panel>
+                            <TextBlock Text="{Binding Initial}"
+                                       FontSize="10" FontWeight="Bold"
+                                       Foreground="#0B0E13"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       IsVisible="{Binding SkillIcon, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
+                            <Image Width="22" Height="22"
+                                   Stretch="UniformToFill"
+                                   Source="{Binding SkillIconBitmap}"/>
+                          </Panel>
+                        </Border>
+                        <TextBlock Text="{Binding Name}" FontSize="13"
+                                   TextTrimming="CharacterEllipsis"
+                                   VerticalAlignment="Center"/>
+                      </StackPanel>
+                      <TextBlock Grid.Column="1" Text="{Binding Dps}" FontSize="13" FontWeight="SemiBold"
+                                 TextAlignment="Right" VerticalAlignment="Center" Foreground="#45DFFF"/>
+                      <TextBlock Grid.Column="2" Text="{Binding Total}" FontSize="12" Foreground="#A8BAC8"
+                                 TextAlignment="Right" VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="3" Text="{Binding Share}" FontSize="12" Foreground="#A8BAC8"
+                                 TextAlignment="Right" VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="4" Text="{Binding Crit}" FontSize="12" Foreground="#FF9B52"
+                                 TextAlignment="Right" VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="5" Text="{Binding Hits}" FontSize="12" Foreground="#A8BAC8"
+                                 TextAlignment="Right" VerticalAlignment="Center"/>
+                    </Grid>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Grid>
+      </Border>
+
+      <!-- 3. Lábléc -->
+      <Grid Grid.Row="3" ColumnDefinitions="*,Auto">
+        <TextBlock Text="DPS: a skill sebzése osztva a harc hosszával. RÉSZ: a játékos összes sebzésének aránya."
+                   FontSize="10" Foreground="#60768A" TextWrapping="Wrap" VerticalAlignment="Center"/>
+        <Button Grid.Column="1" Classes="ui primary" Content="Idővonal" FontSize="12" Click="TimelineClick"/>
+      </Grid>
+    </Grid>
+  </Border>
+</Window>

@@ -1,0 +1,161 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AION_2_Companion.Views.Overlays.DpsOverlayWindow"
+        x:CompileBindings="False"
+        Width="312" Height="390"
+        MinWidth="280" MinHeight="120"
+        MaxWidth="440" MaxHeight="580"
+        Title="AION 2 · DPS"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        ExtendClientAreaToDecorationsHint="True"
+        SystemDecorations="None"
+        Topmost="True"
+        ShowInTaskbar="False"
+        CanResize="True"
+        FontFamily="Inter, Segoe UI Variable Text, Segoe UI"
+        Foreground="#EAF7FF">
+  <Window.Styles>
+    <StyleInclude Source="avares://AION 2 Companion/Styles/Theme.axaml"/>
+  </Window.Styles>
+
+  <Border BorderBrush="#45677F" BorderThickness="1" CornerRadius="14" Padding="10,9"
+          BoxShadow="0 14 38 0 #85000000">
+    <Border.Background>
+      <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#F20A1422" Offset="0"/>
+        <GradientStop Color="#E8142638" Offset="0.72"/>
+        <GradientStop Color="#F2181118" Offset="1"/>
+      </LinearGradientBrush>
+    </Border.Background>
+    <Grid RowDefinitions="Auto,Auto,*">
+      
+      <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Background="Transparent"
+            PointerPressed="HeaderDrag">
+        
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8"
+                    VerticalAlignment="Center" HorizontalAlignment="Left">
+          <Ellipse Width="7" Height="7" Fill="#58E0B2" VerticalAlignment="Center"/>
+          <TextBlock Text="DPS // LIVE" FontSize="11" FontWeight="SemiBold" Foreground="#45DFFF"/>
+          <TextBlock Name="TimerText" FontSize="10" Foreground="#71879B" VerticalAlignment="Center"/>
+        </StackPanel>
+        
+        <TextBlock Grid.Column="1" Text="Vakron" Name="MobName" FontSize="12" FontWeight="SemiBold"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   TextTrimming="CharacterEllipsis" Margin="8,0"/>
+        
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2"
+                    HorizontalAlignment="Right" VerticalAlignment="Center">
+          <Button Classes="ui quiet" Content="◐" Padding="5,1" FontSize="11"
+                  Click="OpacityClick" ToolTip.Tip="Átlátszóság váltása"/>
+          <Button Classes="ui quiet" Content="–" Padding="5,1" FontSize="11"
+                  Click="CollapseClick" ToolTip.Tip="Összecsukás"/>
+          <Button Classes="ui quiet" Content="×" Padding="5,1" FontSize="11"
+                  Click="CloseClick"/>
+        </StackPanel>
+      </Grid>
+
+      <!-- 1. Élő összegzés: pillanatnyi, átlag, csúcs -->
+      <Grid Grid.Row="1" ColumnDefinitions="*,*,*" Margin="0,8,0,0">
+        <Border Classes="inset" CornerRadius="9" Padding="8,6" Margin="0,0,5,0">
+          <StackPanel Spacing="2">
+            <TextBlock Text="MOST · 5S" FontSize="8" FontWeight="SemiBold" Foreground="#71879B"/>
+            <TextBlock Name="NowValue" FontSize="15" FontWeight="SemiBold" Foreground="#58E0B2"/>
+          </StackPanel>
+        </Border>
+        <Border Grid.Column="1" Classes="inset" CornerRadius="9" Padding="8,6" Margin="0,0,5,0">
+          <StackPanel Spacing="2">
+            <TextBlock Text="ÁTLAG" FontSize="8" FontWeight="SemiBold" Foreground="#71879B"/>
+            <TextBlock Name="AvgValue" FontSize="15" FontWeight="SemiBold"/>
+          </StackPanel>
+        </Border>
+        <Border Grid.Column="2" Classes="inset" CornerRadius="9" Padding="8,6">
+          <StackPanel Spacing="2">
+            <TextBlock Text="CSÚCS" FontSize="8" FontWeight="SemiBold" Foreground="#71879B"/>
+            <TextBlock Name="PeakValue" FontSize="15" FontWeight="SemiBold" Foreground="#FF9B52"/>
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <!-- 2. Törzs (összecsukható) -->
+      <Grid Grid.Row="2" Name="Body" RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="0,7,0,0">
+
+        <!-- Mód váltó nyilakkal -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
+          <Button Classes="ui quiet" Content="‹" FontSize="16" Padding="8,0" Click="PrevModeClick"/>
+          <TextBlock Grid.Column="1" Name="ModeLabel" FontSize="12" FontWeight="SemiBold"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          <Button Grid.Column="2" Classes="ui quiet" Content="›" FontSize="16" Padding="8,0" Click="NextModeClick"/>
+        </Grid>
+
+        <!-- Oszlop kapcsolók -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="5" Margin="0,4,0,5">
+          <Button Name="ToggleTotal" Classes="ui" Content="Össz" FontSize="10" MinHeight="26" Padding="8,1" Click="ToggleTotalClick"/>
+          <Button Name="ToggleShare" Classes="ui" Content="%" FontSize="10" MinHeight="26" Padding="8,1" Click="ToggleShareClick"/>
+          <Button Name="ToggleCrit" Classes="ui" Content="Krit" FontSize="10" MinHeight="26" Padding="8,1" Click="ToggleCritClick"/>
+        </StackPanel>
+
+        <!-- Oszlopfejlécek -->
+        <Grid Grid.Row="2" ColumnDefinitions="14,20,*,54,48,34,34" Margin="6,0,6,4">
+          <TextBlock Grid.Column="2" Text="JÁTÉKOS" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496"
+                     Margin="8,0,0,0"/>
+          <TextBlock Grid.Column="3" Name="HdrMetric" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496"
+                     TextAlignment="Right"/>
+          <TextBlock Grid.Column="4" Name="HdrTotal" Text="ÖSSZ" FontSize="9" FontWeight="SemiBold"
+                     Foreground="#7B8496" TextAlignment="Right"/>
+          <TextBlock Grid.Column="5" Name="HdrShare" Text="%" FontSize="9" FontWeight="SemiBold"
+                     Foreground="#7B8496" TextAlignment="Right"/>
+          <TextBlock Grid.Column="6" Name="HdrCrit" Text="KRIT" FontSize="9" FontWeight="SemiBold"
+                     Foreground="#7B8496" TextAlignment="Right"/>
+        </Grid>
+
+        <!-- Játékosok -->
+        <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">
+          <ItemsControl ItemsSource="{Binding Rows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Margin="0,0,0,3" CornerRadius="8" Background="#9A111C2A"
+                        Tag="{Binding Index}" PointerPressed="RowPressed">
+                  <Grid>
+                    <ProgressBar Value="{Binding Percent}" Maximum="100" Height="36" MinHeight="36"
+                                 Background="Transparent" Foreground="{Binding ClassBrush}" Opacity="0.18"/>
+                    <Grid ColumnDefinitions="14,20,*,54,48,34,34" Height="36" Margin="6,0">
+                      <TextBlock Text="{Binding Rank}" FontSize="10" Foreground="#71879B"
+                                 VerticalAlignment="Center"/>
+                      <Border Grid.Column="1"
+                              Width="20"
+                              Height="20"
+                              CornerRadius="5"
+                              Background="#263A50"
+                              ClipToBounds="True"
+                              VerticalAlignment="Center">
+                        <Image Source="{Binding ClassIcon}"
+                               Stretch="Uniform"/>
+                      </Border>
+                      <TextBlock Grid.Column="2" Text="{Binding Name}" FontSize="11" FontWeight="Medium"
+                                 TextTrimming="CharacterEllipsis" Margin="7,0,3,0" VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="3" Text="{Binding Metric}" FontSize="11" FontWeight="SemiBold"
+                                 Foreground="#45DFFF" TextAlignment="Right" VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="4" Text="{Binding Total}" FontSize="10" Foreground="#A8BAC8"
+                                 TextAlignment="Right" VerticalAlignment="Center"
+                                 IsVisible="{Binding ShowTotal}"/>
+                      <TextBlock Grid.Column="5" Text="{Binding Share}" FontSize="10" Foreground="#A8BAC8"
+                                 TextAlignment="Right" VerticalAlignment="Center"
+                                 IsVisible="{Binding ShowShare}"/>
+                      <TextBlock Grid.Column="6" Text="{Binding Crit}" FontSize="10" Foreground="#FF9B52"
+                                 TextAlignment="Right" VerticalAlignment="Center"
+                                 IsVisible="{Binding ShowCrit}"/>
+                    </Grid>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+
+        <TextBlock Grid.Row="4" Name="FooterText" FontSize="9" Foreground="#60768A"
+                   Margin="2,4,2,0" TextWrapping="Wrap"/>
+      </Grid>
+    </Grid>
+  </Border>
+</Window>

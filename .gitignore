@@ -1,0 +1,29 @@
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+.idea/
+*.sln.DotSettings.user
+
+# Local source snapshots; the maintained sources live in their normal folders.
+/Styles.zip
+/ViewModels.zip
+/BACKUPS/
+
+# Private Nexforge data packs. Public releases will use encoded data files.
+*.nfg
+*.nfg*.bak
+!/Data/Opcode.nfg
+/Data/.nexforge/
+/Private/
+
+# Opcode research data stays private. The encrypted runtime catalog is the
+# only opcode dataset published with the project.
+/Core/Wire/OpcodeRegistry.cs
+/Data/*Opcode*.json
+/Data/*Opcode*.csv
+/Data/AION2_Opcodes.nfg
+
+# Local research and data tools are private, including compiled executables.
+/Tools/*

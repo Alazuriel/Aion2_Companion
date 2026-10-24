@@ -1,0 +1,218 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AION_2_Companion.Views.CaptureMonitorView"
+             x:CompileBindings="False">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="18">
+
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel Spacing="4" VerticalAlignment="Center">
+          <TextBlock Text="Capture (fejlesztői)" Classes="h1"/>
+          <TextBlock Text="Fejlesztői nézet: élő forgalom és opcode-felismerés. A végleges verzióban automatikusan fut, és innen eltűnik."
+                     Classes="body"/>
+        </StackPanel>
+        <Border Grid.Column="1" Classes="pill" Padding="12,6" HorizontalAlignment="Right" VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Ellipse Width="7" Height="7" Fill="{Binding StatusColor}" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding StatusText}" FontSize="13" FontWeight="Medium" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <!-- Adapter és műveletek -->
+      <Border Classes="panel" Padding="18">
+        <Grid ColumnDefinitions="*,176" ColumnSpacing="24">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Packet capture" Classes="section"/>
+            <TextBlock Text="Élő hálózati forgalom és OPCODE-felismerés" Classes="body"/>
+            <TextBlock Text="{Binding CaptureDescription}" Classes="hint"/>
+            <ComboBox ItemsSource="{Binding CaptureDevices}"
+                      SelectedItem="{Binding SelectedCaptureDevice}"
+                      IsEnabled="{Binding !IsCapturing}"
+                      HorizontalAlignment="Stretch"
+                      MaxWidth="560"
+                      Margin="0,6,0,0"
+                      PlaceholderText="Hálózati adapter">
+              <ComboBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding DisplayName}" FontSize="13"/>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
+            <Button Classes="ui primary"
+                    Content="Start capture"
+                    Command="{Binding StartCaptureCommand}"
+                    IsEnabled="{Binding CanStartCapture}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"/>
+            <Button Classes="ui"
+                    Content="Stop capture"
+                    Command="{Binding StopCaptureCommand}"
+                    IsEnabled="{Binding IsCapturing}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"/>
+            <Button Classes="ui"
+                    Content="Export raw"
+                    Command="{Binding ExportOpcodeProbeCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"/>
+            <Button Classes="ui"
+                    Content="Export opcodes"
+                    Command="{Binding ExportDecodedFramesCommand}"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <!-- Számlálók -->
+      <Border Classes="panel" Padding="0">
+        <Grid ColumnDefinitions="*,*,*">
+          <StackPanel Margin="20,16" Spacing="6">
+            <TextBlock Text="Received frames" Classes="eyebrow"/>
+            <TextBlock Text="{Binding ReceivedFrames}" Classes="metric" FontSize="26"/>
+            <TextBlock Text="Beérkezett frame-ek" Classes="hint"/>
+          </StackPanel>
+          <Border Grid.Column="1" BorderBrush="#242A34" BorderThickness="1,0,0,0">
+            <StackPanel Margin="20,16" Spacing="6">
+              <TextBlock Text="Opcode activity" Classes="eyebrow"/>
+              <TextBlock Text="{Binding ParsedOpcodes}" Classes="metric accent" FontSize="26"/>
+              <TextBlock Text="Feldolgozott események" Classes="hint"/>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="2" BorderBrush="#242A34" BorderThickness="1,0,0,0">
+            <StackPanel Margin="20,16" Spacing="6">
+              <TextBlock Text="Unknown opcodes" Classes="eyebrow"/>
+              <TextBlock Text="{Binding UnknownOpcodes}" Classes="metric warn" FontSize="26"/>
+              <TextBlock Text="Még nem értelmezett" Classes="hint"/>
+            </StackPanel>
+          </Border>
+        </Grid>
+      </Border>
+
+      <!-- Protokoll és party -->
+      <Border Classes="panel" Padding="18">
+        <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="*,*" RowSpacing="14" ColumnSpacing="16">
+          <StackPanel Spacing="2">
+            <TextBlock Text="Protocol explorer" Classes="section"/>
+            <TextBlock Text="Amit a Companion eddig kiolvasott." Classes="body"/>
+          </StackPanel>
+          <Border Grid.Column="1" Classes="pill" HorizontalAlignment="Right" VerticalAlignment="Center">
+            <TextBlock Text="{Binding LatestConfidence}" Classes="accent" FontSize="12" FontWeight="Medium"/>
+          </Border>
+          <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Spacing="4">
+            <TextBlock Text="{Binding LatestOpcode}" Classes="mono accent" FontSize="13"/>
+            <TextBlock Text="{Binding LatestEvent}" FontSize="13" TextWrapping="Wrap"/>
+          </StackPanel>
+          <Border Grid.Row="2" Classes="inset" Padding="16" MinHeight="168">
+            <StackPanel Spacing="8">
+              <TextBlock Text="Party name" Classes="eyebrow"/>
+              <TextBlock Text="{Binding PartyName}"
+                         FontSize="15"
+                         FontWeight="Medium"
+                         Classes="accent"
+                         TextWrapping="Wrap"/>
+              <TextBlock Text="Party members" Classes="eyebrow" Margin="0,6,0,0"/>
+              <ItemsControl ItemsSource="{Binding PartyMembers}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding Item2}" FontSize="13" Margin="0,2,0,0"/>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <TextBlock Text="{Binding PartyParseStatus}" Classes="hint"/>
+            </StackPanel>
+          </Border>
+          <Border Grid.Row="2" Grid.Column="1" Classes="inset" Padding="14" MinHeight="168" MaxHeight="240">
+            <ScrollViewer>
+              <ItemsControl ItemsSource="{Binding RecentFindings}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding}"
+                               Classes="mono"
+                               FontSize="12"
+                               Foreground="#C8CCD4"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,8"/>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </Border>
+        </Grid>
+      </Border>
+
+      <!-- Élő eseménynapló -->
+      <Border Classes="panel" ClipToBounds="True" Padding="0">
+        <Grid RowDefinitions="Auto,Auto,*">
+          <Grid ColumnDefinitions="*,Auto" Margin="18,14,18,12">
+            <StackPanel Spacing="2">
+              <TextBlock Text="Live event stream" Classes="section"/>
+              <TextBlock Text="A beérkező és felismert csomagok naplója" Classes="hint"/>
+            </StackPanel>
+            <Border Grid.Column="1" Classes="pill" VerticalAlignment="Center">
+              <TextBlock Text="{Binding LogCount, StringFormat='{}{0} events'}"
+                         FontSize="12"
+                         Foreground="#9A9EA8"/>
+            </Border>
+          </Grid>
+          <Border Grid.Row="1"
+                  Background="#0C0F14"
+                  BorderBrush="#242A34"
+                  BorderThickness="0,1,0,1"
+                  Padding="18,8">
+            <Grid ColumnDefinitions="96,148,84,64,*" ColumnSpacing="12">
+              <TextBlock Text="Time" Classes="eyebrow"/>
+              <TextBlock Grid.Column="1" Text="Direction" Classes="eyebrow"/>
+              <TextBlock Grid.Column="2" Text="Opcode" Classes="eyebrow"/>
+              <TextBlock Grid.Column="3" Text="Length" Classes="eyebrow"/>
+              <TextBlock Grid.Column="4" Text="Event" Classes="eyebrow"/>
+            </Grid>
+          </Border>
+          <ScrollViewer Grid.Row="2" MaxHeight="320">
+            <ItemsControl ItemsSource="{Binding LogEntries}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border BorderBrush="#1C2230" BorderThickness="0,0,0,1" Padding="18,9">
+                    <Grid ColumnDefinitions="96,148,84,64,*" ColumnSpacing="12">
+                      <TextBlock Text="{Binding Time}"
+                                 Classes="mono"
+                                 FontSize="12"
+                                 Foreground="#6C717C"
+                                 VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="1"
+                                 Text="{Binding Direction}"
+                                 FontSize="12"
+                                 Foreground="{Binding DirectionColor}"
+                                 VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="2"
+                                 Text="{Binding Opcode}"
+                                 Classes="mono accent"
+                                 FontSize="12"
+                                 FontWeight="Medium"
+                                 VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="3"
+                                 Text="{Binding Length}"
+                                 Classes="mono"
+                                 FontSize="12"
+                                 Foreground="#9A9EA8"
+                                 VerticalAlignment="Center"/>
+                      <TextBlock Grid.Column="4"
+                                 Text="{Binding Summary}"
+                                 FontSize="12"
+                                 Foreground="#C8CCD4"
+                                 TextWrapping="Wrap"
+                                 VerticalAlignment="Center"/>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Grid>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

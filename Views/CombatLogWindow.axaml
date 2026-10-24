@@ -1,0 +1,197 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AION_2_Companion.Views.CombatLogWindow"
+        x:CompileBindings="False"
+        Background="Transparent" Foreground="#EAF7FF"
+        FontFamily="Inter, Segoe UI Variable Text, Segoe UI">
+  <UserControl.Styles>
+    <StyleInclude Source="avares://AION 2 Companion/Styles/Theme.axaml"/>
+    <Style Selector="ListBox">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+    <Style Selector="ListBoxItem">
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="Margin" Value="0,0,0,6"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    </Style>
+    <Style Selector="TextBox">
+      <Setter Property="Background" Value="#98101A29"/>
+      <Setter Property="Foreground" Value="#EAF7FF"/>
+      <Setter Property="BorderBrush" Value="#3A526B"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Padding" Value="10,7"/>
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,Auto,Auto,*">
+    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,14">
+      <StackPanel Spacing="4">
+        <TextBlock Text="Combat Log" Classes="h1"/>
+        <TextBlock Text="Mentett fightok, rekordok, jegyzetek és összehasonlítás egy helyen." Classes="body"/>
+      </StackPanel>
+      <Border Grid.Column="1" Classes="pill" VerticalAlignment="Center" MaxWidth="300" Margin="16,0,0,0">
+        <TextBlock Name="StorageText" Classes="hint" TextWrapping="NoWrap"
+                   TextTrimming="CharacterEllipsis"/>
+      </Border>
+    </Grid>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+      <TextBox Name="SearchBox"
+               Watermark="Keresés boss, dátum, játékos, class vagy jegyzet alapján…"
+               TextChanged="SearchTextChanged"/>
+      <CheckBox Grid.Column="1" Name="FavoritesOnlyToggle" Content="Csak kedvencek"
+                Margin="16,0,4,0" VerticalAlignment="Center"
+                IsCheckedChanged="FavoritesFilterChanged"/>
+    </Grid>
+
+    <Border Grid.Row="2" Classes="inset" Padding="12,9" Margin="0,0,0,14">
+      <Grid ColumnDefinitions="Auto,*">
+        <TextBlock Text="SESSION" Classes="eyebrow" VerticalAlignment="Center" Margin="0,0,14,0"/>
+        <TextBlock Grid.Column="1" Name="SessionText" Classes="body" VerticalAlignment="Center"/>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="3" ColumnDefinitions="250,14,*">
+      <Border Classes="panel" Padding="12">
+        <Grid RowDefinitions="Auto,*">
+          <Grid ColumnDefinitions="*,Auto" Margin="6,2,6,10">
+            <TextBlock Text="Mentett fightok" Classes="section"/>
+            <TextBlock Grid.Column="1" Name="FightCountText" Classes="eyebrow" VerticalAlignment="Center"/>
+          </Grid>
+          <Grid Grid.Row="1">
+            <ListBox Name="FightList" ItemsSource="{Binding Fights}" SelectionChanged="FightSelectionChanged">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="inset" Padding="12">
+                    <StackPanel Spacing="5">
+                      <Grid ColumnDefinitions="Auto,*,Auto">
+                        <TextBlock Text="{Binding FavoriteText}" Foreground="#F5B54C" Margin="0,0,6,0"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="14"
+                                   FontWeight="Medium" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="2" Text="{Binding DurationText}" Classes="mono accent" FontSize="12"/>
+                      </Grid>
+                      <TextBlock Text="{Binding DateText}" Classes="hint"/>
+                      <TextBlock Text="{Binding TotalsText}" Classes="mono" FontSize="11" Foreground="#9A9EA8"/>
+                      <TextBlock Text="{Binding StateText}" Classes="warn" FontSize="11"/>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock Name="EmptyLogText" Text="Nincs a szűrésnek megfelelő fight."
+                       Classes="body" TextAlignment="Center"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="230"/>
+          </Grid>
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="2" Classes="panel" Padding="14">
+        <Grid RowDefinitions="Auto,Auto,*,Auto,Auto">
+          <Grid RowDefinitions="Auto,Auto">
+            <StackPanel Spacing="4">
+              <TextBlock Name="EncounterName" Text="Nincs kijelölt fight" Classes="h1"/>
+              <TextBlock Name="EncounterMeta" Text="—" Classes="body"/>
+            </StackPanel>
+            <WrapPanel Grid.Row="1" Margin="0,10,0,-7" HorizontalAlignment="Right">
+              <Button Name="FavoriteButton" Classes="ui" Content="☆ Kedvenc"
+                      Margin="0,0,7,7" Click="ToggleFavoriteClick"/>
+              <Button Name="CopyButton" Classes="ui" Content="Discord másolás"
+                      Margin="0,0,7,7" Click="CopyDiscordClick"/>
+              <Button Name="CompareButton" Classes="ui" Content="Összehasonlítás"
+                      Margin="0,0,7,7" Click="CompareClick"/>
+              <Button Name="DeleteButton" Classes="ui" Content="Törlés"
+                      Margin="0,0,7,7" Click="DeleteClick" Foreground="#E0786A"/>
+              <Button Name="OpenDpsButton" Classes="ui primary" Content="DPS nézet"
+                      Margin="0,0,0,7" Click="OpenDpsClick"/>
+            </WrapPanel>
+          </Grid>
+
+          <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*" Margin="0,16">
+            <Border Classes="inset" Padding="14" Margin="0,0,6,0">
+              <StackPanel Spacing="4"><TextBlock Text="ÖSSZES SEBZÉS" Classes="eyebrow"/><TextBlock Name="TotalDamageText" Classes="metric" FontSize="21"/></StackPanel>
+            </Border>
+            <Border Grid.Column="1" Classes="inset" Padding="14" Margin="0,0,6,0">
+              <StackPanel Spacing="4"><TextBlock Text="CSOPORT DPS" Classes="eyebrow"/><TextBlock Name="TotalDpsText" Classes="metric accent" FontSize="21"/></StackPanel>
+            </Border>
+            <Border Grid.Column="2" Classes="inset" Padding="14" Margin="0,0,6,0">
+              <StackPanel Spacing="4"><TextBlock Text="ÖSSZES HEAL" Classes="eyebrow"/><TextBlock Name="TotalHealingText" Classes="metric" FontSize="21"/></StackPanel>
+            </Border>
+            <Border Grid.Column="3" Classes="inset" Padding="14">
+              <StackPanel Spacing="4"><TextBlock Text="CSOPORT HPS" Classes="eyebrow"/><TextBlock Name="TotalHpsText" Classes="metric" FontSize="21"/></StackPanel>
+            </Border>
+          </Grid>
+
+          <Grid Grid.Row="2" ColumnDefinitions="220,12,*">
+            <Border Classes="inset" Padding="12">
+              <Grid RowDefinitions="Auto,*">
+                <TextBlock Text="Játékosok" Classes="section" Margin="4,0,4,10"/>
+                <ListBox Grid.Row="1" Name="PlayerList" ItemsSource="{Binding Players}"
+                         SelectionChanged="PlayerSelectionChanged">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate>
+                      <Border Background="#12161D" CornerRadius="8" Padding="10">
+                        <Grid ColumnDefinitions="*,Auto">
+                          <StackPanel Spacing="2"><TextBlock Text="{Binding Name}" FontWeight="Medium"/><TextBlock Text="{Binding ClassName}" Classes="hint"/></StackPanel>
+                          <StackPanel Grid.Column="1" Spacing="2" HorizontalAlignment="Right"><TextBlock Text="{Binding DamageText}" Classes="mono accent" TextAlignment="Right"/><TextBlock Text="{Binding HealingText}" Classes="mono" Foreground="#8FBFA8" FontSize="11" TextAlignment="Right"/></StackPanel>
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </Grid>
+            </Border>
+
+            <Border Grid.Column="2" Classes="inset" Padding="12">
+              <Grid RowDefinitions="Auto,Auto,*">
+                <Grid RowDefinitions="Auto,Auto">
+                  <StackPanel Spacing="2">
+                    <TextBlock Name="SelectedPlayerName" Text="Játékos részletei" Classes="section"/>
+                    <TextBlock Name="SelectedPlayerMeta" Text="—" Classes="hint"/>
+                    <TextBlock Name="RecordText" Classes="warn" FontSize="11"/>
+                  </StackPanel>
+                  <WrapPanel Grid.Row="1" Margin="0,9,0,0" HorizontalAlignment="Right">
+                    <Button Name="PlayerDetailsButton" Classes="ui" Content="Részletek"
+                            Margin="0,0,8,0" Click="OpenPlayerDetailsClick"/>
+                    <Button Name="TimelineButton" Classes="ui" Content="Timeline"
+                            Click="OpenTimelineClick"/>
+                  </WrapPanel>
+                </Grid>
+                <Grid Grid.Row="1" ColumnDefinitions="*,72,52,52" Margin="4,14,4,6">
+                  <TextBlock Text="SKILL" Classes="eyebrow"/><TextBlock Grid.Column="1" Text="ÖSSZES" Classes="eyebrow" TextAlignment="Right"/><TextBlock Grid.Column="2" Text="HIT" Classes="eyebrow" TextAlignment="Right"/><TextBlock Grid.Column="3" Text="CRIT" Classes="eyebrow" TextAlignment="Right"/>
+                </Grid>
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                  <ItemsControl ItemsSource="{Binding Skills}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border BorderBrush="#242A34" BorderThickness="0,1,0,0" Padding="4,9">
+                          <Grid ColumnDefinitions="*,72,52,52">
+                            <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="{Binding TypeText}" FontSize="10" Foreground="{Binding TypeColor}" Width="36" VerticalAlignment="Center"/><TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/></StackPanel>
+                            <TextBlock Grid.Column="1" Text="{Binding TotalText}" Classes="mono" TextAlignment="Right"/><TextBlock Grid.Column="2" Text="{Binding HitsText}" Classes="mono" TextAlignment="Right"/><TextBlock Grid.Column="3" Text="{Binding CritText}" Classes="mono" TextAlignment="Right"/>
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </Grid>
+            </Border>
+          </Grid>
+
+          <Grid Grid.Row="3" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
+            <TextBox Name="NotesBox" Watermark="Jegyzet ehhez a fighthoz…" AcceptsReturn="True"
+                     MinHeight="54" TextWrapping="Wrap"/>
+            <Button Grid.Column="1" Name="SaveNotesButton" Classes="ui" Content="Jegyzet mentése"
+                    Margin="10,0,0,0" Click="SaveNotesClick"/>
+          </Grid>
+
+          <Grid Grid.Row="4" ColumnDefinitions="*,Auto" Margin="2,9,2,0">
+            <StackPanel><TextBlock Name="ComparisonHint" Classes="hint"/><TextBlock Text="A heal a jelenlegi parser eredménye szerint kerül a logba." Classes="hint"/></StackPanel>
+            <TextBlock Grid.Column="1" Name="ActionStatusText" Classes="ok" VerticalAlignment="Bottom"/>
+          </Grid>
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

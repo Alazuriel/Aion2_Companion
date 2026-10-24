@@ -1,0 +1,186 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AION_2_Companion.Views.DashboardView"
+             x:CompileBindings="False"
+             Background="Transparent">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="20">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+        <StackPanel Spacing="4" VerticalAlignment="Center">
+          <TextBlock Text="NEXFORGE COMMAND CENTER" Classes="kicker"/>
+          <TextBlock Text="Tactical overview" Classes="h1" FontSize="29"/>
+          <TextBlock Text="Combat analysis, encounter tools and field intelligence in one system." Classes="body"/>
+        </StackPanel>
+        <Button x:Name="EditLayoutButton" Grid.Column="1" Classes="ui"
+                Content="Layout szerkesztése" Click="EditLayoutClick" VerticalAlignment="Center"/>
+      </Grid>
+
+      <Border Classes="hero" Padding="0" ClipToBounds="True">
+        <Grid ColumnDefinitions="*,280">
+          <Border Grid.ColumnSpan="2">
+            <Border.Background>
+              <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                <GradientStop Color="#EA0B1728" Offset="0"/>
+                <GradientStop Color="#D5132740" Offset="0.62"/>
+                <GradientStop Color="#D92A1720" Offset="1"/>
+              </LinearGradientBrush>
+            </Border.Background>
+          </Border>
+          <Border Grid.ColumnSpan="2" Height="3" VerticalAlignment="Top">
+            <Border.Background>
+              <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                <GradientStop Color="#45DFFF" Offset="0"/>
+                <GradientStop Color="#3A80E8" Offset="0.52"/>
+                <GradientStop Color="#FF8E4F" Offset="1"/>
+              </LinearGradientBrush>
+            </Border.Background>
+          </Border>
+
+          <StackPanel Spacing="11" Margin="30,27" VerticalAlignment="Center">
+            <TextBlock Text="ACTIVE CHARACTER" Classes="kicker"/>
+            <TextBlock Text="{Binding CharacterName}" FontSize="38" FontWeight="SemiBold" Foreground="#F4FBFF"/>
+            <WrapPanel>
+              <Border Classes="pill" Margin="0,0,10,0">
+                <TextBlock Text="{Binding CharacterClass}" Foreground="{Binding CharacterClassColor}"
+                           FontSize="12" FontWeight="SemiBold"/>
+              </Border>
+              <Border Classes="pill" BorderBrush="#385E67">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Ellipse Width="7" Height="7" Fill="#58E0B2" VerticalAlignment="Center"/>
+                  <TextBlock Text="COMBAT READY" Classes="kicker" FontSize="9" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Border>
+            </WrapPanel>
+            <TextBlock Text="Live encounter data and tactical modules are standing by."
+                       Classes="body" MaxWidth="560"/>
+          </StackPanel>
+
+          <Border Grid.Column="1" Classes="inset" Margin="0,20,20,20" Padding="18">
+            <StackPanel Spacing="10" VerticalAlignment="Center">
+              <TextBlock Text="QUICK DEPLOY" Classes="kicker" Margin="1,0,0,3"/>
+              <Button Classes="ui primary" Content="DPS mérő indítása"
+                      Click="OpenDpsClick" HorizontalAlignment="Stretch"/>
+              <Button Classes="ui" Content="Boss időzítő indítása"
+                      Click="OpenDbmClick" HorizontalAlignment="Stretch"/>
+            </StackPanel>
+          </Border>
+        </Grid>
+      </Border>
+
+      <Grid ColumnDefinitions="1.45*,0.75*" ColumnSpacing="16">
+        <Border Classes="glass" Padding="20">
+          <StackPanel Spacing="15">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="3">
+                <TextBlock Text="LIVE MODULES" Classes="kicker"/>
+                <TextBlock Text="Gyorselérés" Classes="section" FontSize="18"/>
+              </StackPanel>
+              <TextBlock Grid.Column="1" Text="DRAGGABLE GRID" Classes="eyebrow" VerticalAlignment="Center"/>
+            </Grid>
+
+            <WrapPanel x:Name="QuickCards" Orientation="Horizontal">
+              <Border Tag="Analytics" Width="230" Padding="16" Margin="0,0,12,12" Classes="inset"
+                      DragDrop.AllowDrop="True" PointerPressed="CardPointerPressed"
+                      DragDrop.DragOver="CardDragOver" DragDrop.Drop="CardDrop">
+                <StackPanel Spacing="9">
+                  <Grid ColumnDefinitions="Auto,*">
+                    <Border Width="34" Height="34" Classes="badge" BorderBrush="#3C91A8">
+                      <TextBlock Text="Δ" Foreground="#45DFFF" FontSize="16" FontWeight="SemiBold"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                      <TextBlock Text="01 // COMBAT" Classes="kicker" FontSize="9"/>
+                      <TextBlock Text="DPS mérő" FontWeight="SemiBold" FontSize="14"/>
+                    </StackPanel>
+                  </Grid>
+                  <TextBlock Text="Sebzés, DPS és játékos sorrend valós időben." Classes="hint"/>
+                  <ProgressBar Value="82"/>
+                </StackPanel>
+              </Border>
+
+              <Border Tag="Boss" Width="230" Padding="16" Margin="0,0,12,12" Classes="inset"
+                      DragDrop.AllowDrop="True" PointerPressed="CardPointerPressed"
+                      DragDrop.DragOver="CardDragOver" DragDrop.Drop="CardDrop">
+                <StackPanel Spacing="9">
+                  <Grid ColumnDefinitions="Auto,*">
+                    <Border Width="34" Height="34" Classes="badge" BorderBrush="#915D43">
+                      <TextBlock Text="◈" Foreground="#FF9B52" FontSize="17"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                      <TextBlock Text="02 // ENCOUNTER" Classes="kicker" FontSize="9" Foreground="#FF9B52"/>
+                      <TextBlock Text="Boss időzítő" FontWeight="SemiBold" FontSize="14"/>
+                    </StackPanel>
+                  </Grid>
+                  <TextBlock Text="Mechanika-idővonal és érkező figyelmeztetések." Classes="hint"/>
+                  <ProgressBar Value="64" Foreground="#FF9B52"/>
+                </StackPanel>
+              </Border>
+
+              <Border Tag="Guides" Width="230" Padding="16" Margin="0,0,12,12" Classes="inset"
+                      DragDrop.AllowDrop="True" PointerPressed="CardPointerPressed"
+                      DragDrop.DragOver="CardDragOver" DragDrop.Drop="CardDrop">
+                <StackPanel Spacing="9">
+                  <Grid ColumnDefinitions="Auto,*">
+                    <Border Width="34" Height="34" Classes="badge" BorderBrush="#436F66">
+                      <TextBlock Text="✦" Foreground="#58E0B2" FontSize="16"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                      <TextBlock Text="03 // INTEL" Classes="kicker" FontSize="9" Foreground="#58E0B2"/>
+                      <TextBlock Text="Class guide" FontWeight="SemiBold" FontSize="14"/>
+                    </StackPanel>
+                  </Grid>
+                  <TextBlock Text="Build, szerep és party összeállítás egy helyen." Classes="hint"/>
+                  <ProgressBar Value="48" Foreground="#58E0B2"/>
+                </StackPanel>
+              </Border>
+            </WrapPanel>
+
+            <TextBlock x:Name="LayoutHint" Text="A modulok sorrendje szerkesztési módban módosítható."
+                       Classes="hint"/>
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="1" Classes="glass" Padding="20">
+          <StackPanel Spacing="0">
+            <TextBlock Text="SYSTEM TELEMETRY" Classes="kicker"/>
+            <TextBlock Text="Állapot" Classes="section" FontSize="18" Margin="0,3,0,8"/>
+
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,11">
+              <Ellipse Width="8" Height="8" Fill="#71879B" VerticalAlignment="Center" Margin="0,0,11,0"/>
+              <TextBlock Grid.Column="1" Text="Harc" Classes="body"/>
+              <TextBlock Grid.Column="2" Text="Készenlét" FontSize="12"/>
+            </Grid>
+            <Border Classes="rowline"/>
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,11">
+              <Ellipse Width="8" Height="8" Fill="#58E0B2" VerticalAlignment="Center" Margin="0,0,11,0"/>
+              <TextBlock Grid.Column="1" Text="DPS modul" Classes="body"/>
+              <TextBlock Grid.Column="2" Text="ONLINE" Classes="ok" FontSize="11" FontWeight="SemiBold"/>
+            </Grid>
+            <Border Classes="rowline"/>
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,11">
+              <Ellipse Width="8" Height="8" Fill="#58E0B2" VerticalAlignment="Center" Margin="0,0,11,0"/>
+              <TextBlock Grid.Column="1" Text="Boss modul" Classes="body"/>
+              <TextBlock Grid.Column="2" Text="ONLINE" Classes="ok" FontSize="11" FontWeight="SemiBold"/>
+            </Grid>
+            <Border Classes="rowline"/>
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,11">
+              <Ellipse Width="8" Height="8" Fill="#FF9B52" VerticalAlignment="Center" Margin="0,0,11,0"/>
+              <TextBlock Grid.Column="1" Text="Auto capture" Classes="body"/>
+              <TextBlock Grid.Column="2" Text="FORGING" Classes="warn" FontSize="11" FontWeight="SemiBold"/>
+            </Grid>
+
+            <Border Classes="inset" Padding="12" Margin="0,12,0,0">
+              <StackPanel Spacing="4">
+                <TextBlock Text="NEXFORGE SIGNAL" Classes="kicker" FontSize="9"/>
+                <TextBlock Text="A kliens eseményei készen állnak a valós idejű feldolgozásra."
+                           Classes="hint"/>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

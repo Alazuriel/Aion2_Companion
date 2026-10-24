@@ -5,7 +5,7 @@ riderModule.iml
 /_ReSharper.Caches/
 .idea/
 *.sln.DotSettings.user
-
+DOCS/
 # Local source snapshots; the maintained sources live in their normal folders.
 /Styles.zip
 /ViewModels.zip

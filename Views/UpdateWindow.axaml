@@ -1,0 +1,54 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AION_2_Companion.Views.UpdateWindow"
+        Width="680" Height="610" MinWidth="560" MinHeight="500"
+        CanResize="True" ShowInTaskbar="False"
+        Title="Nexforge Update"
+        Icon="/Assets/nexforge-companion.ico"
+        Background="#060A12" Foreground="#EAF7FF"
+        FontFamily="Inter, Segoe UI Variable Text, Segoe UI"
+        WindowStartupLocation="CenterOwner">
+  <Window.Styles>
+    <StyleInclude Source="avares://AION 2 Companion/Styles/Theme.axaml"/>
+  </Window.Styles>
+
+  <Grid RowDefinitions="Auto,*,Auto" Margin="24">
+    <Border Classes="hero" Padding="22" Margin="0,0,0,16">
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+        <Border Width="54" Height="54" CornerRadius="15" Background="#B308111F"
+                BorderBrush="#566F88" BorderThickness="1" BoxShadow="0 0 22 0 #5545DFFF">
+          <Image Source="/Assets/nexforge-companion-icon.png" Margin="3"
+                 RenderOptions.BitmapInterpolationMode="HighQuality"/>
+        </Border>
+        <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+          <TextBlock Text="{DynamicResource UpdateAvailableTitle}" Classes="kicker"/>
+          <TextBlock x:Name="ReleaseNameText" FontSize="25" FontWeight="SemiBold"/>
+          <TextBlock x:Name="ReleaseMetaText" Classes="hint"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="1" Classes="panel" Padding="18">
+      <Grid RowDefinitions="Auto,*">
+        <TextBlock Text="{DynamicResource UpdateChanges}" Classes="section" Margin="0,0,0,12"/>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+          <SelectableTextBlock x:Name="ReleaseNotesText" Classes="body" TextWrapping="Wrap"/>
+        </ScrollViewer>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="2" RowDefinitions="Auto,Auto" Margin="0,16,0,0">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Spacing="6" VerticalAlignment="Center">
+          <TextBlock x:Name="UpdateStatusText" Classes="hint" TextWrapping="Wrap"/>
+          <ProgressBar x:Name="DownloadProgress" Height="5" Minimum="0" Maximum="100" IsVisible="False"/>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" Margin="18,0,0,0">
+          <Button x:Name="LaterButton" Classes="ui" Content="{DynamicResource UpdateLater}" Click="LaterClick"/>
+          <Button x:Name="InstallButton" Classes="ui primary" Content="{DynamicResource UpdateInstall}" Click="InstallClick"/>
+        </StackPanel>
+      </Grid>
+      <TextBlock Grid.Row="1" Text="{DynamicResource UpdateVerifiedHint}" Classes="hint" Margin="0,12,0,0"/>
+    </Grid>
+  </Grid>
+</Window>

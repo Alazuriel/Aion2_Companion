@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AION_2_Companion.Views.ChangelogView"
+             x:CompileBindings="False">
+  <Grid RowDefinitions="Auto,*">
+    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,18">
+      <StackPanel Spacing="4">
+        <TextBlock Text="{DynamicResource ChangelogTitle}" Classes="h1"/>
+        <TextBlock Text="{DynamicResource ChangelogSubtitle}" Classes="body"/>
+      </StackPanel>
+      <Border Grid.Column="1" Classes="pill" VerticalAlignment="Center">
+        <TextBlock Text="{Binding CurrentVersionText}" Classes="mono accent" FontSize="11"/>
+      </Border>
+    </Grid>
+
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <ItemsControl ItemsSource="{Binding Entries}" MaxWidth="900" HorizontalAlignment="Left">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Border Classes="panel" Padding="20" Margin="0,0,0,14">
+              <StackPanel Spacing="14">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <Border Width="42" Height="42" Classes="badge" BorderBrush="#3C91A8">
+                    <TextBlock Text="◆" Foreground="#45DFFF" FontSize="14"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  </Border>
+                  <StackPanel Grid.Column="1" Margin="13,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Version}" FontSize="20" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding Date}" Classes="hint"/>
+                  </StackPanel>
+                  <Border Grid.Column="2" Classes="pill" IsVisible="{Binding IsCurrent}" VerticalAlignment="Center">
+                    <TextBlock Text="{DynamicResource ChangelogCurrent}" Classes="kicker" FontSize="9"/>
+                  </Border>
+                </Grid>
+
+                <ItemsControl ItemsSource="{Binding Items}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Grid ColumnDefinitions="110,*" Margin="2,4">
+                        <TextBlock Text="{Binding Category}" Classes="kicker" FontSize="9"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Text}" Classes="body" TextWrapping="Wrap"/>
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

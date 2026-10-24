@@ -1,6 +1,6 @@
 namespace AION_2_Companion.Core.Wire;
 
-// Logikai azonosítók. A wire-értékeket kizárólag a titkosított Opcode.nfg
+// Logikai azonosítók. A wire-értékeket kizárólag a titkosított AION2_Opcodes.nfg
 // tartalmazza; az enum sorrendje nem hálózati protokolladat.
 public enum OpcodeId
 {

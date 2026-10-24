@@ -98,7 +98,7 @@ public class ForgeDataLoader
             db => $"Petek: {db.Pets.Select(x => x.PetId).Distinct().Count()} | Spawnok: {db.Pets.Count}");
 
         _opcodesDatabase = TryLoad<OpCodesDatabase>(
-            Path.Combine(dataDir, "Opcode.nfg"),
+            Path.Combine(dataDir, "AION2_Opcodes.nfg"),
             OpCodesDatabase.Load,
             db => $"Opcode-ok: {db.Opcodes.Count}");
 

@@ -187,7 +187,7 @@
           </Grid>
 
           <Grid Grid.Row="4" ColumnDefinitions="*,Auto" Margin="2,9,2,0">
-            <StackPanel><TextBlock Name="ComparisonHint" Classes="hint"/><TextBlock Text="A heal a jelenlegi parser eredménye szerint kerül a logba." Classes="hint"/></StackPanel>
+            <StackPanel><TextBlock Name="ComparisonHint" Classes="hint"/><TextBlock Text="{DynamicResource HealingAccuracyHint}" Classes="hint"/></StackPanel>
             <TextBlock Grid.Column="1" Name="ActionStatusText" Classes="ok" VerticalAlignment="Bottom"/>
           </Grid>
         </Grid>

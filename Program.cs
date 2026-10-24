@@ -7,6 +7,9 @@ namespace AION_2_Companion;
 sealed class Program
 {
     internal static bool AutoCaptureRequested { get; private set; }
+    internal static bool AutoCaptureDisabled { get; private set; }
+    internal static bool DeveloperMode { get; private set; }
+    internal static string? RequestedLanguage { get; private set; }
     internal static bool AvaloniaTraceRequested { get; private set; }
 
     [STAThread]
@@ -14,6 +17,15 @@ sealed class Program
     {
         AutoCaptureRequested = Array.Exists(args, arg =>
             arg.Equals("--auto", StringComparison.OrdinalIgnoreCase));
+        AutoCaptureDisabled = Array.Exists(args, arg =>
+            arg.Equals("--no-auto", StringComparison.OrdinalIgnoreCase));
+        DeveloperMode = Array.Exists(args, arg =>
+            arg.Equals("--developer", StringComparison.OrdinalIgnoreCase));
+        string? languageArgument = Array.Find(args, arg =>
+            arg.StartsWith("--language=", StringComparison.OrdinalIgnoreCase));
+        RequestedLanguage = languageArgument is null
+            ? null
+            : LocalizationService.NormalizeLanguageCode(languageArgument["--language=".Length..]);
         AvaloniaTraceRequested = Array.Exists(args, arg =>
             arg.Equals("--avalonia-trace", StringComparison.OrdinalIgnoreCase));
 

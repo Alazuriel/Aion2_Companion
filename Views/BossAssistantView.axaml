@@ -50,7 +50,7 @@
               </Grid>
             </StackPanel>
 
-            <TextBlock Text="Minta idővonal. A valódi boss adatok a parser bekötése után jelennek meg." Classes="hint"/>
+            <TextBlock Text="{DynamicResource BossTimelineHint}" Classes="hint"/>
           </StackPanel>
         </Border>
 

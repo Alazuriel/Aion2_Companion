@@ -90,6 +90,11 @@ public static class DebugConsole
 
         Categories.Remove("debug");
         Categories.Remove("auto");
+        Categories.Remove("no-auto");
+        Categories.Remove("developer");
+        Categories.Remove("avalonia-trace");
+        Categories.RemoveWhere(category =>
+            category.StartsWith("language=", StringComparison.OrdinalIgnoreCase));
 
         AllocConsole();
         EnableVirtualTerminal();
@@ -184,6 +189,22 @@ public static class DebugConsole
     {
         lock (FileLogSync)
             CloseFileWriter();
+    }
+
+    public static void Flush()
+    {
+        lock (FileLogSync)
+        {
+            try
+            {
+                _fileWriter?.Flush();
+                _unflushedLines = 0;
+            }
+            catch (IOException)
+            {
+                // The support package can still contain the files already written.
+            }
+        }
     }
 
     private static void WriteToFile(string time, string label, string body)

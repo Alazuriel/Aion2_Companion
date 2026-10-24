@@ -17,8 +17,10 @@ public partial class SettingsView : UserControl
     private readonly CheckBox _fileLoggingToggle;
     private readonly TextBlock _fileLoggingHint;
     private readonly CheckBox _autoDpsOverlayToggle;
+    private readonly CheckBox _autoCaptureToggle;
     private readonly ComboBox _combatLogLimitCombo;
     private readonly ComboBox _closeActionCombo;
+    private readonly ComboBox _languageCombo;
     private readonly TextBlock _petCollectionStatusText;
     private readonly Ellipse _petCollectionStatusDot;
 
@@ -31,10 +33,24 @@ public partial class SettingsView : UserControl
         _fileLoggingToggle = this.FindControl<CheckBox>("FileLoggingToggle")!;
         _fileLoggingHint = this.FindControl<TextBlock>("FileLoggingHint")!;
         _autoDpsOverlayToggle = this.FindControl<CheckBox>("AutoDpsOverlayToggle")!;
+        _autoCaptureToggle = this.FindControl<CheckBox>("AutoCaptureToggle")!;
         _combatLogLimitCombo = this.FindControl<ComboBox>("CombatLogLimitCombo")!;
         _closeActionCombo = this.FindControl<ComboBox>("CloseActionCombo")!;
+        _languageCombo = this.FindControl<ComboBox>("LanguageCombo")!;
         _petCollectionStatusText = this.FindControl<TextBlock>("PetCollectionStatusText")!;
         _petCollectionStatusDot = this.FindControl<Ellipse>("PetCollectionStatusDot")!;
+        this.FindControl<Border>("DeveloperSettingsPanel")!.IsVisible = Program.DeveloperMode;
+
+        foreach (LanguageOption language in LocalizationService.SupportedLanguages)
+        {
+            _languageCombo.Items.Add(new ComboBoxItem
+            {
+                Content = language.DisplayName,
+                Tag = language.Code,
+            });
+        }
+
+        SelectLanguage(CompanionSettings.LanguageCode);
 
         bool isAdministrator = AdministratorAccess.IsRunningAsAdministrator;
 
@@ -52,14 +68,17 @@ public partial class SettingsView : UserControl
 
         _fileLoggingToggle.IsChecked = DebugConsole.FileLoggingEnabled;
         _autoDpsOverlayToggle.IsChecked = CompanionSettings.AutoManageDpsOverlay;
+        _autoCaptureToggle.IsChecked = CompanionSettings.AutoCaptureEnabled;
         SelectCombatLogLimit(CompanionSettings.CombatLogLimit);
         SelectCloseAction(CompanionSettings.CloseAction);
 
         _mapHelperToggle.IsCheckedChanged += MapHelperChanged;
         _fileLoggingToggle.IsCheckedChanged += FileLoggingChanged;
         _autoDpsOverlayToggle.IsCheckedChanged += AutoDpsOverlayChanged;
+        _autoCaptureToggle.IsCheckedChanged += AutoCaptureChanged;
         _combatLogLimitCombo.SelectionChanged += CombatLogLimitChanged;
         _closeActionCombo.SelectionChanged += CloseActionChanged;
+        _languageCombo.SelectionChanged += LanguageChanged;
 
         UpdateFileLoggingHint();
         UpdatePetCollectionStatus();
@@ -101,9 +120,10 @@ public partial class SettingsView : UserControl
 
     private void UpdateFileLoggingHint()
     {
-        _fileLoggingHint.Text = DebugConsole.FileLoggingEnabled
-            ? $"Bekapcsolva: {DebugConsole.LogDirectory}. Legfeljebb 3 × 5 MB napló marad meg."
-            : "Alapból kikapcsolva. Bekapcsolva is legfeljebb 3 × 5 MB napló marad meg.";
+        string key = DebugConsole.FileLoggingEnabled ? "LoggingOn" : "LoggingOff";
+        _fileLoggingHint.Text = string.Format(
+            LocalizationService.Get(key),
+            DebugConsole.LogDirectory);
     }
 
     private void PetCollectionChanged(IReadOnlyList<PetFarmOwnedState>? _) =>
@@ -116,15 +136,15 @@ public partial class SettingsView : UserControl
         switch (PetCollectionBridge.Status)
         {
             case PetCollectionSyncState.Ready:
-                text = "READY // TELJES LISTA";
+                text = $"{LocalizationService.Get("PetReady")} // {LocalizationService.Get("PetReadyTitle").ToUpperInvariant()}";
                 color = "#58E0B2";
                 break;
             case PetCollectionSyncState.Partial:
-                text = "PARTIAL // RÉSZLEGES ADAT";
+                text = $"{LocalizationService.Get("PetPartial")} // {LocalizationService.Get("PetPartialTitle").ToUpperInvariant()}";
                 color = "#45DFFF";
                 break;
             default:
-                text = "UNKNOWN // TELJES LISTA NÉLKÜL";
+                text = $"{LocalizationService.Get("PetUnknown")} // {LocalizationService.Get("PetUnknownTitle").ToUpperInvariant()}";
                 color = "#FFB454";
                 break;
         }
@@ -138,6 +158,37 @@ public partial class SettingsView : UserControl
     private void AutoDpsOverlayChanged(object? sender, RoutedEventArgs e)
     {
         CompanionSettings.AutoManageDpsOverlay = _autoDpsOverlayToggle.IsChecked == true;
+    }
+
+    private void AutoCaptureChanged(object? sender, RoutedEventArgs e)
+    {
+        CompanionSettings.AutoCaptureEnabled = _autoCaptureToggle.IsChecked == true;
+    }
+
+    private void LanguageChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_languageCombo.SelectedItem is not ComboBoxItem { Tag: string code })
+            return;
+
+        CompanionSettings.LanguageCode = code;
+        LocalizationService.Apply(code);
+        UpdateFileLoggingHint();
+        UpdatePetCollectionStatus();
+    }
+
+    private void SelectLanguage(string code)
+    {
+        foreach (object? item in _languageCombo.Items)
+        {
+            if (item is ComboBoxItem { Tag: string itemCode } &&
+                string.Equals(itemCode, code, StringComparison.OrdinalIgnoreCase))
+            {
+                _languageCombo.SelectedItem = item;
+                return;
+            }
+        }
+
+        _languageCombo.SelectedIndex = 0;
     }
 
     private void CombatLogLimitChanged(object? sender, SelectionChangedEventArgs e)

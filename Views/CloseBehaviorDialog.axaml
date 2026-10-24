@@ -15,10 +15,10 @@
 
   <Border Classes="panel" Margin="18" Padding="22">
     <Grid RowDefinitions="Auto,Auto,*,Auto">
-      <TextBlock Text="Ablak bezárása" Classes="h1"/>
+      <TextBlock Text="{DynamicResource CloseTitle}" Classes="h1"/>
       <TextBlock Grid.Row="1"
                  Margin="0,8,0,0"
-                 Text="A Companion futhat tovább a háttérben, vagy teljesen leállhat. A választás a Settings oldalon később módosítható."
+                 Text="{DynamicResource CloseText}"
                  Classes="body"/>
       <TextBlock Grid.Row="2"
                  Text="NEXFORGE · still hot from the forge"
@@ -26,9 +26,9 @@
                  FontStyle="Italic"
                  VerticalAlignment="Center"/>
       <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
-        <Button Classes="ui" Content="Mégse" Click="CancelClick"/>
-        <Button Classes="ui" Content="Háttérben marad" Click="TrayClick"/>
-        <Button Classes="ui primary" Content="Kilépés" Click="ExitClick"/>
+        <Button Classes="ui" Content="{DynamicResource Cancel}" Click="CancelClick"/>
+        <Button Classes="ui" Content="{DynamicResource CloseTray}" Click="TrayClick"/>
+        <Button Classes="ui primary" Content="{DynamicResource Exit}" Click="ExitClick"/>
       </StackPanel>
     </Grid>
   </Border>

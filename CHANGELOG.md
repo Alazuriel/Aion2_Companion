@@ -4,17 +4,27 @@ All notable user-facing changes are recorded here. Versions follow Semantic Vers
 
 ## Unreleased
 
+## [0.1.6] - 2026-10-26
+
+### Added
+
 - Redesigned Settings as a responsive Nexforge control center with clear General, Capture, Combat, Overlay, Event Timer, Data, Pet and Diagnostics sections.
 - Prepared a clearly disabled Nexforge Account area for future character, Discord and cloud-profile linking without enabling unfinished online actions.
 - Added a Nexforge Account teaser to the Dashboard and a dedicated Characters module preview marked as under forge.
 - Added an opt-in browser login UI rehearsal that locks the client and defers automatic capture until the test flow is confirmed.
 - Added a live local data-pack status and kept every existing Settings preference connected to its saved value.
-- Simplified the sidebar by grouping secondary and unfinished modules under an expandable More menu.
-- Polished the Dashboard and Characters empty states so missing character data and unfinished features are presented clearly.
 - Added persistent All/Bosses modes to the live DPS overlay and Combat Log.
-- Boss mode keeps recording trash encounters but excludes non-boss damage from the active view and historical boss analysis.
 - Added encrypted `AION2_Bosses.nfg` runtime data support with template-ID and legacy-name matching.
 - Added boss HP and enrage status to the DPS overlay when verified data is available.
+
+### Changed
+
+- Simplified the sidebar by grouping secondary and unfinished modules under an expandable More menu.
+- Polished the Dashboard and Characters empty states so missing character data and unfinished features are presented clearly.
+- Boss mode keeps recording trash encounters but excludes non-boss damage from the active view and historical boss analysis.
+
+### Fixed
+
 - Automatic DPS overlay display no longer activates the window or steals focus from AION 2.
 - Pet Intelligence is now shown only after the map matcher has recognized the game map.
 

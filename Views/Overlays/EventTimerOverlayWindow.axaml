@@ -1,0 +1,61 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AION_2_Companion.Views.Overlays.EventTimerOverlayWindow"
+        x:CompileBindings="False"
+        Width="330" Height="330" MinWidth="270" MinHeight="120" MaxWidth="480" MaxHeight="520"
+        Title="AION 2 · Event Timers"
+        Background="Transparent" TransparencyLevelHint="Transparent"
+        ExtendClientAreaToDecorationsHint="True" SystemDecorations="None"
+        Topmost="True" ShowInTaskbar="False" ShowActivated="False" CanResize="True"
+        FontFamily="Inter, Segoe UI Variable Text, Segoe UI" Foreground="#EAF7FF">
+  <Window.Styles>
+    <StyleInclude Source="avares://AION 2 Companion/Styles/Theme.axaml"/>
+  </Window.Styles>
+  <Border BorderBrush="#4A6B84" BorderThickness="1" CornerRadius="15" Padding="10"
+          BoxShadow="0 16 40 0 #85000000">
+    <Border.Background>
+      <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#F20A1422" Offset="0"/>
+        <GradientStop Color="#E8142638" Offset="0.72"/>
+        <GradientStop Color="#F215101C" Offset="1"/>
+      </LinearGradientBrush>
+    </Border.Background>
+    <Grid RowDefinitions="Auto,*">
+      <Grid ColumnDefinitions="*,Auto" PointerPressed="HeaderDrag">
+        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Ellipse Width="7" Height="7" Fill="#45DFFF"/>
+          <TextBlock Text="{DynamicResource EventTimerOverlayTitle}" Classes="kicker" FontSize="10"/>
+          <TextBlock x:Name="RegionText" Classes="hint" FontSize="10"/>
+        </StackPanel>
+        <Button Grid.Column="1" Classes="ui quiet" Content="×" Click="CloseClick"/>
+      </Grid>
+
+      <Grid Grid.Row="1" Margin="0,9,0,0">
+        <TextBlock x:Name="EmptyText" Text="{DynamicResource EventTimerOverlayEmpty}" Classes="hint"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/>
+        <ItemsControl ItemsSource="{Binding Rows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Border Classes="inset" Padding="9,7" Margin="0,0,0,6">
+                <Grid ColumnDefinitions="32,*,Auto" ColumnSpacing="9">
+                  <Border Width="30" Height="30" CornerRadius="9" Background="#2A25415A">
+                    <TextBlock Text="{Binding Icon}" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  </Border>
+                  <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                    <StackPanel Orientation="Horizontal" Spacing="5">
+                      <Ellipse Width="5" Height="5" Fill="{Binding StateBrush}" VerticalAlignment="Center"/>
+                      <TextBlock Text="{Binding StateText}" FontSize="9" Foreground="{Binding StateBrush}"/>
+                    </StackPanel>
+                  </StackPanel>
+                  <TextBlock Grid.Column="2" Text="{Binding Countdown}" Classes="mono accent"
+                             FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Grid>
+    </Grid>
+  </Border>
+</Window>

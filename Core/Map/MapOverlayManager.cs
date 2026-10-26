@@ -298,7 +298,6 @@ public sealed class MapOverlayManager : IDisposable
             _overlay.Show();
 
             _overlay.DisableCaptureExclusion();
-            _overlay.ShowPetMenu();
 
             _everShown = true;
         }

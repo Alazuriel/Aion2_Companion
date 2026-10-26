@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 
 namespace AION_2_Companion.Core;
@@ -13,11 +14,27 @@ public sealed class OverlayPlacement
     public double Height { get; set; }
 }
 
+public sealed class EventTimerPreference
+{
+    public bool Visible { get; set; } = true;
+    public bool ShowInOverlay { get; set; }
+    public int AlertMinutes { get; set; } = 5;
+    public bool AlertAtStart { get; set; } = true;
+    public bool SoundEnabled { get; set; } = true;
+    public bool VisualEnabled { get; set; } = true;
+}
+
 public enum MainWindowCloseAction
 {
     Ask = 0,
     MinimizeToTray = 1,
     ExitApplication = 2,
+}
+
+public enum DpsEncounterMode
+{
+    All = 0,
+    Bosses = 1,
 }
 
 public static class CompanionSettings
@@ -31,6 +48,8 @@ public static class CompanionSettings
     private static SettingsData? _data;
 
     public static event EventHandler? MapHelperEnabledChanged;
+    public static event EventHandler? EventTimerSettingsChanged;
+    public static event EventHandler? DpsEncounterModeChanged;
 
     public static string SettingsDirectory { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -149,6 +168,30 @@ public static class CompanionSettings
         }
     }
 
+    public static DpsEncounterMode DpsEncounterMode
+    {
+        get
+        {
+            lock (Sync)
+                return Load().DpsEncounterMode;
+        }
+        set
+        {
+            bool changed;
+            lock (Sync)
+            {
+                SettingsData data = Load();
+                changed = data.DpsEncounterMode != value;
+                if (!changed)
+                    return;
+                data.DpsEncounterMode = value;
+                Save(data);
+            }
+
+            DpsEncounterModeChanged?.Invoke(null, EventArgs.Empty);
+        }
+    }
+
     public static string LanguageCode
     {
         get
@@ -166,6 +209,66 @@ public static class CompanionSettings
                     return;
 
                 data.LanguageCode = normalized;
+                Save(data);
+            }
+        }
+    }
+
+    public static bool CheckUpdatesAutomatically
+    {
+        get
+        {
+            lock (Sync)
+                return Load().CheckUpdatesAutomatically;
+        }
+        set
+        {
+            lock (Sync)
+            {
+                SettingsData data = Load();
+                if (data.CheckUpdatesAutomatically == value)
+                    return;
+
+                data.CheckUpdatesAutomatically = value;
+                Save(data);
+            }
+        }
+    }
+
+    public static DateTimeOffset? LastUpdateCheckUtc
+    {
+        get
+        {
+            lock (Sync)
+                return Load().LastUpdateCheckUtc;
+        }
+        set
+        {
+            lock (Sync)
+            {
+                SettingsData data = Load();
+                data.LastUpdateCheckUtc = value;
+                Save(data);
+            }
+        }
+    }
+
+    public static string? LastSeenOnboardingVersion
+    {
+        get
+        {
+            lock (Sync)
+                return Load().LastSeenOnboardingVersion;
+        }
+        set
+        {
+            lock (Sync)
+            {
+                SettingsData data = Load();
+                if (string.Equals(data.LastSeenOnboardingVersion, value, StringComparison.Ordinal))
+                    return;
+
+                data.LastSeenOnboardingVersion = value;
                 Save(data);
             }
         }
@@ -192,6 +295,121 @@ public static class CompanionSettings
             }
         }
     }
+
+    public static string EventTimerRegion
+    {
+        get
+        {
+            lock (Sync)
+                return Load().EventTimerRegion;
+        }
+        set
+        {
+            string normalized = string.IsNullOrWhiteSpace(value) ? "europe" : value.Trim();
+            bool changed;
+            lock (Sync)
+            {
+                SettingsData data = Load();
+                changed = !string.Equals(data.EventTimerRegion, normalized, StringComparison.OrdinalIgnoreCase);
+                if (!changed)
+                    return;
+                data.EventTimerRegion = normalized;
+                Save(data);
+            }
+
+            EventTimerSettingsChanged?.Invoke(null, EventArgs.Empty);
+        }
+    }
+
+    public static bool EventTimerOverlayClickThrough
+    {
+        get
+        {
+            lock (Sync)
+                return Load().EventTimerOverlayClickThrough;
+        }
+        set
+        {
+            bool changed;
+            lock (Sync)
+            {
+                SettingsData data = Load();
+                changed = data.EventTimerOverlayClickThrough != value;
+                if (!changed)
+                    return;
+                data.EventTimerOverlayClickThrough = value;
+                Save(data);
+            }
+
+            EventTimerSettingsChanged?.Invoke(null, EventArgs.Empty);
+        }
+    }
+
+    public static EventTimerPreference GetEventTimerPreference(string eventId, bool defaultOverlay = false)
+    {
+        lock (Sync)
+        {
+            SettingsData data = Load();
+            if (!data.EventTimerPreferences.TryGetValue(eventId, out EventTimerPreference? preference))
+            {
+                return new EventTimerPreference { ShowInOverlay = defaultOverlay };
+            }
+
+            return Clone(preference);
+        }
+    }
+
+    public static void SetEventTimerPreference(string eventId, EventTimerPreference preference)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(eventId);
+        ArgumentNullException.ThrowIfNull(preference);
+
+        var normalized = Clone(preference);
+        normalized.AlertMinutes = normalized.AlertMinutes < 0
+            ? -1
+            : Math.Clamp(normalized.AlertMinutes, 0, 1440);
+
+        lock (Sync)
+        {
+            SettingsData data = Load();
+            data.EventTimerPreferences[eventId] = normalized;
+            Save(data);
+        }
+
+        EventTimerSettingsChanged?.Invoke(null, EventArgs.Empty);
+    }
+
+    public static bool HasEventTimerNotification(string key)
+    {
+        lock (Sync)
+            return Load().EventTimerNotificationHistory.Contains(key, StringComparer.Ordinal);
+    }
+
+    public static void RememberEventTimerNotification(string key)
+    {
+        lock (Sync)
+        {
+            SettingsData data = Load();
+            if (data.EventTimerNotificationHistory.Contains(key, StringComparer.Ordinal))
+                return;
+
+            data.EventTimerNotificationHistory.Add(key);
+            if (data.EventTimerNotificationHistory.Count > 400)
+                data.EventTimerNotificationHistory.RemoveRange(
+                    0, data.EventTimerNotificationHistory.Count - 300);
+            Save(data);
+        }
+    }
+
+    private static EventTimerPreference Clone(EventTimerPreference value) => new()
+    {
+        Visible = value.Visible,
+        ShowInOverlay = value.ShowInOverlay,
+        AlertMinutes = value.AlertMinutes,
+        AlertAtStart = value.AlertAtStart,
+        SoundEnabled = value.SoundEnabled,
+        VisualEnabled = value.VisualEnabled,
+    };
 
     public static OverlayPlacement? GetOverlayPlacement(string key)
     {
@@ -239,6 +457,8 @@ public static class CompanionSettings
 
         _data ??= new SettingsData();
         _data.OverlayPlacements ??= new Dictionary<string, OverlayPlacement>(StringComparer.OrdinalIgnoreCase);
+        _data.EventTimerPreferences ??= new Dictionary<string, EventTimerPreference>(StringComparer.OrdinalIgnoreCase);
+        _data.EventTimerNotificationHistory ??= [];
         return _data;
     }
 
@@ -268,8 +488,17 @@ public static class CompanionSettings
         public bool FileLoggingEnabled { get; set; }
         public bool AutoManageDpsOverlay { get; set; } = true;
         public bool AutoCaptureEnabled { get; set; } = true;
+        public DpsEncounterMode DpsEncounterMode { get; set; } = DpsEncounterMode.All;
         public string LanguageCode { get; set; } = "en";
+        public bool CheckUpdatesAutomatically { get; set; } = true;
+        public DateTimeOffset? LastUpdateCheckUtc { get; set; }
+        public string? LastSeenOnboardingVersion { get; set; }
         public int CombatLogLimit { get; set; } = 500;
+        public string EventTimerRegion { get; set; } = "europe";
+        public bool EventTimerOverlayClickThrough { get; set; }
+        public Dictionary<string, EventTimerPreference> EventTimerPreferences { get; set; }
+            = new(StringComparer.OrdinalIgnoreCase);
+        public List<string> EventTimerNotificationHistory { get; set; } = [];
         public MainWindowCloseAction CloseAction { get; set; } = MainWindowCloseAction.Ask;
         public Dictionary<string, OverlayPlacement> OverlayPlacements { get; set; }
             = new(StringComparer.OrdinalIgnoreCase);

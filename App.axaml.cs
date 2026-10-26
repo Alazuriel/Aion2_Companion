@@ -36,7 +36,8 @@ public partial class App : Application
 
             CombatLogStore.Shared.StartSession();
             CombatLogStore.Shared.ApplyRetentionLimit();
-            bool autoStartCapture = !Program.AutoCaptureDisabled &&
+            bool autoStartCapture = !Program.TestLoginRequested &&
+                !Program.AutoCaptureDisabled &&
                 (Program.AutoCaptureRequested || CompanionSettings.AutoCaptureEnabled);
             var mainViewModel = new MainWindowViewModel(autoStartCapture);
             desktop.Exit += (_, _) =>

@@ -34,12 +34,14 @@ public partial class PlayerDetailsWindow : Window
 
     public ObservableCollection<SkillBreakRow> Skills { get; } = new();
 
-    public PlayerDetailsWindow() : this(DemoData.Build().Players[0], DemoData.Build()) { }
+    public PlayerDetailsWindow() : this(new PlayerStat(), new MeterSnapshot()) { }
 
     public PlayerDetailsWindow(PlayerStat player, MeterSnapshot snapshot)
     {
         AvaloniaXamlLoader.Load(this);
         DataContext = this;
+        LocalizationService.LanguageChanged += LanguageChanged;
+        Closed += (_, _) => LocalizationService.LanguageChanged -= LanguageChanged;
         UpdatePlayer(player, snapshot);
     }
 
@@ -59,14 +61,21 @@ public partial class PlayerDetailsWindow : Window
         this.FindControl<TextBlock>("DetailName")!.Text = _player.Name;
 
         int secs = (int)_snapshot.Duration;
-        this.FindControl<TextBlock>("DetailMeta")!.Text =
-            $"Harc {secs / 60:00}:{secs % 60:00}  ·  {_player.Events.Count} esemény";
+        this.FindControl<TextBlock>("DetailMeta")!.Text = LocalizationService.Format(
+            "PlayerFightMeta", $"{secs / 60:00}:{secs % 60:00}", _player.Events.Count);
 
         this.FindControl<TextBlock>("DetailDps")!.Text = Meter.Format(_player.Dps, MeterMode.Dps);
         this.FindControl<TextBlock>("DetailDamage")!.Text = Meter.Num(_player.Damage);
         this.FindControl<TextBlock>("DetailPercent")!.Text =
             Meter.Percent(_player.Damage, _snapshot.MobMaxHp);
         this.FindControl<TextBlock>("DetailHeal")!.Text = Meter.Num(_player.Healing);
+    }
+
+    private void LanguageChanged(object? sender, EventArgs e)
+    {
+        Skills.Clear();
+        FillHeader();
+        FillSkills();
     }
 
     private void FillSkills()

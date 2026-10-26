@@ -13,6 +13,7 @@ public static class OverlayWindowManager
     private static DbmOverlayWindow? _dbm;
     private static PlayerDetailsWindow? _playerDetails;
     private static TimelineWindow? _timeline;
+    private static EventTimerOverlayWindow? _eventTimers;
 
     public static DpsOverlayWindow? DpsWindow => _dps;
 
@@ -25,7 +26,7 @@ public static class OverlayWindowManager
     public static void ShowDps(MeterSnapshot snapshot)
     {
         DpsOverlayWindow window = EnsureDps(snapshot);
-        ShowAndActivate(window);
+        ShowWithoutActivation(window);
     }
 
     public static void UpdateDps(MeterSnapshot snapshot)
@@ -53,6 +54,22 @@ public static class OverlayWindowManager
         }
 
         Toggle(_dbm);
+    }
+
+    public static void ToggleEventTimers()
+    {
+        if (_eventTimers is null)
+        {
+            var created = new EventTimerOverlayWindow();
+            created.Closed += (_, _) =>
+            {
+                if (ReferenceEquals(_eventTimers, created))
+                    _eventTimers = null;
+            };
+            _eventTimers = created;
+        }
+
+        Toggle(_eventTimers);
     }
 
     public static void ShowPlayerDetails(PlayerStat player, MeterSnapshot snapshot)
@@ -135,5 +152,11 @@ public static class OverlayWindowManager
             window.Show();
 
         window.Activate();
+    }
+
+    private static void ShowWithoutActivation(Window window)
+    {
+        if (!window.IsVisible)
+            window.Show();
     }
 }

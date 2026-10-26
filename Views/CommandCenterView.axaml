@@ -1,0 +1,82 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AION_2_Companion.Views.CommandCenterView" x:CompileBindings="False" Background="Transparent">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="20">
+      <StackPanel Spacing="4">
+        <TextBlock Text="{DynamicResource DashboardKicker}" Classes="kicker"/>
+        <TextBlock Text="{DynamicResource DashboardTitle}" Classes="h1" FontSize="29"/>
+        <TextBlock Text="{DynamicResource DashboardSubtitle}" Classes="body"/>
+      </StackPanel>
+      <Border Classes="hero" Padding="0" ClipToBounds="True">
+        <Grid ColumnDefinitions="*,300">
+          <Border Grid.ColumnSpan="2"><Border.Background><LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%"><GradientStop Color="#EA0B1728" Offset="0"/><GradientStop Color="#D5132740" Offset="0.62"/><GradientStop Color="#D92A1720" Offset="1"/></LinearGradientBrush></Border.Background></Border>
+          <Border Grid.ColumnSpan="2" Height="3" VerticalAlignment="Top"><Border.Background><LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%"><GradientStop Color="#45DFFF" Offset="0"/><GradientStop Color="#3A80E8" Offset="0.52"/><GradientStop Color="#FF8E4F" Offset="1"/></LinearGradientBrush></Border.Background></Border>
+          <StackPanel Spacing="11" Margin="30,27" VerticalAlignment="Center">
+            <TextBlock Text="{DynamicResource ActiveCharacter}" Classes="kicker"/>
+            <TextBlock x:Name="CharacterNameText" FontSize="31" FontWeight="SemiBold"
+                       Foreground="#F4FBFF" MinHeight="39" VerticalAlignment="Center"/>
+            <WrapPanel>
+              <Border x:Name="CharacterClassPill" Classes="pill" Margin="0,0,10,0" MinWidth="86" IsVisible="False">
+                <TextBlock x:Name="CharacterClassText" FontSize="12" FontWeight="SemiBold"
+                           TextAlignment="Center" HorizontalAlignment="Center"/>
+              </Border>
+              <Border Classes="pill" BorderBrush="#385E67"><StackPanel Orientation="Horizontal" Spacing="8"><Ellipse Width="7" Height="7" Fill="#58E0B2" VerticalAlignment="Center"/><TextBlock Text="{DynamicResource CombatReady}" Classes="kicker" FontSize="9" VerticalAlignment="Center"/></StackPanel></Border>
+            </WrapPanel>
+            <TextBlock Text="{DynamicResource CharacterReadyText}" Classes="body" MaxWidth="560"/>
+          </StackPanel>
+          <Border Grid.Column="1" Classes="inset" Margin="0,20,20,20" Padding="18">
+            <StackPanel Spacing="11" VerticalAlignment="Center">
+              <TextBlock Text="{DynamicResource ForgePulse}" Classes="kicker"/>
+              <TextBlock Text="{DynamicResource ForgePulseTitle}" Classes="section" FontSize="18"/>
+              <TextBlock Text="{DynamicResource ForgePulseText}" Classes="hint"/>
+              <Border Classes="rowline" Margin="0,3"/>
+              <Grid ColumnDefinitions="*,Auto"><TextBlock Text="{DynamicResource CurrentBuild}" Classes="eyebrow" VerticalAlignment="Center"/><TextBlock Grid.Column="1" x:Name="VersionText" Classes="mono accent" FontSize="12"/></Grid>
+              <Button Classes="ui primary" Content="{DynamicResource OpenNexforge}" Click="OpenNexforgeClick" HorizontalAlignment="Stretch"/>
+            </StackPanel>
+          </Border>
+        </Grid>
+      </Border>
+      <Border Classes="glass" Padding="17,15" BorderBrush="#3E536C7C">
+        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="15">
+          <Border Width="44" Height="44" CornerRadius="12" Background="#A00A1422"
+                  BorderBrush="#6545DFFF" BorderThickness="1" BoxShadow="0 0 18 0 #3445DFFF">
+            <Image Source="/Assets/nexforge-logo.png" Margin="6" Stretch="Uniform"
+                   RenderOptions.BitmapInterpolationMode="HighQuality"/>
+          </Border>
+          <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+            <TextBlock Text="{DynamicResource DashboardAccountKicker}" Classes="kicker" FontSize="9"/>
+            <TextBlock Text="{DynamicResource DashboardAccountTitle}" Classes="section" FontSize="16"/>
+            <TextBlock Text="{DynamicResource DashboardAccountText}" Classes="hint" TextWrapping="Wrap"/>
+          </StackPanel>
+          <StackPanel Grid.Column="2" Spacing="7" VerticalAlignment="Center">
+            <Border Classes="goldPill" HorizontalAlignment="Right">
+              <TextBlock Text="{DynamicResource StillUnderForge}" Classes="kicker" FontSize="8"/>
+            </Border>
+            <Button Classes="ui" Content="{DynamicResource CharactersPreview}"
+                    Click="OpenCharactersClick"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+      <Grid ColumnDefinitions="1.25*,0.75*" ColumnSpacing="16">
+        <Border Classes="glass" Padding="22">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="18">
+            <Border Width="74" Height="74" CornerRadius="20" Background="#162B40" BorderBrush="#426681" BorderThickness="1" BoxShadow="0 0 24 0 #3345DFFF"><TextBlock Text="⌁" Foreground="#45DFFF" FontSize="38" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+            <StackPanel Grid.Column="1" Spacing="7" VerticalAlignment="Center"><TextBlock Text="{DynamicResource NexforgeSignal}" Classes="kicker"/><TextBlock Text="{DynamicResource SignalReady}" Classes="section" FontSize="18" TextWrapping="Wrap"/><TextBlock Text="{DynamicResource NoDemoData}" Classes="hint"/></StackPanel>
+          </Grid>
+        </Border>
+        <Border Grid.Column="1" Classes="glass" Padding="20">
+          <StackPanel Spacing="0">
+            <TextBlock Text="{DynamicResource SystemTelemetry}" Classes="kicker"/><TextBlock Text="{DynamicResource Status}" Classes="section" FontSize="18" Margin="0,3,0,8"/>
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,11"><Ellipse Width="8" Height="8" Fill="#71879B" VerticalAlignment="Center" Margin="0,0,11,0"/><TextBlock Grid.Column="1" Text="{DynamicResource Combat}" Classes="body"/><TextBlock Grid.Column="2" Text="{DynamicResource Standby}" FontSize="12"/></Grid>
+            <Border Classes="rowline"/>
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,11"><Ellipse Width="8" Height="8" Fill="#58E0B2" VerticalAlignment="Center" Margin="0,0,11,0"/><TextBlock Grid.Column="1" Text="{DynamicResource DpsModule}" Classes="body"/><TextBlock Grid.Column="2" Text="{DynamicResource Online}" Classes="ok" FontSize="11" FontWeight="SemiBold"/></Grid>
+            <Border Classes="rowline"/>
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,11"><Ellipse Width="8" Height="8" Fill="#FF9B52" VerticalAlignment="Center" Margin="0,0,11,0"/><TextBlock Grid.Column="1" Text="{DynamicResource BossModule}" Classes="body"/><TextBlock Grid.Column="2" Text="{DynamicResource StillUnderForge}" Classes="warn" FontSize="9" FontWeight="SemiBold"/></Grid>
+            <Border Classes="rowline"/>
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,11"><Ellipse Width="8" Height="8" Fill="#58E0B2" VerticalAlignment="Center" Margin="0,0,11,0"/><TextBlock Grid.Column="1" Text="{DynamicResource BackgroundMonitoring}" Classes="body"/><TextBlock Grid.Column="2" Text="{DynamicResource AutomaticMode}" Classes="ok" FontSize="10" FontWeight="SemiBold"/></Grid>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

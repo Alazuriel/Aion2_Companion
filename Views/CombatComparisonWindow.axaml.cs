@@ -52,11 +52,16 @@ public partial class CombatComparisonWindow : Window
     }
 
     public CombatComparisonWindow(CombatLogEntry fightA, CombatLogEntry fightB)
+        : this(fightA, fightB, false)
     {
-        MeterSnapshot snapshotA = fightA.ToSnapshot();
-        MeterSnapshot snapshotB = fightB.ToSnapshot();
-        double groupDpsA = fightA.TotalDamage / Math.Max(0.001, fightA.Duration);
-        double groupDpsB = fightB.TotalDamage / Math.Max(0.001, fightB.Duration);
+    }
+
+    public CombatComparisonWindow(CombatLogEntry fightA, CombatLogEntry fightB, bool bossOnly)
+    {
+        MeterSnapshot snapshotA = fightA.ToSnapshot(bossOnly);
+        MeterSnapshot snapshotB = fightB.ToSnapshot(bossOnly);
+        double groupDpsA = snapshotA.TotalDamage / Math.Max(0.001, fightA.Duration);
+        double groupDpsB = snapshotB.TotalDamage / Math.Max(0.001, fightB.Duration);
 
         FightAName = fightA.MobName;
         FightBName = fightB.MobName;
@@ -65,12 +70,12 @@ public partial class CombatComparisonWindow : Window
         GroupDpsText = $"{Meter.Num(groupDpsA)}/s  →  {Meter.Num(groupDpsB)}/s";
         GroupDpsDelta = Signed(groupDpsB - groupDpsA, "/s");
         GroupDpsDeltaBrush = DeltaBrush(groupDpsB - groupDpsA);
-        DamageText = $"{Meter.Num(fightA.TotalDamage)}  →  {Meter.Num(fightB.TotalDamage)}";
-        DamageDelta = Signed(fightB.TotalDamage - fightA.TotalDamage);
-        DamageDeltaBrush = DeltaBrush(fightB.TotalDamage - fightA.TotalDamage);
-        HealingText = $"{Meter.Num(fightA.TotalHealing)}  →  {Meter.Num(fightB.TotalHealing)}";
-        HealingDelta = Signed(fightB.TotalHealing - fightA.TotalHealing);
-        HealingDeltaBrush = DeltaBrush(fightB.TotalHealing - fightA.TotalHealing);
+        DamageText = $"{Meter.Num(snapshotA.TotalDamage)}  →  {Meter.Num(snapshotB.TotalDamage)}";
+        DamageDelta = Signed(snapshotB.TotalDamage - snapshotA.TotalDamage);
+        DamageDeltaBrush = DeltaBrush(snapshotB.TotalDamage - snapshotA.TotalDamage);
+        HealingText = $"{Meter.Num(snapshotA.TotalHealing)}  →  {Meter.Num(snapshotB.TotalHealing)}";
+        HealingDelta = Signed(snapshotB.TotalHealing - snapshotA.TotalHealing);
+        HealingDeltaBrush = DeltaBrush(snapshotB.TotalHealing - snapshotA.TotalHealing);
 
         foreach (string playerName in snapshotA.Players.Select(player => player.Name)
                      .Union(snapshotB.Players.Select(player => player.Name), StringComparer.OrdinalIgnoreCase)

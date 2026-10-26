@@ -1,4 +1,5 @@
 using Avalonia.Media.Imaging;
+using AION_2_Companion.Core;
 
 namespace AION_2_Companion.Views.Overlays;
 
@@ -17,6 +18,9 @@ public sealed class SkillEvent
     public long Amount { get; init; }
     public bool Crit { get; init; }
     public bool IsHeal { get; init; }
+    public uint TargetRuntimeId { get; init; }
+    public int TargetTemplateId { get; init; }
+    public bool IsBossTarget { get; init; }
 }
 
 public sealed class PlayerStat
@@ -28,7 +32,9 @@ public sealed class PlayerStat
     public string ClassColor { get; init; } = "#9CA3AF";
     public double Duration { get; init; }
     public long Damage { get; init; }
+    public long BossDamage { get; init; }
     public long Healing { get; init; }
+    public long BossHealing { get; init; }
     public IReadOnlyList<SkillEvent> Events { get; init; } = Array.Empty<SkillEvent>();
 
     public double Dps => Duration > 0 ? Damage / Duration : 0;
@@ -42,8 +48,68 @@ public sealed class MeterSnapshot
     public long MobMaxHp { get; init; }
     public bool IsDemo { get; init; }
     public string? MobTemplateName { get; init; }
+    public int MobTemplateId { get; init; }
+    public bool IsBossEncounter { get; init; }
+    public string BossId { get; init; } = string.Empty;
+    public double? BossHpPercent { get; init; }
+    public long? BossCurrentHp { get; init; }
+    public int? EnrageSeconds { get; init; }
+    public double BossStartOffset { get; init; }
+    public double BossDuration { get; init; }
+    public double? EnrageRemainingSeconds { get; init; }
+    public bool IsEnraged => EnrageRemainingSeconds is <= 0;
     public long TotalDamage => Players.Sum(p => p.Damage);
     public long TotalHealing => Players.Sum(p => p.Healing);
+
+    public MeterSnapshot ToBossOnly()
+    {
+        if (!IsBossEncounter)
+            return this;
+
+        return new MeterSnapshot
+        {
+            Players = Players.Select(player => new PlayerStat
+            {
+                Name = player.Name,
+                ClassId = player.ClassId,
+                ClassIcon = player.ClassIcon,
+                ClassName = player.ClassName,
+                ClassColor = player.ClassColor,
+                Duration = BossDuration > 0 ? BossDuration : player.Duration,
+                Damage = player.BossDamage,
+                BossDamage = player.BossDamage,
+                Healing = player.BossHealing,
+                BossHealing = player.BossHealing,
+                Events = player.Events
+                    .Where(entry => entry.Time >= BossStartOffset && (entry.IsHeal || entry.IsBossTarget))
+                    .Select(entry => new SkillEvent
+                    {
+                        Time = Math.Max(0, entry.Time - BossStartOffset),
+                        Skill = entry.Skill,
+                        SkillIcon = entry.SkillIcon,
+                        Amount = entry.Amount,
+                        Crit = entry.Crit,
+                        IsHeal = entry.IsHeal,
+                        TargetRuntimeId = entry.TargetRuntimeId,
+                        TargetTemplateId = entry.TargetTemplateId,
+                        IsBossTarget = entry.IsBossTarget,
+                    }).ToList(),
+            }).ToList(),
+            Duration = BossDuration > 0 ? BossDuration : Duration,
+            MobMaxHp = MobMaxHp,
+            IsDemo = IsDemo,
+            MobTemplateName = MobTemplateName,
+            MobTemplateId = MobTemplateId,
+            IsBossEncounter = true,
+            BossId = BossId,
+            BossHpPercent = BossHpPercent,
+            BossCurrentHp = BossCurrentHp,
+            EnrageSeconds = EnrageSeconds,
+            EnrageRemainingSeconds = EnrageRemainingSeconds,
+            BossStartOffset = 0,
+            BossDuration = BossDuration,
+        };
+    }
 }
 
 public sealed class MeterRow
@@ -77,9 +143,9 @@ public static class Meter
 {
     public static string ModeName(MeterMode m) => m switch
     {
-        MeterMode.Damage => "Sebzés",
+        MeterMode.Damage => LocalizationService.Get("Damage"),
         MeterMode.Dps => "DPS",
-        MeterMode.Heal => "Gyógyítás",
+        MeterMode.Heal => LocalizationService.Get("Healing"),
         _ => "HPS",
     };
 
@@ -115,8 +181,10 @@ public static class Meter
         if (percentMode)
         {
             return dmg
-                ? (primary, $"{Percent(p.Damage, s.MobMaxHp)} a mobból")
-                : (primary, $"{Percent(p.Healing, s.TotalHealing)} az össz gyógyításból");
+                ? (primary, LocalizationService.Format(
+                    "ShareOfMob", Percent(p.Damage, s.MobMaxHp)))
+                : (primary, LocalizationService.Format(
+                    "ShareOfHealing", Percent(p.Healing, s.TotalHealing)));
         }
 
         string secondary = m switch

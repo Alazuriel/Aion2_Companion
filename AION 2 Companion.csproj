@@ -6,6 +6,10 @@
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <ApplicationIcon>Assets\nexforge-companion.ico</ApplicationIcon>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+        <Version>0.1.5</Version>
+        <AssemblyVersion>0.1.5.0</AssemblyVersion>
+        <FileVersion>0.1.5.0</FileVersion>
+        <InformationalVersion>0.1.5</InformationalVersion>
         <NfgLocalKeyFile Condition="'$(NfgLocalKeyFile)' == '' and Exists('Private\NfgMaster.key')">Private\NfgMaster.key</NfgLocalKeyFile>
         <NfgLocalKeyFile Condition="'$(NfgLocalKeyFile)' == '' and '$(NEXFORGE_NFG_MASTER_KEY)' != ''">$(IntermediateOutputPath)NfgMaster.key</NfgLocalKeyFile>
     </PropertyGroup>
@@ -26,6 +30,7 @@
         <Content Include="Data\Assets\Pets\*.webp" CopyToOutputDirectory="PreserveNewest" />
         <EmbeddedResource Include="$(NfgLocalKeyFile)" LogicalName="Nexforge.NfgMasterKey" Condition="'$(NfgLocalKeyFile)' != ''" />
         <Compile Remove="Core\Wire\OpcodeRegistry.cs" />
+        <EmbeddedResource Include="CHANGELOG.md" LogicalName="Nexforge.Changelog.md" />
     </ItemGroup>
     <Target Name="PrepareNfgEnvironmentKey"
             BeforeTargets="PrepareResources"
@@ -52,4 +57,15 @@
         <PackageReference Include="System.Drawing.Common" Version="10.0.9" />
         <PackageReference Include="WgcSharp" Version="1.1.1" />
     </ItemGroup>
+<!-- Add immediately before the closing </Project> in AION 2 Companion.csproj.
+     Nested independent SDK project sources must not compile into the main Companion. -->
+<PropertyGroup>
+  <DefaultItemExcludes>$(DefaultItemExcludes);Nexforge.Installer\**</DefaultItemExcludes>
+</PropertyGroup>
+<ItemGroup>
+  <Compile Remove="Nexforge.Installer\**\*.cs" />
+  <AvaloniaResource Remove="Nexforge.Installer\**\*.axaml" />
+  <None Remove="Nexforge.Installer\**\*" />
+</ItemGroup>
+
 </Project>

@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="AION_2_Companion.Views.Overlays.DpsOverlayWindow"
         x:CompileBindings="False"
-        Width="312" Height="390"
+        Width="328" Height="408"
         MinWidth="280" MinHeight="120"
         MaxWidth="440" MaxHeight="580"
         Title="AION 2 · DPS"
@@ -11,6 +11,8 @@
         ExtendClientAreaToDecorationsHint="True"
         SystemDecorations="None"
         Topmost="True"
+        ShowActivated="False"
+        Focusable="False"
         ShowInTaskbar="False"
         CanResize="True"
         FontFamily="Inter, Segoe UI Variable Text, Segoe UI"
@@ -28,7 +30,7 @@
         <GradientStop Color="#F2181118" Offset="1"/>
       </LinearGradientBrush>
     </Border.Background>
-    <Grid RowDefinitions="Auto,Auto,*">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*">
       
       <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Background="Transparent"
             PointerPressed="HeaderDrag">
@@ -36,49 +38,73 @@
         <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8"
                     VerticalAlignment="Center" HorizontalAlignment="Left">
           <Ellipse Width="7" Height="7" Fill="#58E0B2" VerticalAlignment="Center"/>
-          <TextBlock Text="DPS // LIVE" FontSize="11" FontWeight="SemiBold" Foreground="#45DFFF"/>
+          <TextBlock Text="{DynamicResource DpsLive}" FontSize="11" FontWeight="SemiBold" Foreground="#45DFFF"/>
           <TextBlock Name="TimerText" FontSize="10" Foreground="#71879B" VerticalAlignment="Center"/>
         </StackPanel>
         
-        <TextBlock Grid.Column="1" Text="Vakron" Name="MobName" FontSize="12" FontWeight="SemiBold"
+        <TextBlock Grid.Column="1" Text="—" Name="MobName" FontSize="12" FontWeight="SemiBold"
                    HorizontalAlignment="Center" VerticalAlignment="Center"
                    TextTrimming="CharacterEllipsis" Margin="8,0"/>
         
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2"
                     HorizontalAlignment="Right" VerticalAlignment="Center">
           <Button Classes="ui quiet" Content="◐" Padding="5,1" FontSize="11"
-                  Click="OpacityClick" ToolTip.Tip="Átlátszóság váltása"/>
+                  Click="OpacityClick" ToolTip.Tip="{DynamicResource ToggleOpacity}"/>
           <Button Classes="ui quiet" Content="–" Padding="5,1" FontSize="11"
-                  Click="CollapseClick" ToolTip.Tip="Összecsukás"/>
+                  Click="CollapseClick" ToolTip.Tip="{DynamicResource Collapse}"/>
           <Button Classes="ui quiet" Content="×" Padding="5,1" FontSize="11"
                   Click="CloseClick"/>
         </StackPanel>
       </Grid>
 
+      <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,*" Margin="0,7,0,0">
+        <Button Name="AllEncountersButton" Classes="ui" Content="{DynamicResource EncounterModeAll}"
+                FontSize="9" MinHeight="25" Padding="9,1" Click="EncounterModeClick" Tag="All"/>
+        <Button Grid.Column="1" Name="BossEncountersButton" Classes="ui" Content="{DynamicResource EncounterModeBosses}"
+                FontSize="9" MinHeight="25" Padding="9,1" Margin="4,0,0,0"
+                Click="EncounterModeClick" Tag="Bosses"/>
+        <TextBlock Grid.Column="2" Name="EncounterModeHint" Classes="hint" FontSize="9"
+                   HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+      </Grid>
+
+      <Border Grid.Row="2" Name="BossStatusPanel" Classes="inset" CornerRadius="9"
+              Padding="9,6" Margin="0,7,0,0" IsVisible="False">
+        <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto">
+          <TextBlock Text="{DynamicResource BossHp}" Classes="eyebrow" FontSize="8"/>
+          <TextBlock Grid.Column="1" Name="EnrageText" Classes="mono" FontSize="9" Foreground="#FF9B52"/>
+          <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+            <ProgressBar Name="BossHpBar" Height="7" Minimum="0" Maximum="100"
+                         Background="#263A50" Foreground="#45DFFF" VerticalAlignment="Center"/>
+            <TextBlock Grid.Column="1" Name="BossHpText" Classes="mono" FontSize="10"
+                       Margin="8,0,0,0" VerticalAlignment="Center"/>
+          </Grid>
+        </Grid>
+      </Border>
+
       <!-- 1. Élő összegzés: pillanatnyi, átlag, csúcs -->
-      <Grid Grid.Row="1" ColumnDefinitions="*,*,*" Margin="0,8,0,0">
+      <Grid Grid.Row="3" ColumnDefinitions="*,*,*" Margin="0,8,0,0">
         <Border Classes="inset" CornerRadius="9" Padding="8,6" Margin="0,0,5,0">
           <StackPanel Spacing="2">
-            <TextBlock Text="MOST · 5S" FontSize="8" FontWeight="SemiBold" Foreground="#71879B"/>
+            <TextBlock Text="{DynamicResource CurrentFiveSeconds}" FontSize="8" FontWeight="SemiBold" Foreground="#71879B"/>
             <TextBlock Name="NowValue" FontSize="15" FontWeight="SemiBold" Foreground="#58E0B2"/>
           </StackPanel>
         </Border>
         <Border Grid.Column="1" Classes="inset" CornerRadius="9" Padding="8,6" Margin="0,0,5,0">
           <StackPanel Spacing="2">
-            <TextBlock Text="ÁTLAG" FontSize="8" FontWeight="SemiBold" Foreground="#71879B"/>
+            <TextBlock Text="{DynamicResource Average}" FontSize="8" FontWeight="SemiBold" Foreground="#71879B"/>
             <TextBlock Name="AvgValue" FontSize="15" FontWeight="SemiBold"/>
           </StackPanel>
         </Border>
         <Border Grid.Column="2" Classes="inset" CornerRadius="9" Padding="8,6">
           <StackPanel Spacing="2">
-            <TextBlock Text="CSÚCS" FontSize="8" FontWeight="SemiBold" Foreground="#71879B"/>
+            <TextBlock Text="{DynamicResource Peak}" FontSize="8" FontWeight="SemiBold" Foreground="#71879B"/>
             <TextBlock Name="PeakValue" FontSize="15" FontWeight="SemiBold" Foreground="#FF9B52"/>
           </StackPanel>
         </Border>
       </Grid>
 
       <!-- 2. Törzs (összecsukható) -->
-      <Grid Grid.Row="2" Name="Body" RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="0,7,0,0">
+      <Grid Grid.Row="4" Name="Body" RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="0,7,0,0">
 
         <!-- Mód váltó nyilakkal -->
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
@@ -90,22 +116,22 @@
 
         <!-- Oszlop kapcsolók -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="5" Margin="0,4,0,5">
-          <Button Name="ToggleTotal" Classes="ui" Content="Össz" FontSize="10" MinHeight="26" Padding="8,1" Click="ToggleTotalClick"/>
+          <Button Name="ToggleTotal" Classes="ui" Content="{DynamicResource TotalShort}" FontSize="10" MinHeight="26" Padding="8,1" Click="ToggleTotalClick"/>
           <Button Name="ToggleShare" Classes="ui" Content="%" FontSize="10" MinHeight="26" Padding="8,1" Click="ToggleShareClick"/>
-          <Button Name="ToggleCrit" Classes="ui" Content="Krit" FontSize="10" MinHeight="26" Padding="8,1" Click="ToggleCritClick"/>
+          <Button Name="ToggleCrit" Classes="ui" Content="{DynamicResource CritShort}" FontSize="10" MinHeight="26" Padding="8,1" Click="ToggleCritClick"/>
         </StackPanel>
 
         <!-- Oszlopfejlécek -->
         <Grid Grid.Row="2" ColumnDefinitions="14,20,*,54,48,34,34" Margin="6,0,6,4">
-          <TextBlock Grid.Column="2" Text="JÁTÉKOS" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496"
+          <TextBlock Grid.Column="2" Text="{DynamicResource PlayerHeader}" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496"
                      Margin="8,0,0,0"/>
           <TextBlock Grid.Column="3" Name="HdrMetric" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496"
                      TextAlignment="Right"/>
-          <TextBlock Grid.Column="4" Name="HdrTotal" Text="ÖSSZ" FontSize="9" FontWeight="SemiBold"
+          <TextBlock Grid.Column="4" Name="HdrTotal" Text="{DynamicResource TotalShort}" FontSize="9" FontWeight="SemiBold"
                      Foreground="#7B8496" TextAlignment="Right"/>
           <TextBlock Grid.Column="5" Name="HdrShare" Text="%" FontSize="9" FontWeight="SemiBold"
                      Foreground="#7B8496" TextAlignment="Right"/>
-          <TextBlock Grid.Column="6" Name="HdrCrit" Text="KRIT" FontSize="9" FontWeight="SemiBold"
+          <TextBlock Grid.Column="6" Name="HdrCrit" Text="{DynamicResource CritShort}" FontSize="9" FontWeight="SemiBold"
                      Foreground="#7B8496" TextAlignment="Right"/>
         </Grid>
 

@@ -49,6 +49,15 @@
         <Setter Property="Background" Value="#8BECFF"/>
         <Setter Property="BorderBrush" Value="#8BECFF"/>
       </Style>
+      <Style Selector="^.gold">
+        <Setter Property="Background" Value="#2CC9A85C"/>
+        <Setter Property="BorderBrush" Value="#7AD8B96A"/>
+        <Setter Property="Foreground" Value="#F3DBA2"/>
+      </Style>
+      <Style Selector="^.gold:pointerover">
+        <Setter Property="Background" Value="#43C9A85C"/>
+        <Setter Property="BorderBrush" Value="#D8B96A"/>
+      </Style>
       <Style Selector="^.nav">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
@@ -84,6 +93,26 @@
       <Style Selector="^.quiet:pointerover">
         <Setter Property="Background" Value="#40203A52"/>
         <Setter Property="Foreground" Value="#45DFFF"/>
+      </Style>
+      <Style Selector="^.settingsNav">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="MinHeight" Value="48"/>
+        <Setter Property="Padding" Value="11,7"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Foreground" Value="#8399AE"/>
+      </Style>
+      <Style Selector="^.settingsNav:pointerover">
+        <Setter Property="Background" Value="#4514263A"/>
+        <Setter Property="Foreground" Value="#EAF8FF"/>
+      </Style>
+      <Style Selector="^.settingsNav.active">
+        <Setter Property="Background" Value="#6B123047"/>
+        <Setter Property="BorderBrush" Value="#45DFFF"/>
+        <Setter Property="BorderThickness" Value="2,0,0,0"/>
+        <Setter Property="Padding" Value="9,7,11,7"/>
+        <Setter Property="Foreground" Value="#FFFFFF"/>
       </Style>
     </ControlTheme>
   </Styles.Resources>
@@ -144,6 +173,36 @@
     <Setter Property="BorderThickness" Value="1"/>
     <Setter Property="CornerRadius" Value="20"/>
     <Setter Property="BoxShadow" Value="0 18 48 0 #70000000"/>
+  </Style>
+
+  <Style Selector="Border.settingsSection">
+    <Setter Property="Background" Value="#D20B1522"/>
+    <Setter Property="BorderBrush" Value="#304A63"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="16"/>
+    <Setter Property="Padding" Value="18"/>
+    <Setter Property="BoxShadow" Value="0 10 28 0 #46000000"/>
+  </Style>
+
+  <Style Selector="Border.settingsIcon">
+    <Setter Property="Width" Value="34"/>
+    <Setter Property="Height" Value="34"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="Background" Value="#5A123047"/>
+    <Setter Property="BorderBrush" Value="#42677D"/>
+    <Setter Property="BorderThickness" Value="1"/>
+  </Style>
+
+  <Style Selector="Border.goldPill">
+    <Setter Property="Background" Value="#29C9A95B"/>
+    <Setter Property="BorderBrush" Value="#70C9A95B"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="999"/>
+    <Setter Property="Padding" Value="10,4"/>
+  </Style>
+
+  <Style Selector="TextBlock.gold">
+    <Setter Property="Foreground" Value="#D8BD78"/>
   </Style>
 
   <Style Selector="TextBlock.eyebrow">

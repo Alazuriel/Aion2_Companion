@@ -210,23 +210,26 @@ public static class UpdateService
         return destinationPath;
     }
 
-    public static void LaunchInstaller(string installerPath)
+    public static void LaunchSilentInstaller(string installerPath)
     {
-        string language = CompanionSettings.LanguageCode.ToLowerInvariant() switch
-        {
-            "hu" => "hungarian",
-            "de" => "german",
-            "pl" => "polish",
-            _ => "english",
-        };
-
-        Process.Start(new ProcessStartInfo
+        string language = LocalizationService.NormalizeLanguageCode(
+            CompanionSettings.LanguageCode);
+        string installDirectory = Path.TrimEndingDirectorySeparator(
+            Path.GetFullPath(AppContext.BaseDirectory));
+        var startInfo = new ProcessStartInfo
         {
             FileName = installerPath,
-            Arguments = $"/LANG={language} /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS",
-            UseShellExecute = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
             WorkingDirectory = Path.GetDirectoryName(installerPath) ?? string.Empty,
-        });
+        };
+        startInfo.ArgumentList.Add("--silent-update");
+        startInfo.ArgumentList.Add("--language=" + language);
+        startInfo.ArgumentList.Add("--install-dir=" + installDirectory);
+        startInfo.ArgumentList.Add("--wait-pid=" + Environment.ProcessId);
+
+        _ = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Unable to start the background updater.");
     }
 
     private static HttpClient CreateClient()

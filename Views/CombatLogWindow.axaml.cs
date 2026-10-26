@@ -17,12 +17,19 @@ namespace AION_2_Companion.Views;
 public sealed class CombatLogListRow
 {
     public required CombatLogEntry Entry { get; init; }
+    public bool BossOnly { get; init; }
     public string Title => Entry.MobName;
     public string DateText => Entry.EndedAtUtc.ToLocalTime().ToString("yyyy.MM.dd.  HH:mm:ss");
     public string DurationText => FormatDuration(Entry.Duration);
-    public string TotalsText =>
-        $"DMG {Meter.Num(Entry.TotalDamage)}  ·  HEAL {Meter.Num(Entry.TotalHealing)}";
-    public string StateText => Entry.Completed ? string.Empty : "Megszakított fight";
+    public string TotalsText
+    {
+        get
+        {
+            MeterSnapshot snapshot = Entry.ToSnapshot(BossOnly);
+            return $"DMG {Meter.Num(snapshot.TotalDamage)}  ·  HEAL {Meter.Num(snapshot.TotalHealing)}";
+        }
+    }
+    public string StateText => Entry.Completed ? string.Empty : LocalizationService.Get("InterruptedFight");
     public string FavoriteText => Entry.IsFavorite ? "★" : string.Empty;
 
     private static string FormatDuration(double seconds)
@@ -37,10 +44,11 @@ public sealed class CombatLogPlayerRow
     public required PlayerStat Player { get; init; }
     public string Name => Player.Name;
     public string ClassName => string.IsNullOrWhiteSpace(Player.ClassName)
-        ? "Ismeretlen class"
+        ? LocalizationService.Get("UnknownClass")
         : Player.ClassName;
     public string DamageText => $"{Meter.Num(Player.Damage)} · {Meter.Format(Player.Dps, MeterMode.Dps)}";
-    public string HealingText => $"Heal {Meter.Num(Player.Healing)} · {Meter.Format(Player.Hps, MeterMode.Hps)}";
+    public string HealingText =>
+        $"{LocalizationService.Get("Healing")} {Meter.Num(Player.Healing)} · {Meter.Format(Player.Hps, MeterMode.Hps)}";
 }
 
 public sealed class CombatLogSkillRow
@@ -74,12 +82,30 @@ public partial class CombatLogWindow : UserControl
 
         this.FindControl<TextBlock>("StorageText")!.Text = CombatLogStore.LogDirectory;
         _store.Changed += StoreChanged;
-        DetachedFromVisualTree += (_, _) => _store.Changed -= StoreChanged;
+        LocalizationService.LanguageChanged += LanguageChanged;
+        CompanionSettings.DpsEncounterModeChanged += EncounterModeChanged;
+        DetachedFromVisualTree += (_, _) =>
+        {
+            _store.Changed -= StoreChanged;
+            LocalizationService.LanguageChanged -= LanguageChanged;
+            CompanionSettings.DpsEncounterModeChanged -= EncounterModeChanged;
+        };
         RefreshLogs();
     }
 
+    private void LanguageChanged(object? sender, EventArgs e) => RefreshLogs();
+
     private void StoreChanged(object? sender, EventArgs e) =>
         Dispatcher.UIThread.Post(RefreshLogs);
+
+    private void EncounterModeChanged(object? sender, EventArgs e) =>
+        Dispatcher.UIThread.Post(() =>
+        {
+            ApplyFilter(_selectedEntry?.Id);
+            UpdateSessionSummary();
+        });
+
+    private bool BossOnly => CompanionSettings.DpsEncounterMode == DpsEncounterMode.Bosses;
 
     private void RefreshLogs()
     {
@@ -96,6 +122,8 @@ public partial class CombatLogWindow : UserControl
         bool favoritesOnly = this.FindControl<CheckBox>("FavoritesOnlyToggle")?.IsChecked == true;
 
         IEnumerable<CombatLogEntry> filtered = _allEntries;
+        if (BossOnly)
+            filtered = filtered.Where(entry => entry.IsBossEncounter);
         if (favoritesOnly)
             filtered = filtered.Where(entry => entry.IsFavorite);
 
@@ -107,10 +135,15 @@ public partial class CombatLogWindow : UserControl
 
         Fights.Clear();
         foreach (CombatLogEntry entry in filtered)
-            Fights.Add(new CombatLogListRow { Entry = entry });
+            Fights.Add(new CombatLogListRow { Entry = entry, BossOnly = BossOnly });
+
+        this.FindControl<Button>("AllEncountersButton")!.Classes.Set("primary", !BossOnly);
+        this.FindControl<Button>("BossEncountersButton")!.Classes.Set("primary", BossOnly);
 
         this.FindControl<TextBlock>("FightCountText")!.Text =
-            Fights.Count == _allEntries.Count ? $"{Fights.Count} fight" : $"{Fights.Count} / {_allEntries.Count}";
+            Fights.Count == _allEntries.Count
+                ? LocalizationService.Format("FightCount", Fights.Count)
+                : LocalizationService.Format("FightCountFiltered", Fights.Count, _allEntries.Count);
         this.FindControl<TextBlock>("EmptyLogText")!.IsVisible = Fights.Count == 0;
 
         string? wantedId = preferredId ?? _selectedEntry?.Id;
@@ -135,27 +168,38 @@ public partial class CombatLogWindow : UserControl
 
     private void FavoritesFilterChanged(object? sender, RoutedEventArgs e) => ApplyFilter();
 
+    private void EncounterModeClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string mode })
+            return;
+        CompanionSettings.DpsEncounterMode = mode.Equals("Bosses", StringComparison.OrdinalIgnoreCase)
+            ? DpsEncounterMode.Bosses
+            : DpsEncounterMode.All;
+    }
+
     private void FightSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (sender is not ListBox { SelectedItem: CombatLogListRow row })
             return;
 
         _deleteArmed = false;
-        this.FindControl<Button>("DeleteButton")!.Content = "Törlés";
+        this.FindControl<Button>("DeleteButton")!.Content = LocalizationService.Get("Delete");
         _selectedEntry = row.Entry;
-        _selectedSnapshot = row.Entry.ToSnapshot();
+        _selectedSnapshot = row.Entry.ToSnapshot(BossOnly);
 
         this.FindControl<TextBlock>("EncounterName")!.Text = row.Entry.MobName;
         this.FindControl<TextBlock>("EncounterMeta")!.Text =
-            $"{row.DateText}  ·  {row.DurationText}  ·  {row.Entry.Players.Count} játékos" +
-            (row.Entry.Completed ? string.Empty : "  ·  megszakított");
+            $"{row.DateText}  ·  {row.DurationText}  ·  " +
+            LocalizationService.Format("PlayerCount", row.Entry.Players.Count) +
+            (row.Entry.Completed ? string.Empty : $"  ·  {LocalizationService.Get("Interrupted")}");
 
         double duration = Math.Max(0.001, row.Entry.Duration);
-        this.FindControl<TextBlock>("TotalDamageText")!.Text = Meter.Num(row.Entry.TotalDamage);
-        this.FindControl<TextBlock>("TotalDpsText")!.Text = Meter.Format(row.Entry.TotalDamage / duration, MeterMode.Dps);
-        this.FindControl<TextBlock>("TotalHealingText")!.Text = Meter.Num(row.Entry.TotalHealing);
-        this.FindControl<TextBlock>("TotalHpsText")!.Text = Meter.Format(row.Entry.TotalHealing / duration, MeterMode.Hps);
-        this.FindControl<Button>("FavoriteButton")!.Content = row.Entry.IsFavorite ? "★ Kedvenc" : "☆ Kedvenc";
+        this.FindControl<TextBlock>("TotalDamageText")!.Text = Meter.Num(_selectedSnapshot.TotalDamage);
+        this.FindControl<TextBlock>("TotalDpsText")!.Text = Meter.Format(_selectedSnapshot.TotalDamage / duration, MeterMode.Dps);
+        this.FindControl<TextBlock>("TotalHealingText")!.Text = Meter.Num(_selectedSnapshot.TotalHealing);
+        this.FindControl<TextBlock>("TotalHpsText")!.Text = Meter.Format(_selectedSnapshot.TotalHealing / duration, MeterMode.Hps);
+        this.FindControl<Button>("FavoriteButton")!.Content =
+            $"{(row.Entry.IsFavorite ? "★" : "☆")} {LocalizationService.Get("Favorite")}";
         this.FindControl<TextBox>("NotesBox")!.Text = row.Entry.Notes;
 
         Players.Clear();
@@ -176,7 +220,7 @@ public partial class CombatLogWindow : UserControl
         _selectedPlayer = row.Player;
         this.FindControl<TextBlock>("SelectedPlayerName")!.Text = row.Player.Name;
         this.FindControl<TextBlock>("SelectedPlayerMeta")!.Text =
-            $"{row.ClassName}  ·  {row.Player.Events.Count} esemény  ·  " +
+            $"{row.ClassName}  ·  {LocalizationService.Format("EventCount", row.Player.Events.Count)}  ·  " +
             $"DPS {Meter.Num(row.Player.Dps)}  ·  HPS {Meter.Num(row.Player.Hps)}";
 
         Skills.Clear();
@@ -218,7 +262,7 @@ public partial class CombatLogWindow : UserControl
             .Select(entry => new
             {
                 Entry = entry,
-                Player = entry.ToSnapshot().Players.FirstOrDefault(player =>
+                Player = entry.ToSnapshot(BossOnly).Players.FirstOrDefault(player =>
                     string.Equals(player.Name, selectedPlayer.Name, StringComparison.OrdinalIgnoreCase))
             })
             .Where(item => item.Player is not null)
@@ -238,9 +282,13 @@ public partial class CombatLogWindow : UserControl
         long allTimeBestHit = comparable.Select(item => item.BestHit).DefaultIfEmpty(0).Max();
         double bestHps = comparable.Select(item => item.Player.Hps).DefaultIfEmpty(0).Max();
 
-        string badge = rank == 1 && comparable.Count > 0 ? "🏆 DPS rekord" : $"DPS #{rank}/{comparable.Count}";
-        string hitBadge = bestHit == allTimeBestHit && bestHit > 0 ? " · legnagyobb hit rekord" : string.Empty;
-        string healBadge = selectedPlayer.Hps >= bestHps && bestHps > 0 ? " · HPS rekord" : string.Empty;
+        string badge = rank == 1 && comparable.Count > 0
+            ? LocalizationService.Get("DpsRecord")
+            : LocalizationService.Format("DpsRank", rank, comparable.Count);
+        string hitBadge = bestHit == allTimeBestHit && bestHit > 0
+            ? LocalizationService.Get("BestHitRecord") : string.Empty;
+        string healBadge = selectedPlayer.Hps >= bestHps && bestHps > 0
+            ? LocalizationService.Get("HpsRecord") : string.Empty;
         this.FindControl<TextBlock>("RecordText")!.Text = badge + hitBadge + healBadge;
     }
 
@@ -248,25 +296,27 @@ public partial class CombatLogWindow : UserControl
     {
         List<CombatLogEntry> session = _allEntries
             .Where(entry => entry.EndedAtUtc >= _store.SessionStartedAtUtc)
+            .Where(entry => !BossOnly || entry.IsBossEncounter)
             .ToList();
 
         if (session.Count == 0)
         {
-            this.FindControl<TextBlock>("SessionText")!.Text = "Ebben a munkamenetben még nincs lezárt fight.";
+            this.FindControl<TextBlock>("SessionText")!.Text = LocalizationService.Get("NoSessionFight");
             return;
         }
 
         double seconds = session.Sum(entry => entry.Duration);
-        long damage = session.Sum(entry => entry.TotalDamage);
-        long healing = session.Sum(entry => entry.TotalHealing);
-        CombatLogEntry best = session.OrderByDescending(entry =>
-            entry.TotalDamage / Math.Max(0.001, entry.Duration)).First();
+        var sessionSnapshots = session.Select(entry => (Entry: entry, Snapshot: entry.ToSnapshot(BossOnly))).ToList();
+        long damage = sessionSnapshots.Sum(item => item.Snapshot.TotalDamage);
+        long healing = sessionSnapshots.Sum(item => item.Snapshot.TotalHealing);
+        var best = sessionSnapshots.OrderByDescending(item =>
+            item.Snapshot.TotalDamage / Math.Max(0.001, item.Entry.Duration)).First();
         int total = Math.Max(0, (int)Math.Round(seconds));
 
-        this.FindControl<TextBlock>("SessionText")!.Text =
-            $"{session.Count} fight  ·  {total / 60:00}:{total % 60:00} harcidő  ·  " +
-            $"{Meter.Num(damage)} damage  ·  {Meter.Num(healing)} heal  ·  " +
-            $"legjobb group DPS: {best.MobName} ({Meter.Num(best.TotalDamage / Math.Max(0.001, best.Duration))}/s)";
+        this.FindControl<TextBlock>("SessionText")!.Text = LocalizationService.Format(
+            "SessionSummary", session.Count, $"{total / 60:00}:{total % 60:00}", Meter.Num(damage),
+            Meter.Num(healing), best.Entry.MobName,
+            Meter.Num(best.Snapshot.TotalDamage / Math.Max(0.001, best.Entry.Duration)));
     }
 
     private void ClearDetails()
@@ -275,7 +325,7 @@ public partial class CombatLogWindow : UserControl
         _selectedSnapshot = null;
         Players.Clear();
         Skills.Clear();
-        this.FindControl<TextBlock>("EncounterName")!.Text = "Nincs kijelölt fight";
+        this.FindControl<TextBlock>("EncounterName")!.Text = LocalizationService.Get("NoSelectedFight");
         this.FindControl<TextBlock>("EncounterMeta")!.Text = "—";
         this.FindControl<TextBlock>("TotalDamageText")!.Text = "—";
         this.FindControl<TextBlock>("TotalDpsText")!.Text = "—";
@@ -300,7 +350,7 @@ public partial class CombatLogWindow : UserControl
     {
         _selectedPlayer = null;
         Skills.Clear();
-        this.FindControl<TextBlock>("SelectedPlayerName")!.Text = "Játékos részletei";
+        this.FindControl<TextBlock>("SelectedPlayerName")!.Text = LocalizationService.Get("PlayerDetails");
         this.FindControl<TextBlock>("SelectedPlayerMeta")!.Text = "—";
         this.FindControl<TextBlock>("RecordText")!.Text = string.Empty;
         this.FindControl<Button>("PlayerDetailsButton")!.IsEnabled = false;
@@ -321,7 +371,7 @@ public partial class CombatLogWindow : UserControl
             return;
         _selectedEntry.Notes = this.FindControl<TextBox>("NotesBox")!.Text?.Trim() ?? string.Empty;
         if (_store.UpdateMetadata(_selectedEntry))
-            this.FindControl<TextBlock>("ActionStatusText")!.Text = "Jegyzet elmentve.";
+            this.FindControl<TextBlock>("ActionStatusText")!.Text = LocalizationService.Get("NotesSaved");
     }
 
     private void DeleteClick(object? sender, RoutedEventArgs e)
@@ -332,13 +382,13 @@ public partial class CombatLogWindow : UserControl
         if (!_deleteArmed)
         {
             _deleteArmed = true;
-            button.Content = "Törlés megerősítése";
+            button.Content = LocalizationService.Get("ConfirmDelete");
             return;
         }
         string id = _selectedEntry.Id;
         _selectedEntry = null;
         _deleteArmed = false;
-        button.Content = "Törlés";
+        button.Content = LocalizationService.Get("Delete");
         _store.Delete(id);
     }
 
@@ -346,7 +396,7 @@ public partial class CombatLogWindow : UserControl
     {
         if (_selectedEntry is null)
             return;
-        MeterSnapshot snapshot = _selectedEntry.ToSnapshot();
+        MeterSnapshot snapshot = _selectedEntry.ToSnapshot(BossOnly);
         var text = new StringBuilder();
         text.AppendLine($"**{EscapeMarkdown(_selectedEntry.MobName)}** — {FormatDuration(_selectedEntry.Duration)}");
         int rank = 1;
@@ -361,14 +411,16 @@ public partial class CombatLogWindow : UserControl
                 text.Append(" | ").Append(Meter.Format(player.Hps, MeterMode.Hps)).Append(" heal");
             text.AppendLine();
         }
-        text.Append("**Összesen:** ").Append(Meter.Num(_selectedEntry.TotalDamage))
-            .Append(" damage · ").Append(Meter.Num(_selectedEntry.TotalHealing)).Append(" heal");
+        text.Append(LocalizationService.Format(
+            "DiscordTotalLine",
+            Meter.Num(snapshot.TotalDamage),
+            Meter.Num(snapshot.TotalHealing)));
 
         var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
         if (clipboard is not null)
         {
             await clipboard.SetTextAsync(text.ToString());
-            this.FindControl<TextBlock>("ActionStatusText")!.Text = "Discord-formátum a vágólapra másolva.";
+            this.FindControl<TextBlock>("ActionStatusText")!.Text = LocalizationService.Get("DiscordCopied");
         }
     }
 
@@ -383,24 +435,24 @@ public partial class CombatLogWindow : UserControl
         {
             _comparisonBase = _selectedEntry;
             this.FindControl<TextBlock>("ComparisonHint")!.Text =
-                $"Alap: {_comparisonBase.MobName} · {_comparisonBase.EndedAtUtc.ToLocalTime():MM.dd HH:mm} · " +
-                "második fight nincs kijelölve";
-            this.FindControl<Button>("CompareButton")!.Content = "Összehasonlítás ezzel";
+                LocalizationService.Format("ComparisonBase", _comparisonBase.MobName,
+                    _comparisonBase.EndedAtUtc.ToLocalTime().ToString("MM.dd HH:mm"));
+            this.FindControl<Button>("CompareButton")!.Content = LocalizationService.Get("CompareWithThis");
             return;
         }
         if (_comparisonBase.Id == _selectedEntry.Id)
         {
-            this.FindControl<TextBlock>("ComparisonHint")!.Text = "A második fight megegyezik az alappal.";
+            this.FindControl<TextBlock>("ComparisonHint")!.Text = LocalizationService.Get("SameComparisonFight");
             return;
         }
-        var comparison = new CombatComparisonWindow(_comparisonBase, _selectedEntry);
+        var comparison = new CombatComparisonWindow(_comparisonBase, _selectedEntry, BossOnly);
         if (TopLevel.GetTopLevel(this) is Window owner)
             comparison.Show(owner);
         else
             comparison.Show();
         _comparisonBase = null;
         this.FindControl<TextBlock>("ComparisonHint")!.Text = string.Empty;
-        this.FindControl<Button>("CompareButton")!.Content = "Összehasonlítás";
+        this.FindControl<Button>("CompareButton")!.Content = LocalizationService.Get("Compare");
     }
 
     private void OpenDpsClick(object? sender, RoutedEventArgs e)

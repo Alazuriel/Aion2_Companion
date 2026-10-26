@@ -92,12 +92,12 @@
                                        Foreground="#FFB454"/>
                         </StackPanel>
                         <TextBlock x:Name="PetSyncTitle"
-                                   Text="Teljes lista nélkül"
+                        Text="{DynamicResource PetUnknownTitle}"
                                    FontSize="14"
                                    FontWeight="SemiBold"
                                    Foreground="#F4F7FF"/>
                         <TextBlock x:Name="PetSyncDescription"
-                                   Text="A petek tulajdonosi állapota nem ismert. Az ismeretleneket ideiglenesen mutatjuk."
+                                   Text="{DynamicResource PetUnknownText}"
                                    FontSize="10"
                                    TextWrapping="Wrap"
                                    Foreground="#8EA3B8"/>
@@ -108,18 +108,18 @@
                 <StackPanel Spacing="6">
 
                     <TextBlock
-                        Text="Megjelenítés"
+                        Text="{DynamicResource Display}"
                         FontSize="12"
                         Foreground="#8E9DB7"/>
 
                     <TextBlock
-                        Text="Összes pet"
+                        Text="{DynamicResource AllPets}"
                         FontSize="16"
                         FontWeight="SemiBold"
                         Foreground="White"/>
 
                     <TextBlock
-                        Text="Minden kategória aktív"
+                        Text="{DynamicResource AllCategoriesActive}"
                         FontSize="11"
                         Foreground="#38C9FF"/>
                 </StackPanel>
@@ -137,7 +137,7 @@
                           Margin="12,0">
 
                         <TextBlock
-                            Text="Petek megjelenítése"
+                            Text="{DynamicResource ShowPets}"
                             VerticalAlignment="Center"
                             Foreground="White"
                             FontSize="12"
@@ -146,7 +146,7 @@
                         <TextBlock
                             x:Name="PetVisibilityState"
                             Grid.Column="1"
-                            Text="BE"
+                            Text="{DynamicResource On}"
                             VerticalAlignment="Center"
                             Foreground="#43C9FF"
                             FontWeight="Bold"
@@ -163,7 +163,7 @@
                         CornerRadius="9"
                         IsHitTestVisible="False">
                     <Grid ColumnDefinitions="*,Auto" Margin="12,0">
-                        <TextBlock Text="SZŰRŐK / KERESÉS"
+                        <TextBlock Text="{DynamicResource FiltersSearch}"
                                    FontSize="12" FontWeight="Bold"
                                    Foreground="White" VerticalAlignment="Center" />
                         <TextBlock Grid.Column="1" Text="⌕"
@@ -187,7 +187,7 @@
                             Foreground="#A5B7D4"/>
 
                         <TextBlock
-                            Text="5 269 spawnpont"
+                            Text="{DynamicResource SpawnPointsCount}"
                             FontSize="19"
                             FontWeight="Bold"
                             Foreground="White"/>
@@ -196,7 +196,7 @@
 
                 <!-- KÉSŐBBI FUNKCIÓK -->
                 <TextBlock
-                    Text="Alapból csak a hiányzók. A keresőben módosíthatod a szűrést."
+                    Text="{DynamicResource DefaultMissingHint}"
                     FontSize="12"
                     TextWrapping="Wrap"
                     Foreground="#A5B7D4"/>

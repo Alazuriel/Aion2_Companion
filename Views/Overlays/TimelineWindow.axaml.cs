@@ -42,11 +42,13 @@ public partial class TimelineWindow : Window
     private double? _cursorTime;
     private bool _syncingScroll;
 
-    public TimelineWindow() : this(DemoData.Build().Players[0], DemoData.Build()) { }
+    public TimelineWindow() : this(new PlayerStat(), new MeterSnapshot()) { }
 
     public TimelineWindow(PlayerStat player, MeterSnapshot snapshot)
     {
         AvaloniaXamlLoader.Load(this);
+        LocalizationService.LanguageChanged += LanguageChanged;
+        Closed += (_, _) => LocalizationService.LanguageChanged -= LanguageChanged;
 
         // Vízszintes scroll szinkron chart ↔ sávok
         var chart = this.FindControl<Canvas>("ChartCanvas")!;
@@ -109,9 +111,10 @@ public partial class TimelineWindow : Window
         _zoom = 1.0;
         _cursorTime = null;
 
-        this.FindControl<TextBlock>("TimelineTitle")!.Text = $"{player.Name} · idővonal";
-        this.FindControl<TextBlock>("TimelineSub")!.Text =
-            $"Harc {FormatTime(snapshot.Duration)}  ·  {snapshot.Players.Count} játékos  ·  görgő = zoom, kattintás = részlet";
+        this.FindControl<TextBlock>("TimelineTitle")!.Text = LocalizationService.Format(
+            "TimelineTitleFormat", player.Name);
+        this.FindControl<TextBlock>("TimelineSub")!.Text = LocalizationService.Format(
+            "TimelineSubtitle", FormatTime(snapshot.Duration), snapshot.Players.Count);
 
         ComputeScale();
         BuildChips();
@@ -159,8 +162,8 @@ public partial class TimelineWindow : Window
         UpdateModeUi();
         DrawChart();
 
-        this.FindControl<TextBlock>("LanesTitle")!.Text =
-            $"Skillek idővonalon · {_player.Name}  ·  zoom ×{_zoom:0.0}  ·  {_pxPerSecond:0} px/s";
+        this.FindControl<TextBlock>("LanesTitle")!.Text = LocalizationService.Format(
+            "SkillsTimeline", _player.Name, _zoom, _pxPerSecond);
 
         e.Handled = true;
     }
@@ -186,10 +189,10 @@ public partial class TimelineWindow : Window
 
         this.FindControl<TextBlock>("ChartTitle")!.Text = _mode switch
         {
-            MeterMode.Dps => $"DPS · görgő = zoom (×{_zoom:0.0})",
-            MeterMode.Hps => $"HPS · görgő = zoom (×{_zoom:0.0})",
-            MeterMode.Damage => $"Összes sebzés · görgő = zoom (×{_zoom:0.0})",
-            _ => $"Összes gyógyítás · görgő = zoom (×{_zoom:0.0})",
+            MeterMode.Dps => LocalizationService.Format("TimelineChartDps", _zoom),
+            MeterMode.Hps => LocalizationService.Format("TimelineChartHps", _zoom),
+            MeterMode.Damage => LocalizationService.Format("TimelineChartDamage", _zoom),
+            _ => LocalizationService.Format("TimelineChartHealing", _zoom),
         };
     }
 
@@ -279,7 +282,7 @@ public partial class TimelineWindow : Window
 
         double t = (pos.X - ChartLeft) / _pxPerSecond;
         var lines = new System.Text.StringBuilder();
-        lines.AppendLine($"Idő: {FormatTime(t)}");
+        lines.AppendLine(LocalizationService.Format("TimeValue", FormatTime(t)));
 
         foreach (int i in Enumerable.Range(0, _snapshot.Players.Count).Where(idx => _active[idx]))
         {
@@ -326,12 +329,13 @@ public partial class TimelineWindow : Window
 
         if (hits.Count == 0)
         {
-            timeTb.Text = $"Idő: {FormatTime(timeSeconds)}";
-            listTb.Text = "Nincs esemény ebben az ablakban.";
+            timeTb.Text = LocalizationService.Format("TimeValue", FormatTime(timeSeconds));
+            listTb.Text = LocalizationService.Get("NoEventsWindow");
             return;
         }
 
-        timeTb.Text = $"Idő: {FormatTime(timeSeconds)}  (±{window / 2:0.##}s)  ·  {hits.Count} esemény";
+        timeTb.Text = LocalizationService.Format(
+            "TimelineEventHeader", FormatTime(timeSeconds), window / 2, hits.Count);
         listTb.Text = string.Join("\n", hits.Select(ev =>
         {
             string crit = ev.Crit ? "  CRIT" : "";
@@ -503,8 +507,8 @@ public partial class TimelineWindow : Window
 
         bool cumulative = _mode is MeterMode.Damage or MeterMode.Heal;
         string peakText = cumulative
-            ? $"végösszeg {Meter.Format(selMax, _mode)}"
-            : $"csúcs {Meter.Format(selMax, _mode)} · {FormatTime(peak)}";
+            ? LocalizationService.Format("FinalTotal", Meter.Format(selMax, _mode))
+            : LocalizationService.Format("PeakAt", Meter.Format(selMax, _mode), FormatTime(peak));
 
         var peakLabel = new TextBlock
         {
@@ -527,8 +531,8 @@ public partial class TimelineWindow : Window
         labels.Children.Clear();
         ticks.Children.Clear();
 
-        this.FindControl<TextBlock>("LanesTitle")!.Text =
-            $"Skillek idővonalon · {_player.Name}  ·  zoom ×{_zoom:0.0}  ·  {_pxPerSecond:0} px/s";
+        this.FindControl<TextBlock>("LanesTitle")!.Text = LocalizationService.Format(
+            "SkillsTimeline", _player.Name, _zoom, _pxPerSecond);
 
         double cellWidth = _cellSeconds * _pxPerSecond;
         int cellCount = Math.Max(1, (int)Math.Ceiling(Duration / _cellSeconds));
@@ -546,7 +550,7 @@ public partial class TimelineWindow : Window
         {
             labels.Children.Add(new TextBlock
             {
-                Text = "Nincs rögzített esemény",
+                Text = LocalizationService.Get("NoRecordedEvents"),
                 Height = LaneHeight,
                 Foreground = Brush.Parse("#71879B"),
             });
@@ -672,9 +676,11 @@ public partial class TimelineWindow : Window
                 Cursor = new Cursor(StandardCursorType.Hand),
             };
 
-            ToolTip.SetTip(block,
-                $"{FormatTime(cellStart)} – {FormatTime(cellStart + _cellSeconds)}\n" +
-                $"{counts[i]} találat · részletes eseménylista elérhető");
+            ToolTip.SetTip(block, LocalizationService.Format(
+                "TimelineHitTooltip",
+                FormatTime(cellStart),
+                FormatTime(cellStart + _cellSeconds),
+                counts[i]));
 
             int captured = i;
             block.PointerPressed += (_, e) =>
@@ -735,6 +741,20 @@ public partial class TimelineWindow : Window
             return $"{seconds:0.##}s";
         int total = (int)seconds;
         return $"{total / 60:00}:{total % 60:00}";
+    }
+
+    private void LanguageChanged(object? sender, EventArgs e)
+    {
+        if (_player is null || _snapshot is null)
+            return;
+
+        this.FindControl<TextBlock>("TimelineTitle")!.Text = LocalizationService.Format(
+            "TimelineTitleFormat", _player.Name);
+        this.FindControl<TextBlock>("TimelineSub")!.Text = LocalizationService.Format(
+            "TimelineSubtitle", FormatTime(_snapshot.Duration), _snapshot.Players.Count);
+        BuildLanes();
+        UpdateModeUi();
+        DrawChart();
     }
 
     private void CloseClick(object? sender, RoutedEventArgs e) => Close();

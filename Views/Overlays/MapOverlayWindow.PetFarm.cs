@@ -4,6 +4,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using AION_2_Companion.Core;
 using AION_2_Companion.Core.Map.Pets;
 using System.Collections.Generic;
 using AION_2_Companion.Core.Map.V2;
@@ -123,6 +124,11 @@ public partial class MapOverlayWindow
         if (_petFarmLayer is null)
             return;
 
+        if (result is null)
+            HidePetMenu();
+        else
+            ShowPetMenu();
+
         // Jelenleg a SIFT csak a Verteron referenciat ismeri.
         _petFarmLayer.SetActiveGameMap(
             result is null
@@ -141,6 +147,7 @@ public partial class MapOverlayWindow
 
     public void HidePetFarm()
     {
+        HidePetMenu();
         _petFarmLayer?.SetActiveGameMap(null);
         _petFarmLayer?.SetFrame(null, Position.X, Position.Y, RenderScaling);
         _petFarmSelected = null;
@@ -180,8 +187,8 @@ public partial class MapOverlayWindow
             .FirstOrDefault(p => p.PetId == hit.PetId &&
                                  p.MapId.Equals(hit.MapId, StringComparison.OrdinalIgnoreCase));
         string mobName = hit.MonsterId is >= int.MinValue and <= int.MaxValue
-            ? MainWindowViewModel._mobsDatabaseStatic?.GetById((int)hit.MonsterId)?.Name ?? "Ismeretlen mob"
-            : "Ismeretlen mob";
+            ? MainWindowViewModel._mobsDatabaseStatic?.GetById((int)hit.MonsterId)?.Name ?? LocalizationService.Get("UnknownMob")
+            : LocalizationService.Get("UnknownMob");
 
         if (_petFarmTooltipName is not null)
             _petFarmTooltipName.Text = hit.PetName;
@@ -190,7 +197,7 @@ public partial class MapOverlayWindow
         {
             _petFarmTooltipInfo.Text =
                 $"{hit.MapName.ToUpperInvariant()}  //  {hit.Category.ToUpperInvariant()}  //  PET #{hit.PetId}\n" +
-                $"{mobName}  ·  {catalog?.SpawnCount ?? 0} ismert spawnpont\n" +
+                LocalizationService.Format("KnownSpawnCount", mobName, catalog?.SpawnCount ?? 0) + "\n" +
                 $"World  {hit.WorldX:F0}  /  {hit.WorldY:F0}  /  {hit.WorldZ:F0}";
         }
 
@@ -226,7 +233,7 @@ public partial class MapOverlayWindow
 
         _petFarmTooltipOwnership = new TextBlock
         {
-            Text = "UNKNOWN // ISMERETLEN",
+            Text = LocalizationService.Get("UnknownPetBadge"),
             Foreground = new SolidColorBrush(Color.Parse("#FFB454")),
             FontSize = 10,
             FontWeight = FontWeight.Bold
@@ -245,7 +252,7 @@ public partial class MapOverlayWindow
         var contents = new StackPanel { Spacing = 8 };
         contents.Children.Add(new TextBlock
         {
-            Text = "NEXFORGE // PET LOCATION",
+            Text = LocalizationService.Get("PetLocation"),
             Foreground = new SolidColorBrush(Color.Parse("#45DFFF")),
             FontFamily = new FontFamily("Cascadia Mono, Consolas"),
             FontSize = 9,
@@ -262,7 +269,7 @@ public partial class MapOverlayWindow
         });
         contents.Children.Add(new TextBlock
         {
-            Text = "LEHETSÉGES SPAWNHELY  //  NEM ÉLŐ MOBÉSZLELÉS",
+            Text = LocalizationService.Get("PossibleSpawnWarning"),
             Foreground = new SolidColorBrush(Color.Parse("#607A91")),
             FontFamily = new FontFamily("Cascadia Mono, Consolas"),
             FontSize = 8.5
@@ -297,20 +304,20 @@ public partial class MapOverlayWindow
         string background;
         if (pet?.Level is int level)
         {
-            text = $"OWNED // LV. {level}" +
+            text = LocalizationService.Format("OwnedLevelBadge", level) +
                    (pet.SoulProgress > 0 ? $"  ·  SOUL {pet.SoulProgress}" : string.Empty);
             foreground = level == 3 ? "#FFB454" : "#58E0B2";
             background = level == 3 ? "#403A2817" : "#40213A34";
         }
         else if (PetFarmCollectionStatus == PetCollectionSyncState.Ready)
         {
-            text = "MISSING // NINCS MEG";
+            text = LocalizationService.Get("MissingPetBadge");
             foreground = "#FF8FA3";
             background = "#4038202D";
         }
         else
         {
-            text = "UNKNOWN // ISMERETLEN";
+            text = LocalizationService.Get("UnknownPetBadge");
             foreground = "#FFB454";
             background = "#402C2418";
         }

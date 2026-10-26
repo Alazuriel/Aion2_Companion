@@ -10,11 +10,13 @@
  */
 
 using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using System.Diagnostics;
+using AION_2_Companion.Core;
 
 namespace AION_2_Companion.Views.Overlays;
 
@@ -90,6 +92,7 @@ public partial class MapOverlayWindow : Window
         
         Opened += OnOverlayOpened;
         Closing += OnOverlayClosing;
+        LocalizationService.LanguageChanged += LanguageChanged;
     }
 
 
@@ -194,6 +197,7 @@ public partial class MapOverlayWindow : Window
         object? sender,
         WindowClosingEventArgs e)
     {
+        LocalizationService.LanguageChanged -= LanguageChanged;
         if (_registeredScreens is not null)
         {
             _registeredScreens.Changed -= OnScreensChanged;
@@ -202,6 +206,17 @@ public partial class MapOverlayWindow : Window
 
         Console.WriteLine(
             "[MAP OVERLAY] Window closing.");
+    }
+
+    private void LanguageChanged(object? sender, EventArgs e)
+    {
+        UpdatePetMenuToggleVisual();
+        UpdatePetMenuCollectionStatus();
+        UpdatePetFarmTooltipOwnership(_petFarmSelected is null
+            ? null
+            : _petFarmLayer?.GetCatalog().FirstOrDefault(p =>
+                p.PetId == _petFarmSelected.PetId &&
+                p.MapId.Equals(_petFarmSelected.MapId, StringComparison.OrdinalIgnoreCase)));
     }
 
     private double _mapOffsetX = 0;

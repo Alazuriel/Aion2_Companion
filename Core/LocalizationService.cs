@@ -20,6 +20,7 @@ public static class LocalizationService
         ["NavGuides"] = "Class guides",
         ["NavSettings"] = "Settings",
         ["NavSupport"] = "Support",
+        ["NavChangelog"] = "Changelog",
         ["NavSystem"] = "DEVELOPER",
         ["NavDeveloper"] = "Live monitor",
         ["UnderForge"] = "UNDER FORGE",
@@ -97,6 +98,28 @@ public static class LocalizationService
         ["BossTimelineHint"] = "The timeline updates automatically when encounter information is available.",
         ["HealingAccuracyHint"] = "Healing totals may be incomplete while support for every healing effect is being expanded.",
         ["PartyGuideHint"] = "Party composition details appear automatically when they become available.",
+        ["ChangelogTitle"] = "Changelog",
+        ["ChangelogSubtitle"] = "New features, improvements and known issues by version.",
+        ["ChangelogCurrent"] = "CURRENT",
+        ["UpdateSection"] = "UPDATES",
+        ["AutoUpdateToggle"] = "Keep the Companion updated automatically",
+        ["AutoUpdateHint"] = "Verified releases are downloaded in the background, installed silently, then the Companion restarts.",
+        ["CurrentVersion"] = "Installed version",
+        ["CheckForUpdates"] = "Check for updates",
+        ["UpdateChecking"] = "Checking for updates…",
+        ["UpdateFound"] = "Version {0} is available.",
+        ["UpdateCurrent"] = "You already have the latest published version.",
+        ["UpdateUnavailable"] = "The public update channel is not available yet.",
+        ["UpdateCheckFailed"] = "Updates could not be checked. Please try again later.",
+        ["UpdateAvailableTitle"] = "NEXFORGE UPDATE AVAILABLE",
+        ["UpdateChanges"] = "What's new",
+        ["UpdateLater"] = "Later",
+        ["UpdateInstall"] = "Download & install",
+        ["UpdateVerifiedHint"] = "The installer is verified before it can run.",
+        ["UpdateNoNotes"] = "No release notes were provided for this version.",
+        ["UpdateDownloading"] = "Downloading and verifying the update…",
+        ["UpdateLaunching"] = "Installing the update in the background…",
+        ["UpdateDownloadFailed"] = "The update could not be prepared. Please try again later.",
     };
 
     private static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> Translations =
@@ -104,7 +127,7 @@ public static class LocalizationService
         {
             ["hu"] = new Dictionary<string, string>
             {
-                ["AppReady"]="KÉSZENLÉT", ["NavModules"]="MODULOK", ["NavHome"]="Főoldal", ["NavDps"]="DPS mérő", ["NavCombatLog"]="Harcnapló", ["NavBoss"]="Boss időzítő", ["NavGuides"]="Class guide", ["NavSettings"]="Beállítások", ["NavSupport"]="Támogatás", ["NavSystem"]="FEJLESZTŐ", ["NavDeveloper"]="Élő monitor",
+                ["AppReady"]="KÉSZENLÉT", ["NavModules"]="MODULOK", ["NavHome"]="Főoldal", ["NavDps"]="DPS mérő", ["NavCombatLog"]="Harcnapló", ["NavBoss"]="Boss időzítő", ["NavGuides"]="Class guide", ["NavSettings"]="Beállítások", ["NavSupport"]="Támogatás", ["NavChangelog"]="Változások", ["NavSystem"]="FEJLESZTŐ", ["NavDeveloper"]="Élő monitor",
                 ["SettingsTitle"]="Beállítások", ["SettingsSubtitle"]="A Companion és a lebegő ablakok működésének beállítása.", ["LanguageSection"]="NYELV", ["LanguageLabel"]="Alkalmazás nyelve", ["LanguageHint"]="A módosítás azonnal életbe lép, és a következő indításra is megmarad.",
                 ["OverlaySection"]="LEBEGŐ ABLAKOK", ["DpsMeter"]="DPS mérő", ["DpsOverlayHint"]="Kompakt lebegő ablak. A felső sávval húzható.", ["BossAssistant"]="Boss segéd", ["BossOverlayHint"]="Kompakt időzítő. A felső sávval húzható.", ["Open"]="Megnyitás",
                 ["MapHelper"]="Térképsegéd", ["MapHelperHint"]="Bekapcsolva az M billentyűre reagál a játékban.", ["MapHelperTooltip"]="A Térképsegéd borderless fullscreen módban működik megbízhatóan. Más megjelenítési módban előfordulhat, hogy nem jelenik meg vagy pontatlanul igazodik.", ["Enabled"]="Engedélyezve", ["MapAdminWarning"]="A Térképsegéd használatához rendszergazdaként indítsd el az AION 2 Companiont.",
@@ -116,10 +139,11 @@ public static class LocalizationService
                 ["CloseTitle"]="Ablak bezárása", ["CloseText"]="A Companion futhat tovább a háttérben, vagy teljesen leállhat. Ezt később a Beállításokban módosíthatod.", ["Cancel"]="Mégse", ["Exit"]="Kilépés", ["TrayOpen"]="Companion megnyitása", ["TrayExit"]="Kilépés",
                 ["BackgroundMonitoring"]="Háttérbeli megfigyelés", ["AutomaticMode"]="AUTOMATIKUS",
                 ["BossTimelineHint"]="Az idővonal automatikusan frissül, amikor elérhetők a harchoz tartozó információk.", ["HealingAccuracyHint"]="A gyógyítási összesítés hiányos lehet, amíg minden gyógyító hatás támogatása elkészül.", ["PartyGuideHint"]="A csapat összeállítása automatikusan megjelenik, amikor elérhetővé válik.",
+                ["ChangelogTitle"]="Változások", ["ChangelogSubtitle"]="Új funkciók, fejlesztések és ismert hibák verziónként.", ["ChangelogCurrent"]="JELENLEGI", ["UpdateSection"]="FRISSÍTÉSEK", ["AutoUpdateToggle"]="A Companion automatikus frissítése", ["AutoUpdateHint"]="Az ellenőrzött kiadást a háttérben letölti, csendben telepíti, majd újraindítja a Companiont.", ["CurrentVersion"]="Telepített verzió", ["CheckForUpdates"]="Frissítések keresése", ["UpdateChecking"]="Frissítések keresése…", ["UpdateFound"]="A(z) {0} verzió elérhető.", ["UpdateCurrent"]="Már a legfrissebb közzétett verziót használod.", ["UpdateUnavailable"]="A nyilvános frissítési csatorna még nem érhető el.", ["UpdateCheckFailed"]="A frissítések most nem ellenőrizhetők. Próbáld újra később.", ["UpdateAvailableTitle"]="NEXFORGE FRISSÍTÉS ÉRHETŐ EL", ["UpdateChanges"]="Újdonságok", ["UpdateLater"]="Később", ["UpdateInstall"]="Letöltés és telepítés", ["UpdateVerifiedHint"]="A frissítést telepítés előtt ellenőrizzük.", ["UpdateNoNotes"]="Ehhez a verzióhoz nem tartozik kiadási leírás.", ["UpdateDownloading"]="A frissítés letöltése és ellenőrzése…", ["UpdateLaunching"]="A frissítés telepítése a háttérben…", ["UpdateDownloadFailed"]="A frissítés nem készíthető elő. Próbáld újra később.",
             },
             ["de"] = new Dictionary<string, string>
             {
-                ["AppReady"]="BEREIT", ["NavModules"]="MODULE", ["NavHome"]="Start", ["NavDps"]="DPS-Meter", ["NavCombatLog"]="Kampfverlauf", ["NavBoss"]="Boss-Timer", ["NavGuides"]="Klassen-Guides", ["NavSettings"]="Einstellungen", ["NavSupport"]="Support", ["NavSystem"]="ENTWICKLER", ["NavDeveloper"]="Live-Monitor",
+                ["AppReady"]="BEREIT", ["NavModules"]="MODULE", ["NavHome"]="Start", ["NavDps"]="DPS-Meter", ["NavCombatLog"]="Kampfverlauf", ["NavBoss"]="Boss-Timer", ["NavGuides"]="Klassen-Guides", ["NavSettings"]="Einstellungen", ["NavSupport"]="Support", ["NavChangelog"]="Änderungen", ["NavSystem"]="ENTWICKLER", ["NavDeveloper"]="Live-Monitor",
                 ["SettingsTitle"]="Einstellungen", ["SettingsSubtitle"]="Verhalten des Companions und der Overlays festlegen.", ["LanguageSection"]="SPRACHE", ["LanguageLabel"]="Anwendungssprache", ["LanguageHint"]="Änderungen werden sofort übernommen und für den nächsten Start gespeichert.", ["OverlaySection"]="OVERLAYS", ["DpsMeter"]="DPS-Meter", ["DpsOverlayHint"]="Kompaktes schwebendes Fenster, an der oberen Leiste verschiebbar.", ["BossAssistant"]="Boss-Assistent", ["BossOverlayHint"]="Kompaktes Timer-Fenster, an der oberen Leiste verschiebbar.", ["Open"]="Öffnen",
                 ["MapHelper"]="Kartenhilfe", ["MapHelperHint"]="Reagiert im Spiel auf die M-Taste, wenn aktiviert.", ["MapHelperTooltip"]="Die Kartenhilfe funktioniert zuverlässig im randlosen Vollbildmodus. In anderen Modi kann sie fehlen oder falsch ausgerichtet sein.", ["Enabled"]="Aktiviert", ["MapAdminWarning"]="Starte AION 2 Companion als Administrator, um die Kartenhilfe zu verwenden.",
                 ["PetCollection"]="PET-SAMMLUNG", ["PetCollectionStatus"]="Status der Sammlungsdaten", ["PetUnknown"]="UNBEKANNT", ["PetUnknownTitle"]="Warte auf die vollständige Liste", ["PetUnknownText"]="Deine Sammlung ist noch nicht bekannt. Pets mit unbekanntem Status werden vorübergehend angezeigt.", ["PetPartial"]="TEILWEISE", ["PetPartialTitle"]="Teilweise Daten", ["PetPartialText"]="Mindestens ein eigenes Pet wurde erkannt, der Rest der Sammlung ist noch unbekannt.", ["PetReady"]="BEREIT", ["PetReadyTitle"]="Vollständige Liste verfügbar", ["PetReadyText"]="Deine vollständige Pet-Sammlung ist verfügbar. Filter für fehlende Pets und Stufen können verwendet werden.",
@@ -129,10 +153,11 @@ public static class LocalizationService
                 ["CloseTitle"]="Fenster schließen", ["CloseText"]="Der Companion kann im Hintergrund weiterlaufen oder vollständig beendet werden. Dies kann später in den Einstellungen geändert werden.", ["Cancel"]="Abbrechen", ["Exit"]="Beenden", ["TrayOpen"]="Companion öffnen", ["TrayExit"]="Beenden",
                 ["BackgroundMonitoring"]="Hintergrundüberwachung", ["AutomaticMode"]="AUTOMATISCH",
                 ["BossTimelineHint"]="Die Zeitleiste wird automatisch aktualisiert, sobald Informationen zum Kampf verfügbar sind.", ["HealingAccuracyHint"]="Heilungswerte können unvollständig sein, solange die Unterstützung aller Heileffekte erweitert wird.", ["PartyGuideHint"]="Details zur Gruppenzusammenstellung erscheinen automatisch, sobald sie verfügbar sind.",
+                ["ChangelogTitle"]="Änderungen", ["ChangelogSubtitle"]="Neue Funktionen, Verbesserungen und bekannte Probleme nach Version.", ["ChangelogCurrent"]="AKTUELL", ["UpdateSection"]="UPDATES", ["AutoUpdateToggle"]="Companion automatisch aktuell halten", ["AutoUpdateHint"]="Geprüfte Versionen werden im Hintergrund geladen, lautlos installiert und der Companion danach neu gestartet.", ["CurrentVersion"]="Installierte Version", ["CheckForUpdates"]="Nach Updates suchen", ["UpdateChecking"]="Suche nach Updates…", ["UpdateFound"]="Version {0} ist verfügbar.", ["UpdateCurrent"]="Du verwendest bereits die neueste veröffentlichte Version.", ["UpdateUnavailable"]="Der öffentliche Update-Kanal ist noch nicht verfügbar.", ["UpdateCheckFailed"]="Updates konnten nicht geprüft werden. Bitte später erneut versuchen.", ["UpdateAvailableTitle"]="NEXFORGE-UPDATE VERFÜGBAR", ["UpdateChanges"]="Neuigkeiten", ["UpdateLater"]="Später", ["UpdateInstall"]="Herunterladen & installieren", ["UpdateVerifiedHint"]="Das Update wird vor der Installation geprüft.", ["UpdateNoNotes"]="Für diese Version sind keine Hinweise vorhanden.", ["UpdateDownloading"]="Update wird heruntergeladen und geprüft…", ["UpdateLaunching"]="Update wird im Hintergrund installiert…", ["UpdateDownloadFailed"]="Das Update konnte nicht vorbereitet werden. Bitte später erneut versuchen.",
             },
             ["pl"] = new Dictionary<string, string>
             {
-                ["AppReady"]="GOTOWE", ["NavModules"]="MODUŁY", ["NavHome"]="Strona główna", ["NavDps"]="Miernik DPS", ["NavCombatLog"]="Historia walk", ["NavBoss"]="Timery bossów", ["NavGuides"]="Poradniki klas", ["NavSettings"]="Ustawienia", ["NavSupport"]="Wsparcie", ["NavSystem"]="DEWELOPER", ["NavDeveloper"]="Monitor na żywo",
+                ["AppReady"]="GOTOWE", ["NavModules"]="MODUŁY", ["NavHome"]="Strona główna", ["NavDps"]="Miernik DPS", ["NavCombatLog"]="Historia walk", ["NavBoss"]="Timery bossów", ["NavGuides"]="Poradniki klas", ["NavSettings"]="Ustawienia", ["NavSupport"]="Wsparcie", ["NavChangelog"]="Zmiany", ["NavSystem"]="DEWELOPER", ["NavDeveloper"]="Monitor na żywo",
                 ["SettingsTitle"]="Ustawienia", ["SettingsSubtitle"]="Dostosuj działanie Companiona i jego nakładek.", ["LanguageSection"]="JĘZYK", ["LanguageLabel"]="Język aplikacji", ["LanguageHint"]="Zmiany są stosowane od razu i zapisywane na następne uruchomienie.", ["OverlaySection"]="NAKŁADKI", ["DpsMeter"]="Miernik DPS", ["DpsOverlayHint"]="Kompaktowe okno pływające. Przeciągnij je za górny pasek.", ["BossAssistant"]="Asystent bossów", ["BossOverlayHint"]="Kompaktowe okno timerów. Przeciągnij je za górny pasek.", ["Open"]="Otwórz",
                 ["MapHelper"]="Pomocnik mapy", ["MapHelperHint"]="Po włączeniu reaguje w grze na klawisz M.", ["MapHelperTooltip"]="Pomocnik mapy działa niezawodnie w trybie pełnoekranowym bez ramek. W innych trybach może się nie pojawić lub być źle ustawiony.", ["Enabled"]="Włączone", ["MapAdminWarning"]="Uruchom AION 2 Companion jako administrator, aby używać Pomocnika mapy.",
                 ["PetCollection"]="KOLEKCJA PETÓW", ["PetCollectionStatus"]="Stan danych kolekcji", ["PetUnknown"]="NIEZNANE", ["PetUnknownTitle"]="Oczekiwanie na pełną listę", ["PetUnknownText"]="Twoja kolekcja nie jest jeszcze znana. Pety o nieznanym stanie są tymczasowo wyświetlane.", ["PetPartial"]="CZĘŚCIOWE", ["PetPartialTitle"]="Dane częściowe", ["PetPartialText"]="Wykryto co najmniej jednego posiadanego peta, ale reszta kolekcji nadal jest nieznana.", ["PetReady"]="GOTOWE", ["PetReadyTitle"]="Pełna lista dostępna", ["PetReadyText"]="Pełna kolekcja petów jest dostępna. Możesz używać filtrów brakujących petów i poziomów.",
@@ -142,6 +167,7 @@ public static class LocalizationService
                 ["CloseTitle"]="Zamknij okno", ["CloseText"]="Companion może działać dalej w tle albo zostać całkowicie zamknięty. Możesz to później zmienić w Ustawieniach.", ["Cancel"]="Anuluj", ["Exit"]="Zamknij", ["TrayOpen"]="Otwórz Companion", ["TrayExit"]="Zamknij",
                 ["BackgroundMonitoring"]="Monitorowanie w tle", ["AutomaticMode"]="AUTOMATYCZNE",
                 ["BossTimelineHint"]="Oś czasu aktualizuje się automatycznie, gdy dane o starciu są dostępne.", ["HealingAccuracyHint"]="Suma leczenia może być niepełna, dopóki obsługa wszystkich efektów leczenia jest rozwijana.", ["PartyGuideHint"]="Skład grupy pojawi się automatycznie, gdy dane będą dostępne.",
+                ["ChangelogTitle"]="Zmiany", ["ChangelogSubtitle"]="Nowe funkcje, ulepszenia i znane problemy według wersji.", ["ChangelogCurrent"]="OBECNA", ["UpdateSection"]="AKTUALIZACJE", ["AutoUpdateToggle"]="Automatycznie aktualizuj Companion", ["AutoUpdateHint"]="Zweryfikowane wydania są pobierane w tle, instalowane po cichu, a Companion uruchamia się ponownie.", ["CurrentVersion"]="Zainstalowana wersja", ["CheckForUpdates"]="Sprawdź aktualizacje", ["UpdateChecking"]="Sprawdzanie aktualizacji…", ["UpdateFound"]="Wersja {0} jest dostępna.", ["UpdateCurrent"]="Masz już najnowszą opublikowaną wersję.", ["UpdateUnavailable"]="Publiczny kanał aktualizacji nie jest jeszcze dostępny.", ["UpdateCheckFailed"]="Nie udało się sprawdzić aktualizacji. Spróbuj ponownie później.", ["UpdateAvailableTitle"]="DOSTĘPNA AKTUALIZACJA NEXFORGE", ["UpdateChanges"]="Co nowego", ["UpdateLater"]="Później", ["UpdateInstall"]="Pobierz i zainstaluj", ["UpdateVerifiedHint"]="Aktualizacja jest weryfikowana przed instalacją.", ["UpdateNoNotes"]="Brak informacji o tej wersji.", ["UpdateDownloading"]="Pobieranie i weryfikowanie aktualizacji…", ["UpdateLaunching"]="Instalowanie aktualizacji w tle…", ["UpdateDownloadFailed"]="Nie udało się przygotować aktualizacji. Spróbuj ponownie później.",
             },
         };
 
@@ -178,8 +204,15 @@ public static class LocalizationService
             return value;
         }
 
+        if (LocalizationCatalog.TryGet(CurrentLanguageCode, key, out string? supplemental) &&
+            supplemental is not null)
+            return supplemental;
+
         return English.TryGetValue(key, out string? fallback) ? fallback : key;
     }
+
+    public static string Format(string key, params object?[] args) =>
+        string.Format(CultureInfo.CurrentCulture, Get(key), args);
 
     public static void Apply(string? languageCode)
     {
@@ -205,6 +238,16 @@ public static class LocalizationService
             if (Translations.TryGetValue(normalized, out var translation))
             {
                 foreach ((string key, string value) in translation)
+                    app.Resources[key] = value;
+            }
+
+
+            foreach ((string key, string value) in LocalizationCatalog.English)
+                app.Resources[key] = value;
+
+            if (LocalizationCatalog.ByLanguage.TryGetValue(normalized, out var supplemental))
+            {
+                foreach ((string key, string value) in supplemental)
                     app.Resources[key] = value;
             }
         }

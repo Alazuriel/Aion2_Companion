@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using AION_2_Companion.Core.Parsers;
+using AION_2_Companion.Core.GameData;
 using AION_2_Companion.Views.Overlays;
 
 namespace AION_2_Companion.Core;
@@ -15,6 +17,9 @@ public sealed class StoredSkillEvent
     public long Amount { get; set; }
     public bool Crit { get; set; }
     public bool IsHeal { get; set; }
+    public uint TargetRuntimeId { get; set; }
+    public int TargetTemplateId { get; set; }
+    public bool IsBossTarget { get; set; }
 }
 
 public sealed class StoredPlayerStat
@@ -24,13 +29,15 @@ public sealed class StoredPlayerStat
     public string ClassName { get; set; } = string.Empty;
     public string ClassColor { get; set; } = "#9CA3AF";
     public long Damage { get; set; }
+    public long BossDamage { get; set; }
     public long Healing { get; set; }
+    public long BossHealing { get; set; }
     public List<StoredSkillEvent> Events { get; set; } = new();
 }
 
 public sealed class CombatLogEntry
 {
-    public int SchemaVersion { get; set; } = 2;
+    public int SchemaVersion { get; set; } = 3;
     public string Id { get; set; } = string.Empty;
     public DateTimeOffset StartedAtUtc { get; set; }
     public DateTimeOffset EndedAtUtc { get; set; }
@@ -40,13 +47,23 @@ public sealed class CombatLogEntry
     public string MobName { get; set; } = string.Empty;
     public double Duration { get; set; }
     public long MobMaxHp { get; set; }
+    public int MobTemplateId { get; set; }
+    public bool IsBossEncounter { get; set; }
+    public string BossId { get; set; } = string.Empty;
+    public int? EnrageSeconds { get; set; }
+    public double BossStartOffset { get; set; }
+    public double BossDuration { get; set; }
     public List<StoredPlayerStat> Players { get; set; } = new();
 
     public long TotalDamage => Players.Sum(player => player.Damage);
     public long TotalHealing => Players.Sum(player => player.Healing);
 
-    public MeterSnapshot ToSnapshot()
+    public MeterSnapshot ToSnapshot(bool bossOnly = false)
     {
+        bool hasTargetClassification = Players.Any(player =>
+            player.Events.Any(skillEvent => !skillEvent.IsHeal &&
+                (skillEvent.TargetRuntimeId != 0 || skillEvent.TargetTemplateId != 0)));
+
         List<PlayerStat> players = Players.Select(player => new PlayerStat
         {
             Name = player.Name,
@@ -55,18 +72,34 @@ public sealed class CombatLogEntry
             ClassColor = string.IsNullOrWhiteSpace(player.ClassColor)
                 ? "#9CA3AF"
                 : player.ClassColor,
-            Duration = Duration,
-            Damage = player.Damage,
-            Healing = player.Healing,
+            Duration = bossOnly && IsBossEncounter && BossDuration > 0
+                ? BossDuration
+                : Duration,
+            Damage = bossOnly && IsBossEncounter
+                ? hasTargetClassification ? player.BossDamage : player.Damage
+                : player.Damage,
+            BossDamage = player.BossDamage,
+            Healing = bossOnly && IsBossEncounter && hasTargetClassification
+                ? player.BossHealing
+                : player.Healing,
+            BossHealing = player.BossHealing,
             Events = (player.Events ?? new List<StoredSkillEvent>())
+                .Where(skillEvent => !bossOnly || !IsBossEncounter ||
+                    skillEvent.Time >= BossStartOffset &&
+                    (skillEvent.IsHeal || !hasTargetClassification || skillEvent.IsBossTarget))
                 .Select(skillEvent => new SkillEvent
                 {
-                    Time = skillEvent.Time,
+                    Time = bossOnly && IsBossEncounter
+                        ? Math.Max(0, skillEvent.Time - BossStartOffset)
+                        : skillEvent.Time,
                     Skill = skillEvent.Skill,
                     SkillIcon = skillEvent.SkillIcon,
                     Amount = skillEvent.Amount,
                     Crit = skillEvent.Crit,
                     IsHeal = skillEvent.IsHeal,
+                    TargetRuntimeId = skillEvent.TargetRuntimeId,
+                    TargetTemplateId = skillEvent.TargetTemplateId,
+                    IsBossTarget = skillEvent.IsBossTarget,
                 })
                 .ToList(),
         }).ToList();
@@ -74,9 +107,20 @@ public sealed class CombatLogEntry
         return new MeterSnapshot
         {
             Players = players,
-            Duration = Duration,
+            Duration = bossOnly && IsBossEncounter && BossDuration > 0
+                ? BossDuration
+                : Duration,
             MobMaxHp = MobMaxHp,
             MobTemplateName = MobName,
+            MobTemplateId = MobTemplateId,
+            IsBossEncounter = IsBossEncounter,
+            BossId = BossId,
+            EnrageSeconds = EnrageSeconds,
+            EnrageRemainingSeconds = EnrageSeconds.HasValue
+                ? EnrageSeconds.Value - (BossDuration > 0 ? BossDuration : Duration)
+                : null,
+            BossStartOffset = bossOnly ? 0 : BossStartOffset,
+            BossDuration = BossDuration,
             IsDemo = false,
         };
     }
@@ -132,6 +176,12 @@ public sealed class CombatLogStore
                 : snapshot.MobTemplateName,
             Duration = snapshot.Duration,
             MobMaxHp = snapshot.MobMaxHp,
+            MobTemplateId = snapshot.MobTemplateId,
+            IsBossEncounter = snapshot.IsBossEncounter,
+            BossId = snapshot.BossId,
+            EnrageSeconds = snapshot.EnrageSeconds,
+            BossStartOffset = snapshot.BossStartOffset,
+            BossDuration = snapshot.BossDuration,
             Players = snapshot.Players.Select(player => new StoredPlayerStat
             {
                 Name = player.Name,
@@ -139,7 +189,9 @@ public sealed class CombatLogStore
                 ClassName = player.ClassName,
                 ClassColor = player.ClassColor,
                 Damage = player.Damage,
+                BossDamage = player.BossDamage,
                 Healing = player.Healing,
+                BossHealing = player.BossHealing,
                 Events = player.Events.TakeLast(MaxEventsPerPlayerInLog).Select(skillEvent => new StoredSkillEvent
                 {
                     Time = skillEvent.Time,
@@ -148,6 +200,9 @@ public sealed class CombatLogStore
                     Amount = skillEvent.Amount,
                     Crit = skillEvent.Crit,
                     IsHeal = skillEvent.IsHeal,
+                    TargetRuntimeId = skillEvent.TargetRuntimeId,
+                    TargetTemplateId = skillEvent.TargetTemplateId,
+                    IsBossTarget = skillEvent.IsBossTarget,
                 }).ToList(),
             }).ToList(),
         };
@@ -204,6 +259,26 @@ public sealed class CombatLogStore
                         foreach (StoredPlayerStat player in entry.Players)
                             player.Events ??= new List<StoredSkillEvent>();
 
+                        BossDefinition? boss = BossCatalog.Find(entry.MobTemplateId, entry.MobName);
+                        if (boss is not null)
+                        {
+                            entry.IsBossEncounter = true;
+                            entry.BossId = string.IsNullOrWhiteSpace(entry.BossId) ? boss.Id : entry.BossId;
+                            entry.MobMaxHp = entry.MobMaxHp > 0 ? entry.MobMaxHp : boss.MaxHp;
+                            entry.EnrageSeconds ??= boss.EnrageSeconds;
+                        }
+
+                        if (entry.Players.Any(player => player.Events.Any(skillEvent =>
+                                !skillEvent.IsHeal &&
+                                skillEvent.Amount > DamageScanner.MaxAcceptedDamage)))
+                        {
+                            DebugConsole.Log(
+                                "combatlog",
+                                $"Hibás, irreális találatot tartalmazó fight elrejtve: " +
+                                Path.GetFileName(path));
+                            continue;
+                        }
+
                         entries.Add(entry);
                     }
                     catch (Exception ex) when (
@@ -224,6 +299,15 @@ public sealed class CombatLogStore
 
         return entries
             .OrderByDescending(entry => entry.EndedAtUtc)
+            .GroupBy(entry => new
+            {
+                entry.MobName,
+                StartedSecond = entry.StartedAtUtc.ToUnixTimeSeconds(),
+                EndedSecond = entry.EndedAtUtc.ToUnixTimeSeconds(),
+                entry.TotalDamage,
+                entry.TotalHealing,
+            })
+            .Select(group => group.First())
             .ToList();
     }
 
@@ -237,7 +321,7 @@ public sealed class CombatLogStore
             lock (_sync)
             {
                 Directory.CreateDirectory(LogDirectory);
-                entry.SchemaVersion = 2;
+                entry.SchemaVersion = 3;
                 WriteEntryLocked(entry);
             }
 

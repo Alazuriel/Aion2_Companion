@@ -4,7 +4,7 @@
         x:CompileBindings="False"
         Width="1020" Height="760"
         MinWidth="760" MinHeight="560"
-        Title="AION 2 · Idővonal"
+        Title="AION 2 · Timeline"
         Background="Transparent"
         TransparencyLevelHint="Transparent"
         ExtendClientAreaToDecorationsHint="True"
@@ -41,9 +41,9 @@
       <!-- 1. Metrika váltó -->
       <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6" Margin="0,12,0,0">
         <Button Name="ModeDps" Tag="Dps" Classes="ui" Content="DPS" FontSize="12" Click="ModeClick"/>
-        <Button Name="ModeDamage" Tag="Damage" Classes="ui" Content="Összes sebzés" FontSize="12" Click="ModeClick"/>
+        <Button Name="ModeDamage" Tag="Damage" Classes="ui" Content="{DynamicResource TimelineTotalDamage}" FontSize="12" Click="ModeClick"/>
         <Button Name="ModeHps" Tag="Hps" Classes="ui" Content="HPS" FontSize="12" Click="ModeClick"/>
-        <Button Name="ModeHeal" Tag="Heal" Classes="ui" Content="Összes gyógyítás" FontSize="12" Click="ModeClick"/>
+        <Button Name="ModeHeal" Tag="Heal" Classes="ui" Content="{DynamicResource TimelineTotalHealing}" FontSize="12" Click="ModeClick"/>
       </StackPanel>
 
       <!-- 2. Játékos chipek a grafikonhoz -->
@@ -70,7 +70,7 @@
           <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,8">
             <TextBlock Name="LanesTitle" FontSize="13" FontWeight="SemiBold"/>
             <TextBlock Grid.Column="1" FontSize="10" Foreground="#60768A" HorizontalAlignment="Right"
-                       Text="egy doboz 5 mp · sötétebb = több találat · zöld = gyógyítás"/>
+                       Text="{DynamicResource TimelineHint}"/>
           </Grid>
           <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <Grid ColumnDefinitions="Auto,*">

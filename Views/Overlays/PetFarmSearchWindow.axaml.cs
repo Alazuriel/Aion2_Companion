@@ -9,6 +9,7 @@ using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using AION_2_Companion.Core;
 using AION_2_Companion.Core.Map.Pets;
 
 namespace AION_2_Companion.Views.Overlays;
@@ -54,6 +55,7 @@ public partial class PetFarmSearchWindow : Window
         _collectionStatus = collectionStatus;
         _settings = settings;
         AvaloniaXamlLoader.Load(this);
+        LocalizationService.LanguageChanged += LanguageChanged;
 
         _category = this.FindControl<ComboBox>("CategorySelect")!;
         _map = this.FindControl<ComboBox>("MapSelect")!;
@@ -106,6 +108,7 @@ public partial class PetFarmSearchWindow : Window
         Opened += (_, _) => _search.Focus();
         Closed += (_, _) =>
         {
+            LocalizationService.LanguageChanged -= LanguageChanged;
             foreach (Bitmap icon in _icons.Values)
                 icon.Dispose();
             _icons.Clear();
@@ -136,7 +139,7 @@ public partial class PetFarmSearchWindow : Window
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(s => s).ToArray();
-        var items = new List<string> { "Minden kategória" };
+        var items = new List<string> { LocalizationService.Get("AllCategories") };
         items.AddRange(cats);
         _category.ItemsSource = items;
         _category.SelectedItem = _settings.Category is string wanted && items.Contains(wanted)
@@ -176,7 +179,7 @@ public partial class PetFarmSearchWindow : Window
         };
         _highlighted = null;
         _selectedIcon.Source = null;
-        _details.Text = "Válassz egy petet a listából.";
+        _details.Text = LocalizationService.Get("SelectPetHint");
         _only.IsEnabled = false;
         ReloadCategories();
         RebuildList();
@@ -190,7 +193,7 @@ public partial class PetFarmSearchWindow : Window
         string? category = _category.SelectedItem as string;
         _settings = _settings with
         {
-            Category = category == "Minden kategória" ? null : category,
+            Category = category == LocalizationService.Get("AllCategories") ? null : category,
             ShowMissing = _missing.IsChecked == true,
             ShowLevel1 = _lv1.IsChecked == true,
             ShowLevel2 = _lv2.IsChecked == true,
@@ -224,7 +227,7 @@ public partial class PetFarmSearchWindow : Window
             .ToArray();
 
         _pets.ItemsSource = filtered;
-        _count.Text = $"Találatok: {filtered.Length} / {_catalog.Count} pet";
+        _count.Text = LocalizationService.Format("PetResults", filtered.Length, _catalog.Count);
     }
 
     private void Highlight()
@@ -238,11 +241,11 @@ public partial class PetFarmSearchWindow : Window
         _details.Text = _highlighted is PetFarmCatalogEntry pet
             ? $"{pet.Name}\n" +
               $"#{pet.PetId}  //  {pet.Category}\n" +
-              $"Térkép: {pet.MapName}\n" +
-              $"Tulajdon: {OwnershipText(pet, _collectionStatus)}\n" +
-              $"Soul progress: {pet.SoulProgress}\n" +
-              $"Ismert spawnpont: {pet.SpawnCount}"
-            : "Válassz egy petet a listából.";
+              LocalizationService.Format("PetMap", pet.MapName) + "\n" +
+              LocalizationService.Format("PetOwnership", OwnershipText(pet, _collectionStatus)) + "\n" +
+              LocalizationService.Format("PetSoulProgress", pet.SoulProgress) + "\n" +
+              LocalizationService.Format("PetKnownSpawns", pet.SpawnCount)
+            : LocalizationService.Get("SelectPetHint");
     }
 
     private void SelectOnlyThisPet()
@@ -269,14 +272,14 @@ public partial class PetFarmSearchWindow : Window
         (_statusCode.Text, _statusTitle.Text, _status.Text) = _collectionStatus switch
         {
             PetCollectionSyncState.Ready =>
-                ("READY", "Teljes lista",
-                 "Megérkezett a 00 90; a Hiányzó / Lv. 1 / Lv. 2 / Lv. 3 szűrés teljesen használható."),
+                ("READY", LocalizationService.Get("PetReadyTitle"),
+                 LocalizationService.Get("PetReadyText")),
             PetCollectionSyncState.Partial =>
-                ("PARTIAL", "Részleges adat",
-                 "Megszereztél egy petet, és a 09 90-ből már tudjuk, hogy megvan, de a többiek továbbra is ismeretlenek."),
+                ("PARTIAL", LocalizationService.Get("PetPartialTitle"),
+                 LocalizationService.Get("PetPartialText")),
             _ =>
-                ("UNKNOWN", "Teljes lista nélkül",
-                 "A petek tulajdonosi állapota nem ismert. Az ismeretleneket ideiglenesen mutatjuk.")
+                ("UNKNOWN", LocalizationService.Get("PetUnknownTitle"),
+                 LocalizationService.Get("PetUnknownText"))
         };
         string color = _collectionStatus switch
         {
@@ -288,9 +291,15 @@ public partial class PetFarmSearchWindow : Window
         _statusDot.Fill = Brush.Parse(color);
         string activeMap = (_map.SelectedItem as MapChoice)?.Name ?? _settings.MapId;
         _active.Text = _settings.SpecificPetId is int id
-            ? $"AKTÍV: {activeMap} • CSAK #{id}  •  Ez elsőbbséget élvez a kategória- és szintszűrőkkel szemben."
-            : $"AKTÍV: {activeMap} • {(_settings.Category ?? "Összes kategória")} • " +
-              $"Hiányzó={_settings.ShowMissing} | L1={_settings.ShowLevel1} | L2={_settings.ShowLevel2} | L3={_settings.ShowLevel3}";
+            ? LocalizationService.Format("ActiveSpecificPetFilter", activeMap, id)
+            : LocalizationService.Format(
+                "ActivePetFilters",
+                activeMap,
+                _settings.Category ?? LocalizationService.Get("AllCategories"),
+                _settings.ShowMissing,
+                _settings.ShowLevel1,
+                _settings.ShowLevel2,
+                _settings.ShowLevel3);
     }
 
     private Bitmap? GetPetIcon(int petId)
@@ -323,14 +332,15 @@ public partial class PetFarmSearchWindow : Window
         pet.Level is int level
             ? $"Lv. {level}"
             : collectionStatus == PetCollectionSyncState.Ready
-                ? "Nincs meg"
-                : "Ismeretlen";
+                ? LocalizationService.Get("NotOwned")
+                : LocalizationService.Get("UnknownOwnership");
 
     private sealed class PetSearchRow
     {
         public PetFarmCatalogEntry Pet { get; }
         public string Name => Pet.Name;
-        public string Meta => $"#{Pet.PetId}  //  {Pet.Category}  //  {Pet.SpawnCount} spawn";
+        public string Meta => LocalizationService.Format(
+            "PetRowMeta", Pet.PetId, Pet.Category, Pet.SpawnCount);
         public string Status { get; }
         public string StatusColor { get; }
         public Bitmap? Icon { get; }
@@ -362,5 +372,15 @@ public partial class PetFarmSearchWindow : Window
     {
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
             BeginMoveDrag(e);
+    }
+
+    private void LanguageChanged(object? sender, EventArgs e)
+    {
+        _loading = true;
+        ReloadCategories();
+        RebuildList();
+        _loading = false;
+        UpdateStatus();
+        Highlight();
     }
 }

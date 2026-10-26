@@ -29,6 +29,12 @@ public sealed class DamageHit
 
 public static class DamageScanner
 {
+    // Védelmi plafon a payloadon belüli véletlen varint-egyezések ellen.
+    // A logokban igazolt 100k feletti criteket megtartja, a több tízmilliós
+    // hamis rekordokat viszont már a parser határán eldobja.
+    public const uint MaxAcceptedDamage = 2_000_000;
+    private const uint MaxSoftAcceptedDamage = 100_999;
+
     private const byte HitOp0 = 0x04, HitOp1 = 0x38;  // 04 38: Hit
     private const byte DotOp0 = 0x05, DotOp1 = 0x38;  // 05 38: DoT
 
@@ -73,7 +79,7 @@ public static class DamageScanner
             }
         }
 
-        return found;
+        return Deduplicate(found);
     }
 
     // Azonos (Origin, Target, Actor, Skill, Damage, Type, Sequence) esetén a legkisebb offsetet tartjuk meg.
@@ -136,9 +142,10 @@ public static class DamageScanner
         bool softAccept = origin == HitOrigin.HitOpcode
                           && start == 0
                           && damage > 0
-                          && damage <= 100_999;
+                          && damage <= MaxSoftAcceptedDamage;
 
-        if (!trailerOk && !softAccept)
+        if (damage == 0 || damage > MaxAcceptedDamage ||
+            (!trailerOk && !softAccept))
             return false;
 
         hit = new DamageHit
@@ -177,7 +184,7 @@ public static class DamageScanner
         if (!c.Varint(out uint damage)) return false;
 
         if (target == 0 || actor == 0 || actor == target || damage == 0
-            || damage > 100_999 || skill == 0 || skill > 299_999_999)
+            || damage > MaxAcceptedDamage || skill == 0 || skill > 299_999_999)
             return false;
 
         hit = new DamageHit

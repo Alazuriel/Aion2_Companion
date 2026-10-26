@@ -50,7 +50,7 @@ public partial class DpsOverlayWindow : Window
 
     public ObservableCollection<PartyRow> Rows { get; } = new();
 
-    public DpsOverlayWindow() : this(DemoData.Build()) { }
+    public DpsOverlayWindow() : this(new MeterSnapshot()) { }
 
     public DpsOverlayWindow(MeterSnapshot snapshot)
     {
@@ -58,6 +58,14 @@ public partial class DpsOverlayWindow : Window
         AvaloniaXamlLoader.Load(this);
         DataContext = this;
         OverlayPlacementTracker.Attach(this, "dps-meter-compact-v2", "dps-meter");
+        Opened += (_, _) => WindowClickThrough.Apply(this, enabled: false);
+        LocalizationService.LanguageChanged += LanguageChanged;
+        CompanionSettings.DpsEncounterModeChanged += EncounterModeChanged;
+        Closed += (_, _) =>
+        {
+            LocalizationService.LanguageChanged -= LanguageChanged;
+            CompanionSettings.DpsEncounterModeChanged -= EncounterModeChanged;
+        };
         Refresh();
     }
 
@@ -95,7 +103,10 @@ public partial class DpsOverlayWindow : Window
     private void Refresh()
     {
         var mode = Mode;
-        var s = _snapshot;
+        bool bossOnly = CompanionSettings.DpsEncounterMode == DpsEncounterMode.Bosses;
+        var s = bossOnly
+            ? _snapshot.IsBossEncounter ? _snapshot.ToBossOnly() : new MeterSnapshot()
+            : _snapshot;
         bool heal = mode is MeterMode.Hps or MeterMode.Heal;
         bool rate = mode is MeterMode.Dps or MeterMode.Hps;
         double dur = Math.Max(1, s.Duration);
@@ -115,7 +126,35 @@ public partial class DpsOverlayWindow : Window
         this.FindControl<TextBlock>("AvgValue")!.Text = Meter.Format(avg, rateMode);
         this.FindControl<TextBlock>("PeakValue")!.Text = Meter.Format(peak, rateMode);
         this.FindControl<TextBlock>("TimerText")!.Text = FormatTime(s.Duration);
-        this.FindControl<TextBlock>("MobName")!.Text = s.MobTemplateName;
+        this.FindControl<TextBlock>("MobName")!.Text =
+            string.IsNullOrWhiteSpace(s.MobTemplateName) ? "—" : s.MobTemplateName;
+
+        this.FindControl<Button>("AllEncountersButton")!.Classes.Set("primary", !bossOnly);
+        this.FindControl<Button>("BossEncountersButton")!.Classes.Set("primary", bossOnly);
+        this.FindControl<TextBlock>("EncounterModeHint")!.Text = LocalizationService.Get(
+            bossOnly ? "BossTargetsOnly" : "AllTargets");
+
+        Border bossPanel = this.FindControl<Border>("BossStatusPanel")!;
+        bossPanel.IsVisible = s.IsBossEncounter;
+        if (s.IsBossEncounter)
+        {
+            double percent = Math.Clamp(s.BossHpPercent ?? 0, 0, 100);
+            this.FindControl<ProgressBar>("BossHpBar")!.Value = percent;
+            this.FindControl<TextBlock>("BossHpText")!.Text = s.BossHpPercent.HasValue
+                ? s.BossCurrentHp.HasValue && s.MobMaxHp > 0
+                    ? $"{Meter.Num(s.BossCurrentHp.Value)} / {Meter.Num(s.MobMaxHp)}  ·  {percent:F1}%"
+                    : $"{percent:F1}%"
+                : s.MobMaxHp > 0
+                    ? $"— / {Meter.Num(s.MobMaxHp)}"
+                    : LocalizationService.Get("BossHpWaiting");
+
+            this.FindControl<TextBlock>("EnrageText")!.Text = s.EnrageRemainingSeconds switch
+            {
+                <= 0 => LocalizationService.Get("Enraged"),
+                double remaining => LocalizationService.Format("EnrageIn", FormatTime(remaining)),
+                _ => LocalizationService.Get("EnrageUnknown"),
+            };
+        }
 
         // Rangsor
         var items = s.Players
@@ -157,7 +196,9 @@ public partial class DpsOverlayWindow : Window
 
         // Fejléc és kapcsolók
         this.FindControl<TextBlock>("ModeLabel")!.Text = Meter.ModeName(mode);
-        this.FindControl<TextBlock>("HdrMetric")!.Text = rate ? (heal ? "HPS" : "DPS") : "ÖSSZES";
+        this.FindControl<TextBlock>("HdrMetric")!.Text = rate
+            ? (heal ? "HPS" : "DPS")
+            : LocalizationService.Get("Total");
         this.FindControl<TextBlock>("HdrTotal")!.IsVisible = _showTotal;
         this.FindControl<TextBlock>("HdrShare")!.IsVisible = _showShare;
         this.FindControl<TextBlock>("HdrCrit")!.IsVisible = _showCrit;
@@ -166,10 +207,14 @@ public partial class DpsOverlayWindow : Window
         this.FindControl<Button>("ToggleShare")!.Classes.Set("primary", _showShare);
         this.FindControl<Button>("ToggleCrit")!.Classes.Set("primary", _showCrit);
 
-        this.FindControl<TextBlock>("FooterText")!.Text = s.IsDemo
-            ? "Mintaadat · nincs aktív mérés."
-            : "Játékosrészletek a rangsor soraiból nyithatók.";
+        this.FindControl<TextBlock>("FooterText")!.Text = s.Players.Count == 0
+            ? LocalizationService.Get(bossOnly ? "BossModeWaiting" : "DpsWaiting")
+            : LocalizationService.Get("DpsDetailsHint");
     }
+
+    private void LanguageChanged(object? sender, EventArgs e) => Refresh();
+
+    private void EncounterModeChanged(object? sender, EventArgs e) => Refresh();
 
     // Csoport idősor: másodpercenként összesített sebzés (vagy gyógyítás)
     private static double[] GroupSeries(MeterSnapshot s, bool heal)
@@ -260,6 +305,15 @@ public partial class DpsOverlayWindow : Window
         Refresh();
     }
 
+    private void EncounterModeClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string mode })
+            return;
+        CompanionSettings.DpsEncounterMode = mode.Equals("Bosses", StringComparison.OrdinalIgnoreCase)
+            ? DpsEncounterMode.Bosses
+            : DpsEncounterMode.All;
+    }
+
     private void OpacityClick(object? sender, RoutedEventArgs e)
     {
         _opacityIndex = (_opacityIndex + 1) % Opacities.Length;
@@ -270,7 +324,7 @@ public partial class DpsOverlayWindow : Window
     {
         _collapsed = !_collapsed;
         this.FindControl<Grid>("Body")!.IsVisible = !_collapsed;
-        Height = _collapsed ? 96 : 390;
+        Height = _collapsed ? 132 : 408;
     }
 
     private void RowPressed(object? sender, PointerPressedEventArgs e)

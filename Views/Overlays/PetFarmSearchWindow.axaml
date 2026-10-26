@@ -45,8 +45,8 @@
         </Border>
         <StackPanel Grid.Column="1" Margin="13,0,0,0" Spacing="2" VerticalAlignment="Center">
           <TextBlock Text="NEXFORGE // PET INTELLIGENCE" Classes="kicker" FontSize="10"/>
-          <TextBlock Text="Collection &amp; Spawn Atlas" FontSize="23" FontWeight="SemiBold"/>
-          <TextBlock Text="Külön térképek, pethelyek, tulajdonosi állapot és célzott szűrés." Classes="hint"/>
+          <TextBlock Text="{DynamicResource PetAtlasTitle}" FontSize="23" FontWeight="SemiBold"/>
+          <TextBlock Text="{DynamicResource PetAtlasSubtitle}" Classes="hint"/>
         </StackPanel>
         <Button x:Name="CloseSearch" Grid.Column="2" Classes="ui quiet" Content="×"
                 FontSize="21" VerticalAlignment="Top"/>
@@ -58,7 +58,7 @@
                    VerticalAlignment="Center"/>
           <StackPanel Grid.Column="1" Spacing="1" MinWidth="150">
             <TextBlock x:Name="CollectionStatusCode" Text="UNKNOWN" Classes="kicker" FontSize="9"/>
-            <TextBlock x:Name="CollectionStatusTitle" Text="Teljes lista nélkül"
+            <TextBlock x:Name="CollectionStatusTitle" Text="{DynamicResource PetUnknownTitle}"
                        FontSize="13" FontWeight="SemiBold"/>
           </StackPanel>
           <TextBlock x:Name="CollectionStatus" Grid.Column="2" Classes="hint"
@@ -70,12 +70,12 @@
         <Border Classes="glass" Padding="16">
           <Grid RowDefinitions="Auto,Auto,*" RowSpacing="12">
             <Grid ColumnDefinitions="*,190" ColumnSpacing="10">
-              <TextBox x:Name="PetSearchText" Watermark="Petnév vagy Pet ID keresése..."
+              <TextBox x:Name="PetSearchText" Watermark="{DynamicResource PetSearchWatermark}"
                        FontSize="13" MinHeight="40"/>
               <ComboBox x:Name="CategorySelect" Grid.Column="1" HorizontalAlignment="Stretch"/>
             </Grid>
             <Grid Grid.Row="1" ColumnDefinitions="*,Auto">
-              <TextBlock Text="PET CATALOG" Classes="kicker" FontSize="9"/>
+              <TextBlock Text="{DynamicResource PetCatalog}" Classes="kicker" FontSize="9"/>
               <TextBlock x:Name="SearchCount" Grid.Column="1" Classes="eyebrow" FontSize="10"/>
             </Grid>
             <ListBox Grid.Row="2" x:Name="PetItems" Background="Transparent"
@@ -111,14 +111,14 @@
             <StackPanel Spacing="11">
               <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Spacing="2">
-                  <TextBlock Text="MAP FILTERS" Classes="kicker" FontSize="9"/>
-                  <TextBlock Text="Mit mutassunk?" FontSize="17" FontWeight="SemiBold"/>
+                  <TextBlock Text="{DynamicResource MapFilters}" Classes="kicker" FontSize="9"/>
+                  <TextBlock Text="{DynamicResource WhatToShow}" FontSize="17" FontWeight="SemiBold"/>
                 </StackPanel>
-                <CheckBox x:Name="ShowMarkers" Grid.Column="1" Content="MARKERS" VerticalAlignment="Center"/>
+                <CheckBox x:Name="ShowMarkers" Grid.Column="1" Content="{DynamicResource Markers}" VerticalAlignment="Center"/>
               </Grid>
               <ComboBox x:Name="MapSelect" HorizontalAlignment="Stretch"/>
               <WrapPanel Orientation="Horizontal">
-                <CheckBox x:Name="ShowMissing" Content="Hiányzó" Margin="0,0,15,8"/>
+                <CheckBox x:Name="ShowMissing" Content="{DynamicResource Missing}" Margin="0,0,15,8"/>
                 <CheckBox x:Name="ShowLevel1" Content="Lv. 1" Margin="0,0,15,8"/>
                 <CheckBox x:Name="ShowLevel2" Content="Lv. 2" Margin="0,0,15,8"/>
                 <CheckBox x:Name="ShowLevel3" Content="Lv. 3" Margin="0,0,0,8"/>
@@ -129,35 +129,35 @@
 
           <Border Grid.Row="1" Classes="glass" Padding="17">
             <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" RowSpacing="12">
-              <TextBlock Text="SELECTED PET" Classes="kicker" FontSize="9"/>
+              <TextBlock Text="{DynamicResource SelectedPet}" Classes="kicker" FontSize="9"/>
               <Grid Grid.Row="1" ColumnDefinitions="64,*" ColumnSpacing="13">
                 <Border Width="64" Height="64" CornerRadius="15" Background="#17283B"
                         BorderBrush="#466B88" BorderThickness="1" ClipToBounds="True">
                   <Image x:Name="SelectedPetIcon" Stretch="UniformToFill"/>
                 </Border>
                 <TextBlock x:Name="SelectedPetDetails" Grid.Column="1"
-                           Text="Válassz egy petet a listából."
+                           Text="{DynamicResource SelectPetHint}"
                            Foreground="#EAF7FF" TextWrapping="Wrap" FontSize="13"
                            VerticalAlignment="Center"/>
               </Grid>
               <Border Grid.Row="2" Classes="inset" Padding="12" VerticalAlignment="Stretch">
-                <TextBlock Text="A kiválasztott pet összes ismert spawnpontját külön kiemelheted a térképen."
+                <TextBlock Text="{DynamicResource SelectedPetMapHint}"
                            Classes="hint" VerticalAlignment="Center"/>
               </Border>
               <Button x:Name="OnlyThisPet" Grid.Row="3" Classes="ui primary"
-                      Content="CSAK EZT MUTASD" IsEnabled="False" HorizontalAlignment="Stretch"/>
+                      Content="{DynamicResource ShowOnlyThisPet}" IsEnabled="False" HorizontalAlignment="Stretch"/>
               <Button x:Name="ClearPetSelection" Grid.Row="4" Classes="ui"
-                      Content="SZŰRÉS VISSZAÁLLÍTÁSA" HorizontalAlignment="Stretch"/>
+                      Content="{DynamicResource ResetFilters}" HorizontalAlignment="Stretch"/>
             </Grid>
           </Border>
         </Grid>
       </Grid>
 
       <Grid Grid.Row="4" ColumnDefinitions="*,Auto" Margin="24,14,24,20">
-        <TextBlock Text="LIVE FILTER // A módosítások azonnal megjelennek a térképen."
+        <TextBlock Text="{DynamicResource LiveFilterHint}"
                    Classes="kicker" FontSize="9" VerticalAlignment="Center"/>
         <Button x:Name="ApplyAndClose" Grid.Column="1" Classes="ui primary"
-                Content="KÉSZ  ✓" Padding="24,10"/>
+                Content="{DynamicResource Done}" Padding="24,10"/>
       </Grid>
     </Grid>
   </Border>

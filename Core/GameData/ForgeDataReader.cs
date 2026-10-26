@@ -22,12 +22,21 @@ public sealed class ForgeDataDocument
 
     [JsonPropertyName("mobs")]
     public MobDefinition[] Mobs { get; init; } = [];
+
+    [JsonPropertyName("bosses")]
+    public BossDefinition[] Bosses { get; init; } = [];
     
     [JsonPropertyName("spawns")]
     public PetsDefiniton[] Pets { get; init; } = [];
 
     [JsonPropertyName("opcodes")]
     public OpCodesDefinition.OpCodes[] Opcodes { get; init; } = [];
+
+    [JsonPropertyName("event_timers")]
+    public EventTimerDefinition[] EventTimers { get; init; } = [];
+
+    [JsonPropertyName("event_timer_regions")]
+    public EventTimerRegionDefinition[] EventTimerRegions { get; init; } = [];
 }
 
 public static class ForgeDataReader
@@ -247,9 +256,11 @@ public static class ForgeDataReader
         bool hasClasses = document.Classes is { Length: > 0 };
         bool hasSkills = document.Skills is { Length: > 0 };
         bool hasMobs = document.Mobs is { Length: > 0 };
+        bool hasBosses = document.Bosses is { Length: > 0 };
         bool hasSpawns = document.Pets is { Length: > 0 };
         bool hasOpcodes = document.Opcodes is { Length: > 0 };
-        if (!hasClasses && !hasSkills && !hasMobs && !hasSpawns && !hasOpcodes)
+        bool hasEventTimers = document.EventTimers is { Length: > 0 };
+        if (!hasClasses && !hasSkills && !hasMobs && !hasBosses && !hasSpawns && !hasOpcodes && !hasEventTimers)
             throw new InvalidDataException("Az NFG nem tartalmaz támogatott Nexforge adatot.");
         return document;
     }
@@ -277,6 +288,13 @@ public static class ForgeDataReader
             ? mobs
             : throw new InvalidDataException("Az NFG nem tartalmaz mobokat.");
     }
+    public static BossDefinition[] LoadBosses(string path)
+    {
+        ForgeDataDocument document = Load(path);
+        return document.Bosses is { Length: > 0 } bosses
+            ? bosses
+            : throw new InvalidDataException("Az NFG nem tartalmaz bossokat.");
+    }
     public static PetsDefiniton[] LoadPets(string path)
     {
         ForgeDataDocument document = Load(path);
@@ -291,5 +309,13 @@ public static class ForgeDataReader
         return document.Opcodes is { Length: > 0 } opcodes
             ? opcodes
             : throw new InvalidDataException("Az NFG nem tartalmaz opcode-okat.");
+    }
+
+    public static EventTimerDefinition[] LoadEventTimers(string path)
+    {
+        ForgeDataDocument document = Load(path);
+        return document.EventTimers is { Length: > 0 } timers
+            ? timers
+            : throw new InvalidDataException("Az NFG nem tartalmaz eseményidőzítőket.");
     }
 }

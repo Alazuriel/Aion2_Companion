@@ -76,7 +76,7 @@
       <DockPanel LastChildFill="False">
         <StackPanel DockPanel.Dock="Top" Spacing="4">
           <TextBlock Text="{DynamicResource NavModules}" Classes="kicker" Margin="13,0,0,10"/>
-          <Button Classes="ui nav" Tag="Dashboard" Click="NavClick">
+          <Button x:Name="HomeNavButton" Classes="ui nav" Tag="Dashboard" Click="NavClick">
             <StackPanel Orientation="Horizontal" Spacing="10">
               <Viewbox Width="15" Height="15">
                 <Path Width="16" Height="16" Fill="Transparent"
@@ -87,7 +87,17 @@
               <TextBlock Text="{DynamicResource NavHome}" VerticalAlignment="Center"/>
             </StackPanel>
           </Button>
-          <Button Classes="ui nav" Tag="Analytics" Click="NavClick">
+          <Button x:Name="CharactersNavButton" Classes="ui nav" Tag="Characters" Click="NavClick">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Viewbox Width="15" Height="15">
+                <Path Width="16" Height="16" Fill="Transparent"
+                      Stroke="#78BFD2" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round"
+                      Data="M8,2.7 A2.6,2.6 0 1 0 8,7.9 A2.6,2.6 0 1 0 8,2.7 M3.1,13.3 C3.6,10.5 5.2,9.2 8,9.2 C10.8,9.2 12.4,10.5 12.9,13.3"/>
+              </Viewbox>
+              <TextBlock Text="{DynamicResource NavCharacters}" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <Button x:Name="DpsNavButton" Classes="ui nav" Tag="DpsOverlay" Click="NavClick">
             <StackPanel Orientation="Horizontal" Spacing="10">
               <Viewbox Width="15" Height="15">
                 <Path Width="16" Height="16" Fill="Transparent"
@@ -98,7 +108,7 @@
               <TextBlock Text="{DynamicResource NavDps}" VerticalAlignment="Center"/>
             </StackPanel>
           </Button>
-          <Button Classes="ui nav" Tag="CombatLog" Click="NavClick">
+          <Button x:Name="CombatLogNavButton" Classes="ui nav" Tag="CombatLog" Click="NavClick">
             <StackPanel Orientation="Horizontal" Spacing="10">
               <Viewbox Width="15" Height="15">
                 <Path Width="16" Height="16" Fill="Transparent"
@@ -109,52 +119,59 @@
               <TextBlock Text="{DynamicResource NavCombatLog}" VerticalAlignment="Center"/>
             </StackPanel>
           </Button>
-          <Button Classes="ui nav" Tag="Boss" Click="NavClick">
-            <StackPanel Orientation="Horizontal" Spacing="10">
-              <Viewbox Width="15" Height="15">
-                <Path Width="16" Height="16" Fill="Transparent"
-                      Stroke="#78BFD2"
-                      StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round"
-                      Data="M8,2.5 V6.5 M8,6.5 A3.5,3.5 0 1 0 8,13.5 A3.5,3.5 0 1 0 8,6.5"/>
-              </Viewbox>
-              <TextBlock Text="{DynamicResource NavBoss}" VerticalAlignment="Center"/>
-            </StackPanel>
-          </Button>
-          <Button Classes="ui nav" Tag="Guides" Click="NavClick">
-            <StackPanel Orientation="Horizontal" Spacing="10">
-              <Viewbox Width="15" Height="15">
-                <Path Width="16" Height="16" Fill="Transparent"
-                      Stroke="#78BFD2"
-                      StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round"
-                      Data="M3,3.5 H7.2 A2.2,2.2 0 0 1 9.2,5.2 V13 H3.6 A1.2,1.2 0 0 1 3,11.6 Z M13,3.5 H8.8 A2.2,2.2 0 0 0 6.8,5.2"/>
-              </Viewbox>
-              <TextBlock Text="{DynamicResource NavGuides}" VerticalAlignment="Center"/>
-            </StackPanel>
-          </Button>
-          <Button Classes="ui nav" Tag="Settings" Click="NavClick">
-            <StackPanel Orientation="Horizontal" Spacing="10">
-              <Viewbox Width="15" Height="15">
-                <Path Width="16" Height="16" Fill="Transparent"
-                      Stroke="#78BFD2"
-                      StrokeThickness="1.6" StrokeLineCap="Round"
-                      Data="M8,5.2 A2.8,2.8 0 1 0 8,10.8 A2.8,2.8 0 1 0 8,5.2 M8,2.2 V3.6 M8,12.4 V13.8 M2.2,8 H3.6 M12.4,8 H13.8"/>
-              </Viewbox>
-              <TextBlock Text="{DynamicResource NavSettings}" VerticalAlignment="Center"/>
-            </StackPanel>
-          </Button>
-          <Button Classes="ui nav" Tag="Support" Click="NavClick">
+          <Button x:Name="EventTimersNavButton" Classes="ui nav" Tag="EventTimers" Click="NavClick">
             <StackPanel Orientation="Horizontal" Spacing="10">
               <Viewbox Width="15" Height="15">
                 <Path Width="16" Height="16" Fill="Transparent"
                       Stroke="#78BFD2" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round"
-                      Data="M8,2.5 A5.5,5.5 0 1 0 8,13.5 A5.5,5.5 0 1 0 8,2.5 M8,10.8 V11 M8,5 A2,2 0 0 1 8,9"/>
+                      Data="M8,2.5 A5.5,5.5 0 1 0 8,13.5 A5.5,5.5 0 1 0 8,2.5 M8,5 V8 L10.5,9.5"/>
               </Viewbox>
-              <TextBlock Text="{DynamicResource NavSupport}" VerticalAlignment="Center"/>
+              <TextBlock Text="{DynamicResource NavEventTimers}" VerticalAlignment="Center"/>
             </StackPanel>
           </Button>
+          <Button x:Name="MoreNavButton" Classes="ui nav" Click="ToggleMoreMenuClick">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+              <TextBlock Text="···" Foreground="#78BFD2" FontSize="17" FontWeight="Bold" VerticalAlignment="Center"/>
+              <TextBlock Grid.Column="1" Text="{DynamicResource NavMore}" VerticalAlignment="Center"/>
+              <TextBlock x:Name="MoreChevronText" Grid.Column="2" Text="+" Foreground="#78BFD2"
+                         FontSize="16" VerticalAlignment="Center"/>
+            </Grid>
+          </Button>
+          <StackPanel x:Name="MoreMenuPanel" IsVisible="False" Spacing="2" Margin="9,0,0,0">
+            <Button x:Name="BossNavButton" Classes="ui nav" Tag="Boss" Click="NavClick">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Viewbox Width="15" Height="15"><Path Width="16" Height="16" Fill="Transparent" Stroke="#78BFD2" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M8,2.5 V6.5 M8,6.5 A3.5,3.5 0 1 0 8,13.5 A3.5,3.5 0 1 0 8,6.5"/></Viewbox>
+                <TextBlock Text="{DynamicResource NavBoss}" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+            <Button x:Name="GuidesNavButton" Classes="ui nav" Tag="Guides" Click="NavClick">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Viewbox Width="15" Height="15"><Path Width="16" Height="16" Fill="Transparent" Stroke="#78BFD2" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M3,3.5 H7.2 A2.2,2.2 0 0 1 9.2,5.2 V13 H3.6 A1.2,1.2 0 0 1 3,11.6 Z M13,3.5 H8.8 A2.2,2.2 0 0 0 6.8,5.2"/></Viewbox>
+                <TextBlock Text="{DynamicResource NavGuides}" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+            <Button x:Name="ChangelogNavButton" Classes="ui nav" Tag="Changelog" Click="NavClick">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Viewbox Width="15" Height="15"><Path Width="16" Height="16" Fill="Transparent" Stroke="#78BFD2" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M3,2.8 H10.5 L13,5.3 V13.2 H3 Z M10.5,2.8 V5.3 H13 M5.2,8 H10.8 M5.2,10.5 H9"/></Viewbox>
+                <TextBlock Text="{DynamicResource NavChangelog}" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+            <Button x:Name="SupportNavButton" Classes="ui nav" Tag="Support" Click="NavClick">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Viewbox Width="15" Height="15"><Path Width="16" Height="16" Fill="Transparent" Stroke="#78BFD2" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M8,2.5 A5.5,5.5 0 1 0 8,13.5 A5.5,5.5 0 1 0 8,2.5 M8,10.8 V11 M8,5 A2,2 0 0 1 8,9"/></Viewbox>
+                <TextBlock Text="{DynamicResource NavSupport}" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+          </StackPanel>
         </StackPanel>
 
         <StackPanel DockPanel.Dock="Bottom" Spacing="4">
+          <Button x:Name="SettingsNavButton" Classes="ui nav" Tag="Settings" Click="NavClick">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Viewbox Width="15" Height="15"><Path Width="16" Height="16" Fill="Transparent" Stroke="#78BFD2" StrokeThickness="1.6" StrokeLineCap="Round" Data="M8,5.2 A2.8,2.8 0 1 0 8,10.8 A2.8,2.8 0 1 0 8,5.2 M8,2.2 V3.6 M8,12.4 V13.8 M2.2,8 H3.6 M12.4,8 H13.8"/></Viewbox>
+              <TextBlock Text="{DynamicResource NavSettings}" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
           <TextBlock x:Name="DeveloperSectionLabel" Text="{DynamicResource NavSystem}" Classes="kicker" Margin="13,0,0,8"/>
           <Button x:Name="DeveloperNavButton" Classes="ui nav" Tag="Debug" Click="NavClick">
             <StackPanel Orientation="Horizontal" Spacing="10">
@@ -180,6 +197,77 @@
     <!-- Tartalom -->
     <Grid Grid.Row="1" Grid.Column="1" Margin="28,24,28,24">
       <ContentControl x:Name="PageHost"/>
+    </Grid>
+
+    <Grid x:Name="OnboardingLayer" Grid.RowSpan="2" Grid.ColumnSpan="2"
+          IsVisible="False" ZIndex="1000" Background="Transparent">
+      <Canvas x:Name="OnboardingCanvas">
+        <Border x:Name="OnboardingShadeTop" Background="#B900050B"/>
+        <Border x:Name="OnboardingShadeLeft" Background="#B900050B"/>
+        <Border x:Name="OnboardingShadeRight" Background="#B900050B"/>
+        <Border x:Name="OnboardingShadeBottom" Background="#B900050B"/>
+        <Border x:Name="OnboardingHighlight" IsHitTestVisible="False"
+                BorderBrush="#45DFFF" BorderThickness="2" CornerRadius="12"
+                Background="#1235DFFF" BoxShadow="0 0 28 2 #AA45DFFF">
+          <Border.Transitions>
+            <Transitions><DoubleTransition Property="Opacity" Duration="0:0:0.6"/></Transitions>
+          </Border.Transitions>
+        </Border>
+        <Border x:Name="OnboardingCard" Width="380" Classes="hero" Padding="22">
+          <StackPanel Spacing="12">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock x:Name="OnboardingCounter" Classes="kicker"/>
+              <Button Grid.Column="1" Classes="ui quiet" Content="×" Click="OnboardingSkipClick"/>
+            </Grid>
+            <TextBlock x:Name="OnboardingTitle" Classes="h1" FontSize="23" TextWrapping="Wrap"/>
+            <TextBlock x:Name="OnboardingText" Classes="body" FontSize="14" TextWrapping="Wrap"/>
+            <Border Classes="rowline" Margin="0,3"/>
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+              <Button x:Name="OnboardingSkipButton" Classes="ui" Content="{DynamicResource Skip}" Click="OnboardingSkipClick"/>
+              <Button x:Name="OnboardingPreviousButton" Grid.Column="2" Classes="ui" Content="{DynamicResource Previous}" Click="OnboardingPreviousClick"/>
+              <Button x:Name="OnboardingNextButton" Grid.Column="3" Classes="ui primary" Content="{DynamicResource Next}" Click="OnboardingNextClick"/>
+            </Grid>
+          </StackPanel>
+        </Border>
+      </Canvas>
+    </Grid>
+
+    <!-- UI-only auth rehearsal. Real token validation replaces this manual gate later. -->
+    <Grid x:Name="TestLoginLayer" Grid.RowSpan="2" Grid.ColumnSpan="2"
+          IsVisible="False" ZIndex="2000" Background="#F2050910">
+      <Border Width="570" MaxWidth="570" Classes="hero" Padding="32"
+              HorizontalAlignment="Center" VerticalAlignment="Center"
+              BorderBrush="#665FDFF4" BoxShadow="0 24 70 0 #B0000000, 0 0 42 0 #3045DFFF">
+        <StackPanel Spacing="18">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="17">
+            <Border Width="66" Height="66" CornerRadius="18" Background="#A00A1422"
+                    BorderBrush="#6545DFFF" BorderThickness="1" BoxShadow="0 0 24 0 #4845DFFF">
+              <Image Source="/Assets/nexforge-logo.png" Margin="8" Stretch="Uniform"
+                     RenderOptions.BitmapInterpolationMode="HighQuality"/>
+            </Border>
+            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+              <TextBlock Text="{DynamicResource TestLoginKicker}" Classes="kicker"/>
+              <TextBlock Text="{DynamicResource TestLoginTitle}" Classes="h1" FontSize="25"/>
+            </StackPanel>
+          </Grid>
+          <TextBlock Text="{DynamicResource TestLoginText}" Classes="body" FontSize="14" TextWrapping="Wrap"/>
+          <Border Classes="inset" Padding="14">
+            <StackPanel Spacing="5">
+              <TextBlock Text="{DynamicResource TestLoginTestOnly}" Classes="kicker" FontSize="9"/>
+              <TextBlock x:Name="TestLoginStatusText" Classes="hint" TextWrapping="Wrap"/>
+            </StackPanel>
+          </Border>
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+            <Button Classes="ui primary" Content="{DynamicResource TestLoginOpenBrowser}"
+                    Click="OpenTestLoginBrowserClick" HorizontalAlignment="Stretch"/>
+            <Button x:Name="TestLoginContinueButton" Grid.Column="1" Classes="ui gold"
+                    Content="{DynamicResource TestLoginContinue}" Click="CompleteTestLoginClick"
+                    IsEnabled="False"/>
+          </Grid>
+          <TextBlock Text="{DynamicResource TestLoginFooter}" Classes="hint" FontSize="10"
+                     TextAlignment="Center" TextWrapping="Wrap"/>
+        </StackPanel>
+      </Border>
     </Grid>
   </Grid>
 </Window>

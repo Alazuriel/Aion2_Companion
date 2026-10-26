@@ -51,6 +51,13 @@ from the repository. Maintainer builds load the key from
 `Private/NfgMaster.key` or the `NEXFORGE_NFG_MASTER_KEY` environment variable.
 The key is embedded only into the resulting official build.
 
+## Releases and updates
+
+The project includes a branded per-user Windows installer, an in-app changelog
+and a GitHub Release updater with mandatory SHA-256 verification. Maintainer
+instructions are documented in
+[DOCS/RELEASES_UPDATER_INSTALLER.md](DOCS/RELEASES_UPDATER_INSTALLER.md).
+
 ## Data and privacy
 
 - Combat history and settings are stored locally.

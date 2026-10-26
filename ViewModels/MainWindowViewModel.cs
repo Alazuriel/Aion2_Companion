@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -25,46 +25,15 @@ using AION_2_Companion.Core.Map.Pets;
 
 /*
  *          TODO ÍGY SORBA!
- * 
+ *
  * A heal nem az aminek hittük, de legalább a szarokat kiszűrjük.
  *
- *  A Death-nél, ellenőrízzük az utolsó hit-et is arra a mobra, abból látjuk a hpját..
- *  Ha a hp-ja több mint a hit, remélhetőleg ígykell nézni, nem töröljük a mobot nem halt meg! 
-    Habár első tesztnél nézhetjük úgyis hogy ameddig nem 0 a hp-ja, addig megtartjuk a Deathnél.
-    - Jó a hit-be nem látjuk a hp-t!
-    - De a hp-be látjuk xD
- *  A timer úgyis megoldja :3
- *  Kész
- *
- * 
- * 
- * Ha ismerjük a player classát, ellenőrzzük hogy tényleg ővé az a spell,
- * 2 opció van:
-        Ha nem ővé a spell megkeressük kié lehet (Ez csak akkor jó ha abból a class-ból csak 1 ember van!)
-        Ha nem ővé a spell eldobjuk a sebzést és senki nem kaphatja meg!
- *  Ezt a 2-öt persze egyszerre kell használni! AION2_Classes file-ba elkell tárolni a spell prefixet!
- *  Ismeretlen skilleket meg egyenlőre mindig kuka (Amit sehol se ismerünk!)
- * Kész
- *
- * Csökkentsük a vinyo terhelést. Automatikusan induljon az egész.
- * A logolást csak be lehessen kapcsolni (file-ba exportálás) mert jelenleg eltünik a helyem ha futtatom.
- * Debugnak így jó, de bele hal a gép néha xD 
- * (Program bezárása utánse jön vissza a hely a gépen csak gép resinél! )
- * 
- * 
- * A login-t figyelni kéne, mert azzal tudnánk beragt party-t törölni - Jó kérdés hogy lehet e
- * 
- * Vissza lehessen nézni a fightokat! A dps meter atljan legyen vissza fele nyil. Ha máshol is használható ott is!
- * Ha vissza mentünk másik fighht értelem szerűen, azt írjuk a Details-be és a Timelineon! - Jó ötlet még mindig 
- * 
  * A spellek level szintjének vissza fejtése, az id végén található számokból. (Pontosabban azaz extra amit rárakunk! 
  *  Ha ezis megvan, mehet a dps meter-re és a timeline-ra.
  *
  *
  *
- *  NFG fileok titkosítása, valahogy úgy hogy a program tudja csak vissza fejteni
- *  De ha a programot vissza fejtik ne tudják az NFG-t xD
- *  Illetve ha fentvan githubon, az NFG Loader marad, de amivel kibontja az nem! - Tökéletes
+ *
  */
 public partial class MainWindowViewModel : ViewModelBase
 {
@@ -81,24 +50,37 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool _autoManagedDpsOverlay;
     private long _fightEndTimestamp;
     private string _selfName = "";
-    private string _currentMobName;
+    private string _currentMobName = string.Empty;
+    private int _currentMobTemplateId;
+    private BossDefinition? _currentBoss;
+    private uint _currentBossRuntimeId;
+    private long _bossStartTimestamp;
+    private long _bossLastHitTimestamp;
+    private readonly Dictionary<uint, uint> _mobHealthRaw = new();
+    private MeterSnapshot _lastBossSnapshot = new();
     public static PetsDatabase? _ElyosPets;
     private readonly Dictionary<int, (int Level, int Soul)> _ownedPets = new();
     private bool _petCollectionReady;
     public static MobsDatabase? _mobsDatabaseStatic;
     private readonly HashSet<uint> _pendingSummons = new();
-    private string _characterName = "Várakozás a karakterre";
+    private string _characterName = LocalizationService.Get("WaitingForCharacter");
     private Bitmap? _selfClassIcon;
     private string _selfClassName = string.Empty;
     private string _selfClassColor = "#9CA3AF";
     private ForgeDataLoader _forgeDataLoader;
-    private const double FightEndGraceSeconds = 0.75;
+    private const double FightEndGraceSeconds = 8.5;
 
     private bool _fightEndPending;
     private long _fightEndRequestedAt;
     private long _fightLastHitTimestamp;
 
     private readonly HashSet<uint> _fightTargets = new();
+    private readonly HashSet<uint> _deadFightTargets = new();
+
+    // Ideiglenesen lezárt fightok. Egy másik mob sebzése NEM archiválja
+    // az előzőt azonnal; 8,5s-ig vissza tudunk térni rá.
+    private readonly List<PausedFightState> _pausedFights = new();
+    private const int MaxPausedFights = 12;
     private sealed record SkillOwnerResult(
         PartyMemberEntry? Owner,
         bool Found,
@@ -226,7 +208,9 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
     {
         public string Name { get; set; } = "";
         public long TotalDamage { get; set; }
+        public long BossDamage { get; set; }
         public long TotalHealing { get; set; }
+        public long BossHealing { get; set; }
 
         public byte? ClassId { get; set; }
         public string ClassName { get; set; } = "";
@@ -238,6 +222,26 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         public int SnapshotHitCount { get; set; }
         public string SnapshotClassName { get; set; } = string.Empty;
         public bool SnapshotNeedsSort { get; set; }
+    }
+
+    private sealed class PausedFightState
+    {
+        public required Dictionary<uint, PlayerDamageStats> Players { get; init; }
+        public required HashSet<uint> Targets { get; init; }
+        public required HashSet<uint> DeadTargets { get; init; }
+        public required HashSet<uint> CombatMobs { get; init; }
+        public required MeterSnapshot ArchiveSnapshot { get; init; }
+        public required string? MobName { get; init; }
+        public required int MobTemplateId { get; init; }
+        public required string BossId { get; init; }
+        public required uint BossRuntimeId { get; init; }
+        public required long BossStartTimestamp { get; init; }
+        public required long BossLastHitTimestamp { get; init; }
+        public required long StartTimestamp { get; init; }
+        public required long LastDamageTimestamp { get; init; }
+        public required long LastHitTimestamp { get; init; }
+        public required long PauseTimestamp { get; init; }
+        public required long ExpiryTimestamp { get; init; }
     }
 
     // A damage/heal összeg ettől függetlenül mindig tovább számolódik. Ez csak
@@ -252,6 +256,9 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         public bool Crit { get; init; }
         public bool IsDot { get; init; }
         public bool IsHeal { get; init; }
+        public uint TargetRuntimeId { get; init; }
+        public int TargetTemplateId { get; set; }
+        public bool IsBossTarget { get; set; }
     }
     
 
@@ -260,6 +267,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
     private long _fightStartTimestamp;
     private bool _fightActive;
     private long _lastDamageTimestamp;
+    // Eredeti 8,5 másodperces timeout megtartva.
     private const double CombatInactivityTimeoutSeconds = 8.5;
     
     // Summon runtime ID -> tulajdonos runtime ID
@@ -293,133 +301,372 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
     
     private void CombatStartCheck(WireFrame frame)
     {
-        Opcode opcode = frame.Opcode;
-        byte[] paylod = frame.Payload;
-        
-        if (_SelfId == 0)
+        if (_SelfId == 0 || frame.Opcode != OpcodeId.EnterCombat ||
+            !CombatStartFrameParser.TryParse(frame.Payload, out var start) ||
+            start.actorId != _SelfId)
             return;
-        
-        if (opcode == OpcodeId.EnterCombat)
-        {
-            if (CombatStartFrameParser.TryParse(paylod, out var start))
-            {
-                
-                if (start.actorId == _SelfId)
-                {
-                    int _mobTemplateId = _KnowMobs.TryGetValue(start.targetId,  out var mobTemplate) ? mobTemplate : 0;
-                    string? _mobName = _forgeDataLoader._mobsDatabase?.GetById(_mobTemplateId).Name;
-                    DebugConsole.Log("damage",$"[DPS] Fight started. Target mob: {_mobName}");
-                    if (_fightEndPending)
-                    {
-                        if (_fightTargets.Contains(start.targetId))
-                            return;
-                        FinalizeCombat();
-                    }
-                    _MobsInCombat.Add(start.targetId);
-                }
-            }
-        }
+
+        // EnterCombat önmagában nem bizonyít új sebzést, ezért nem
+        // von vissza pending lezárást vagy soft Leave/Disengage jelzést.
+        // Ezt kizárólag az ugyanarra a célpontra érkező elfogadott Hit teszi.
+
+        _MobsInCombat.Add(start.targetId);
+        TrackTargetMetadata(start.targetId);
+
+        DebugConsole.Log("dpstime",
+            $"[COMBAT ENTER] Target={start.targetId} | " +
+            $"TargetsInFight={_fightTargets.Count} | Pending={_fightEndPending}");
     }
 
     private void CombatEndCheck(WireFrame frame)
     {
         Opcode opcode = frame.Opcode;
-        byte[] paylod = frame.Payload;
-        
         if (opcode == OpcodeId.HP)
         {
-            if (HpFrameParser.TryParse(paylod, out var hp))
+            if (HpFrameParser.TryParse(frame.Payload, out var hp) && hp is not null && hp.Target != 0)
             {
-               
-                if(hp != null && hp.Target == 0)
-                    return;
-                
-                if (_MobsInCombat.Contains(hp.Target) && hp.Health == 0)
-                {
-                    DebugConsole.Log("damage",$"Mob {hp.Target} removed. HP: {hp.Health}");
-                    _MobsInCombat.Remove(hp.Target);
-                    StopCombat();
-                }
+                _mobHealthRaw[hp.Target] = hp.Health;
+                TrackTargetMetadata(hp.Target);
+                if (hp.Health == 0)
+                    ConfirmCombatTargetDeath(hp.Target, "HP=0");
             }
+            return;
         }
-        else if (opcode == OpcodeId.LeaveCombat || opcode == OpcodeId.DisengageCombat)
+
+        // A Leave/Disengage bossmechanika alatt is érkezhet.
+        // NEM indítunk vele lezárást, csak diagnosztikát.
+        if (opcode == OpcodeId.LeaveCombat ||
+            opcode == OpcodeId.DisengageCombat)
         {
-            if (CombatEndFrameParser.TryParse(paylod, out var id))
+            if (CombatEndFrameParser.TryParse(frame.Payload, out var entityId) &&
+                _fightActive && _fightTargets.Contains(entityId))
             {
-                if(id == _SelfId)
-                    return;
-                
-                if (_MobsInCombat.Contains(id))
-                {
-                    _MobsInCombat.Remove(id);
-                    StopCombat();
-                }
+                DebugConsole.Log("dpstime",
+                    $"[COMBAT SOFT SIGNAL] Target={entityId} | Opcode={opcode} | " +
+                    "IgnoredAsFightEnd=True");
             }
         }
+    }
+
+    private (int TemplateId, string Name, BossDefinition? Boss) ResolveTarget(uint runtimeId)
+    {
+        if (!_KnowMobs.TryGetValue(runtimeId, out int templateId))
+            return (0, string.Empty, null);
+
+        string name = _forgeDataLoader._mobsDatabase?.GetById(templateId)?.Name ?? string.Empty;
+        BossDefinition? boss = _forgeDataLoader._bossesDatabase?.Find(templateId, name);
+        return (templateId, name, boss);
+    }
+
+    private void TrackTargetMetadata(uint runtimeId)
+    {
+        var target = ResolveTarget(runtimeId);
+        if (target.TemplateId == 0)
+            return;
+
+        if (target.Boss is not null)
+        {
+            bool newlyDetected = _currentBoss is null;
+            _currentBoss = target.Boss;
+            _currentBossRuntimeId = runtimeId;
+            _currentMobTemplateId = target.TemplateId;
+            _currentMobName = target.Boss.LocalizedName(
+                LocalizationService.CurrentLanguageCode,
+                target.Name);
+            ReclassifyBossTarget(runtimeId, target.TemplateId);
+
+            if (newlyDetected && CompanionSettings.DpsEncounterMode == DpsEncounterMode.Bosses &&
+                _fightActive && CompanionSettings.AutoManageDpsOverlay)
+                ShowDpsOverlayForCombat();
+            return;
+        }
+
+        if (_currentBoss is null && !string.IsNullOrWhiteSpace(target.Name))
+        {
+            _currentMobTemplateId = target.TemplateId;
+            _currentMobName = target.Name;
+        }
+    }
+
+    private void ReclassifyBossTarget(uint runtimeId, int templateId)
+    {
+        foreach (PlayerDamageStats stats in _damageByPlayer.Values)
+        {
+            bool changed = false;
+            foreach (StoredHit hit in stats.Hits)
+            {
+                if (hit.IsHeal || hit.TargetRuntimeId != runtimeId || hit.IsBossTarget)
+                    continue;
+
+                hit.TargetTemplateId = templateId;
+                hit.IsBossTarget = true;
+                stats.BossDamage += hit.Amount;
+                if (_bossStartTimestamp == 0 || hit.Timestamp < _bossStartTimestamp)
+                    _bossStartTimestamp = hit.Timestamp;
+                _bossLastHitTimestamp = Math.Max(_bossLastHitTimestamp, hit.Timestamp);
+                changed = true;
+            }
+
+            if (changed)
+            {
+                stats.SnapshotEvents.Clear();
+                stats.SnapshotHitCount = 0;
+                stats.SnapshotClassName = "\0";
+                stats.SnapshotNeedsSort = true;
+            }
+        }
+    }
+
+        private void CombatDeathCheck(WireFrame frame)
+    {
+        if (frame.Opcode != OpcodeId.Death)
+            return;
+
+        if (DeathFrameParser.TryParse(frame.Payload, out var entityId))
+            ConfirmCombatTargetDeath(entityId, "Death");
+    }
+
+    private void ConfirmCombatTargetDeath(uint entityId, string signal)
+    {
+        // Csak az AKTUÁLIS fightban valóban sebzett target halála számít.
+        if (!_fightActive || entityId == 0 || !_fightTargets.Contains(entityId))
+            return;
+
+        _deadFightTargets.Add(entityId);
+        _MobsInCombat.Remove(entityId);
+
+        DebugConsole.Log("dpstime",
+            $"[COMBAT TARGET DEAD] Target={entityId} | Via={signal} | " +
+            $"Confirmed={_deadFightTargets.Count}/{_fightTargets.Count}");
+
+        // Egy add halála NEM zárhatja le az élő bosst.
+        StopCombat();
     }
     
     private void CheckCombatTimeout()
     {
+        long now = Stopwatch.GetTimestamp();
+        FlushExpiredPausedFights(now);
+
         if (!_fightActive)
             return;
 
-        long now = Stopwatch.GetTimestamp();
-
+        // HP=0 / Death esetén az óra megállt, de 8,5s-ig újranyitható.
         if (_fightEndPending)
         {
-            double waitingSeconds =
-                (now - _fightEndRequestedAt) /
-                (double)Stopwatch.Frequency;
+            double pendingSeconds =
+                (now - _fightEndRequestedAt) / (double)Stopwatch.Frequency;
 
-            if (waitingSeconds >= FightEndGraceSeconds)
-                FinalizeCombat();
-
+            if (pendingSeconds >= FightEndGraceSeconds)
+                FinalizeCombat("HpZeroOrDeathGraceExpired");
             return;
         }
 
+        // Ha HP=0 packet elveszik, a 8,5s damage-idle védőháló.
         if (_lastDamageTimestamp == 0)
             return;
 
         double inactiveSeconds =
-            (now - _lastDamageTimestamp) /
-            (double)Stopwatch.Frequency;
-
-        if (inactiveSeconds < CombatInactivityTimeoutSeconds)
-            return;
-
-        _MobsInCombat.Clear();
-
-        // Inaktivitás esetén is az utolsó hitig
-        // számoljuk a fight időtartamát.
-        FinalizeCombat();
-
-        _lastDamageTimestamp = 0;
+            (now - _lastDamageTimestamp) / (double)Stopwatch.Frequency;
+        if (inactiveSeconds >= CombatInactivityTimeoutSeconds)
+        {
+            DebugConsole.Log("dpstime",
+                $"[COMBAT IDLE] NoDamage={inactiveSeconds:F1}s | " +
+                $"Targets={_fightTargets.Count}");
+            FinalizeCombat("InactivityTimeout");
+        }
     }
 
-    
     private void StopCombat()
     {
-        if (_MobsInCombat.Count != 0)
+        if (!_fightActive || _fightEndPending || _fightTargets.Count == 0)
             return;
 
-        if (!_fightActive || _fightEndPending)
+        // Egy boss add halála nem zárja le az egész fightot.
+        if (!_fightTargets.All(_deadFightTargets.Contains))
             return;
 
-        // Még ne zárjuk le a fightot!
         _fightEndPending = true;
         _fightEndRequestedAt = Stopwatch.GetTimestamp();
 
         DebugConsole.Log("dpstime",
-            "[COMBAT END PENDING] No active mobs. " +
-            "Waiting for late damage.");
+            $"[FIGHT PAUSED] Reason=AllDamagedTargetsHP0OrDeath | " +
+            $"Targets={_fightTargets.Count} | " +
+            $"RecoverableFor={FightEndGraceSeconds:F1}s");
     }
 
-    private void FinalizeCombat()
+    // Másik mob első ütésekor eltesszük a régi fight TELJES állapotát.
+    // A snapshot csak lejáratkor kerül Historyba. A mob ID ugyanaz marad.
+    private void SuspendCurrentFight(string reason, long now)
+    {
+        if (!_fightActive || _damageByPlayer.Count == 0)
+            return;
+
+        if (!_fightEndPending)
+        {
+            _fightEndPending = true;
+            _fightEndRequestedAt = now;
+        }
+
+        long pauseAt = _fightEndRequestedAt;
+        long expiry = pauseAt +
+            (long)(FightEndGraceSeconds * Stopwatch.Frequency);
+
+        var state = new PausedFightState
+        {
+            Players = new Dictionary<uint, PlayerDamageStats>(_damageByPlayer),
+            Targets = new HashSet<uint>(_fightTargets),
+            DeadTargets = new HashSet<uint>(_deadFightTargets),
+            CombatMobs = new HashSet<uint>(_MobsInCombat),
+            ArchiveSnapshot = BuildSnapshot(),
+            MobName = _currentMobName,
+            MobTemplateId = _currentMobTemplateId,
+            BossId = _currentBoss?.Id ?? string.Empty,
+            BossRuntimeId = _currentBossRuntimeId,
+            BossStartTimestamp = _bossStartTimestamp,
+            BossLastHitTimestamp = _bossLastHitTimestamp,
+            StartTimestamp = _fightStartTimestamp,
+            LastDamageTimestamp = _lastDamageTimestamp,
+            LastHitTimestamp = _fightLastHitTimestamp,
+            PauseTimestamp = pauseAt,
+            ExpiryTimestamp = expiry
+        };
+        _pausedFights.Add(state);
+
+        DebugConsole.Log("dpstime",
+            $"[FIGHT SUSPENDED] Reason={reason} | " +
+            $"Targets={string.Join(",", state.Targets)} | " +
+            $"Remaining={Math.Max(0, (expiry - now) / (double)Stopwatch.Frequency):F2}s");
+
+        // A régi statisztikát még NEM mentjük, és nem is veszítjük el.
+        _fightActive = false;
+        _fightEndPending = false;
+        _fightEndRequestedAt = 0;
+        _fightStartTimestamp = 0;
+        _fightLastHitTimestamp = 0;
+        _fightEndTimestamp = 0;
+        _lastDamageTimestamp = 0;
+        _damageByPlayer.Clear();
+        _fightTargets.Clear();
+        _deadFightTargets.Clear();
+        _MobsInCombat.Clear();
+        _currentMobName = string.Empty;
+        _currentMobTemplateId = 0;
+        _currentBoss = null;
+        _currentBossRuntimeId = 0;
+        _bossStartTimestamp = 0;
+        _bossLastHitTimestamp = 0;
+
+        // Memóriakorlát extrém, sokmobszos szituációra.
+        while (_pausedFights.Count > MaxPausedFights)
+        {
+            var oldest = _pausedFights[0];
+            _pausedFights.RemoveAt(0);
+            SavePausedFight(oldest, completed: true, "PauseBufferLimit");
+        }
+    }
+
+    private bool TryResumePausedFight(uint targetId, long hitTimestamp, long now)
+    {
+        // A korábbi summon replayek nem új harci aktivitások!
+        if (hitTimestamp < now - (long)(2.0 * Stopwatch.Frequency))
+            return false;
+
+        PausedFightState? previous = _pausedFights.LastOrDefault(p =>
+            p.Targets.Contains(targetId) && now < p.ExpiryTimestamp &&
+            hitTimestamp >= p.PauseTimestamp);
+        if (previous is null)
+            return false;
+
+        // A közben indult másik fightot is eltesszük, így nem keverjük
+        // az új mob sebzését a visszahozott boss sebzésével.
+        if (_fightActive)
+            SuspendCurrentFight("ReturnToEarlierTarget", now);
+
+        _pausedFights.Remove(previous);
+
+        _damageByPlayer.Clear();
+        foreach (var (id, stats) in previous.Players)
+            _damageByPlayer[id] = stats;
+        _fightTargets.Clear();
+        _fightTargets.UnionWith(previous.Targets);
+        _deadFightTargets.Clear();
+        _deadFightTargets.UnionWith(previous.DeadTargets);
+        _MobsInCombat.Clear();
+        _MobsInCombat.UnionWith(previous.CombatMobs);
+
+        _fightStartTimestamp = previous.StartTimestamp;
+        _fightLastHitTimestamp = previous.LastHitTimestamp;
+        _lastDamageTimestamp = previous.LastDamageTimestamp;
+        _fightEndTimestamp = 0;
+        _fightActive = true;
+        _fightEndPending = false;
+        _fightEndRequestedAt = 0;
+        _currentMobName = previous.MobName ?? string.Empty;
+        _currentMobTemplateId = previous.MobTemplateId;
+        _currentBoss = _forgeDataLoader._bossesDatabase?.Find(
+            previous.MobTemplateId, previous.MobName);
+        _currentBossRuntimeId = previous.BossRuntimeId;
+        _bossStartTimestamp = previous.BossStartTimestamp;
+        _bossLastHitTimestamp = previous.BossLastHitTimestamp;
+
+        _deadFightTargets.Remove(targetId);  // téves HP=0 feloldása
+        _MobsInCombat.Add(targetId);
+
+        DebugConsole.Log("dpstime",
+            $"[FIGHT RESTORED] Target={targetId} | " +
+            $"OriginalStart={previous.StartTimestamp} | " +
+            $"Players={previous.Players.Count}");
+        return true;
+    }
+
+    private void FlushExpiredPausedFights(long now)
+    {
+        for (int i = _pausedFights.Count - 1; i >= 0; i--)
+        {
+            PausedFightState paused = _pausedFights[i];
+            if (now < paused.ExpiryTimestamp)
+                continue;
+
+            _pausedFights.RemoveAt(i);
+            SavePausedFight(paused, completed: true, "GraceExpired");
+        }
+    }
+
+    private void SavePausedFight(PausedFightState paused, bool completed, string reason)
+    {
+        MeterSnapshot snapshot = paused.ArchiveSnapshot;
+        DebugConsole.Log("dpstime",
+            $"[FIGHT FINAL PAUSED] Reason={reason} | " +
+            $"Targets={string.Join(",", paused.Targets)} | " +
+            $"Duration={snapshot.Duration:F2}s");
+
+        foreach (uint target in paused.Targets)
+            _mobHealthRaw.Remove(target);
+
+        if (snapshot.Duration <= 0 ||
+            (snapshot.TotalDamage <= 0 && snapshot.TotalHealing <= 0))
+            return;
+
+        double ageSeconds = Math.Max(0,
+            (Stopwatch.GetTimestamp() - paused.LastHitTimestamp) /
+            (double)Stopwatch.Frequency);
+        DateTimeOffset endedAt = DateTimeOffset.UtcNow -
+            TimeSpan.FromSeconds(ageSeconds);
+        CombatLogStore.Shared.Save(snapshot,
+            endedAt - TimeSpan.FromSeconds(snapshot.Duration),
+            endedAt, completed);
+
+        if (snapshot.IsBossEncounter)
+            _lastBossSnapshot = snapshot.ToBossOnly();
+
+    }
+
+        private void FinalizeCombat(string reason = "Unknown")
     {
         if (!_fightActive)
             return;
 
-        // Nem a 750 ms várakozás végéig számoljuk a DPS-t!
         _fightEndTimestamp = Math.Max(
             _fightStartTimestamp,
             _fightLastHitTimestamp);
@@ -428,10 +675,23 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         _fightEndPending = false;
 
         DebugConsole.Log("dpstime",
-            "[DPS] Fight ended.");
+            $"[FIGHT FINAL] Reason={reason} | " +
+            $"Duration={(double)(_fightEndTimestamp - _fightStartTimestamp) / Stopwatch.Frequency:F2}s | " +
+            $"Targets={_fightTargets.Count}");
+
+        MeterSnapshot finalSnapshot = BuildSnapshot();
+        if (finalSnapshot.IsBossEncounter)
+            _lastBossSnapshot = BuildSnapshot(bossOnly: true);
 
         SaveFightToCombatLog(completed: true);
         CountDps();
+
+        foreach (uint target in _fightTargets)
+            _mobHealthRaw.Remove(target);
+
+        // A snapshot elkészítése UTÁN törlünk, hogy a boss nevét ne veszítsük el.
+        _MobsInCombat.Clear();
+        _deadFightTargets.Clear();
         ScheduleAutomaticDpsOverlayHide();
     }
 
@@ -467,6 +727,11 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
 
     public void SaveActiveFightForShutdown()
     {
+        // A szüneteltetett boss fightokat se veszítsük el leállításkor.
+        foreach (PausedFightState paused in _pausedFights.ToArray())
+            SavePausedFight(paused, completed: false, "ApplicationShutdown");
+        _pausedFights.Clear();
+
         if (!_fightActive || _damageByPlayer.Count == 0)
             return;
 
@@ -480,8 +745,8 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         _fightEndPending = false;
         SaveFightToCombatLog(completed: false);
     }
-    
-    private void ProcessDamage(WireFrame frame)
+
+        private void ProcessDamage(WireFrame frame)
     {
         var opcode = frame.Opcode;
 
@@ -568,6 +833,8 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         }
 
         stats.TotalHealing += hit.Damage;
+        if (_currentBoss is not null && _bossStartTimestamp > 0 && timestamp >= _bossStartTimestamp)
+            stats.BossHealing += hit.Damage;
 
         if (stats.Hits.Count < MaxStoredCombatEventsPerPlayer)
         {
@@ -614,52 +881,21 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
             return;
         }
 
-        if (hit.Target == hit.Actor || hit.Damage <= 0)
+        if (hit.Target == hit.Actor || hit.Damage <= 0 ||
+            hit.Damage > DamageScanner.MaxAcceptedDamage)
+        {
+            if (hit.Damage > DamageScanner.MaxAcceptedDamage)
+            {
+                DebugConsole.Log("damage",
+                    $"[DAMAGE DROP] Implausible damage={hit.Damage} | " +
+                    $"Actor={hit.Actor} | Target={hit.Target} | Skill={hit.Skill}");
+            }
             return;
-        
+        }
+
         if (_SelfId == 0)
             return;
-        
-        PartyMemberEntry? findPlayer = PartyMembers
-            .FirstOrDefault(p => p.Id != 0 && p.Id == hit.Actor);
-        
-        if (findPlayer is not null)
-        {
-            string className = findPlayer.ClassName;
-            SkillDatabase? db = GetSkillDatabase(className);
 
-            // A skill benne van a játékos kasztjának adatbázisában.
-            if (db?.GetById(hit.Skill) is not null)
-            {
-                // Normál feldolgozás, mehet tovább a sebzés.
-            }
-            else
-            {
-                string skillId = hit.Skill.ToString();
-                string skillPrefix = skillId[..Math.Min(2, skillId.Length)];
-
-                // A skill nincs a DB-ben, de a prefix egyezik.
-                if (skillPrefix == Convert.ToString(findPlayer.SpellPrefix))
-                {
-                    DebugConsole.Log("skill",
-                        $"[SKILL PREFIX OK] Skill={hit.Skill} | " +
-                        $"Owner={findPlayer.Name} | Class={className}");
-
-                    // Elfogadjuk, és mehet tovább a sebzés.
-                }
-                else
-                {
-                    DebugConsole.Log("skill",
-                        $"[SKILL DROP] Skill={hit.Skill} | " +
-                        $"Class={className} | " +
-                        $"Prefix={skillPrefix} | " +
-                        $"ExpectedPrefix={findPlayer.SpellPrefix}");
-
-                    return;
-                }
-            }
-        }
-        
         uint originalActor = hit.Actor;
 
         uint ownerId = _summonOwners.TryGetValue(
@@ -675,6 +911,26 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         {
             BufferPendingDamage(originalActor, hit);
             return;
+        }
+
+        // Közvetlen játékostalálatnál csak a kaszt NFG-jében ténylegesen
+        // szereplő skill fogadható el. A korábbi kétjegyű prefix-ellenőrzés
+        // véletlen payloadokat is valódi skillnek nézett. Summonok saját
+        // skilljei nem feltétlenül szerepelnek a játékos kasztadatbázisában.
+        if (originalActor == ownerId)
+        {
+            PartyMemberEntry? member = isSelf
+                ? null
+                : PartyMembers.FirstOrDefault(p => p.Id != 0 && p.Id == ownerId);
+            string className = isSelf ? _selfClassName : member?.ClassName ?? string.Empty;
+            SkillDatabase? database = GetSkillDatabase(className);
+            if (database is not null && database.GetById(hit.Skill) is null)
+            {
+                DebugConsole.Log("skill",
+                    $"[SKILL DROP] Skill={hit.Skill} | Owner={ownerId} | " +
+                    $"Class={className} | Reason=NotInClassDatabase");
+                return;
+            }
         }
 
         string ownerName = isSelf
@@ -774,7 +1030,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
             var definition = _forgeDataLoader._classDatabase?.GetByJobValue(jobValue);
 
             if (definition is null)
-                CharacterClass = $"Ismeretlen (job {jobValue})";
+                CharacterClass = LocalizationService.Format("UnknownJob", jobValue);
 
             if (definition is not null)
             {
@@ -917,6 +1173,9 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
             uint _mobId = mobs.MobId;
             int _mobTemplateId = Convert.ToInt32(mobs.MobTemplateId);
             _KnowMobs[_mobId] = _mobTemplateId;
+
+            if (_fightTargets.Contains(_mobId) || _MobsInCombat.Contains(_mobId))
+                TrackTargetMetadata(_mobId);
 
             if (_forgeDataLoader._mobsDatabase != null)
                 DebugConsole.Log("spawn", $"[SPAWN] MobId={mobs.MobId} | " +
@@ -1450,8 +1709,8 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
 
     public string CaptureDescription =>
         SelectedCaptureDevice is null
-            ? "Nincs kiválasztott hálózati adapter"
-            : $"Adapter: {SelectedCaptureDevice.DisplayName}";
+            ? LocalizationService.Get("CaptureNoAdapter")
+            : LocalizationService.Format("CaptureAdapter", SelectedCaptureDevice.DisplayName);
     public ObservableCollection<LogEntry> LogEntries { get; } = new();
     public ObservableCollection<EndpointStats> Endpoints { get; } = new();
 
@@ -1619,7 +1878,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
             ?? CaptureDevices.FirstOrDefault();
 
         if (SelectedCaptureDevice is null)
-            StatusText = "Nem található hálózati adapter";
+            StatusText = LocalizationService.Get("CaptureNoAdapterFound");
 
         _meterTimer = new DispatcherTimer
         {
@@ -1663,7 +1922,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
 
         if (SelectedCaptureDevice is null)
         {
-            StatusText = "Nincs kijelölt hálózati adapter.";
+            StatusText = LocalizationService.Get("CaptureNoAdapter");
             return;
         }
 
@@ -1680,17 +1939,20 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
             _captureService.Start(SelectedCaptureDevice.Device);
 
             IsCapturing = true;
-            StatusText = "Capture running";
+            StatusText = LocalizationService.Get("CaptureRunning");
             StatusColor = "#34D399";
         }
         catch (Exception ex)
         {
             _tcpStreamDecoder = null;
             IsCapturing = false;
-            StatusText = $"Capture hiba: {ex.Message}";
+            StatusText = LocalizationService.Get("CaptureStartFailed");
             StatusColor = "#F87171";
+            DebugConsole.Log("capture", $"Capture start failed: {ex.Message}");
         }
     }
+
+    public void StartCaptureAfterLogin() => StartCapture();
     
     [RelayCommand]
     private void StopCapture()
@@ -1703,13 +1965,14 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         }
         catch (Exception ex)
         {
-            StatusText = $"Leállítási hiba: {ex.Message}";
+            StatusText = LocalizationService.Get("CaptureStopFailed");
             StatusColor = "#F87171";
+            DebugConsole.Log("capture", $"Capture stop failed: {ex.Message}");
             return;
         }
 
         IsCapturing = false;
-        StatusText = "Capture stopped";
+        StatusText = LocalizationService.Get("CaptureStopped");
         StatusColor = "#F87171";
     }
 
@@ -1753,41 +2016,115 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         long hitTimestamp =
             eventTimestamp ?? Stopwatch.GetTimestamp();
 
-        _lastDamageTimestamp = Stopwatch.GetTimestamp();
-
         bool fightJustStarted = false;
 
-        // Ha már lezárásra várunk, de új célpontot
-        // támadunk, az új fight legyen.
-        if (_fightActive &&
-            _fightEndPending &&
-            !_fightTargets.Contains(hit.Target))
+        // Lejárt, félretett fightot előbb elmentjük.
+        // Az új sebzés MINDIG a megfelelő runtime mobhoz kerüljön.
+        long now = Stopwatch.GetTimestamp();
+        FlushExpiredPausedFights(now);
+
+        // Egy későn azonosított summon régi, pufferelt találata nem indíthat
+        // új fightot és nem válthat át egy másik mobra. Ha ugyanaz a jelenlegi
+        // célpont, az összeget megtartjuk, de nem engedjük visszahúzni az órát.
+        if (eventTimestamp.HasValue &&
+            hitTimestamp < now - (long)(2.0 * Stopwatch.Frequency))
         {
-            FinalizeCombat();
+            if (!_fightActive || !_fightTargets.Contains(hit.Target))
+            {
+                DebugConsole.Log("damage",
+                    $"[DAMAGE REPLAY DROP] Target={hit.Target} | Skill={hit.Skill} | " +
+                    "Reason=StaleReplayCannotStartOrSwitchFight");
+                return;
+            }
+
+            hitTimestamp = Math.Max(hitTimestamp, _fightStartTimestamp);
+        }
+
+        if (_fightActive && _fightEndPending &&
+            (now - _fightEndRequestedAt) / (double)Stopwatch.Frequency >= FightEndGraceSeconds)
+        {
+            FinalizeCombat("GraceExpiredBeforeDamage");
+        }
+
+        bool sameCurrentTarget =
+            _fightActive && _fightTargets.Contains(hit.Target);
+        if (!sameCurrentTarget && !eventTimestamp.HasValue)
+            TryResumePausedFight(hit.Target, hitTimestamp, now);
+
+        if (_fightActive && _fightEndPending)
+        {
+            if (_fightTargets.Contains(hit.Target))
+            {
+                if (hitTimestamp >= _fightEndRequestedAt)
+                {
+                    _fightEndPending = false;
+                    _fightEndRequestedAt = 0;
+                    _deadFightTargets.Remove(hit.Target);
+                    _MobsInCombat.Add(hit.Target);
+                    DebugConsole.Log("dpstime",
+                        $"[FIGHT RESUMED] Target={hit.Target} | Via=SameTargetDamage");
+                }
+            }
+            else if (hitTimestamp >= _fightEndRequestedAt)
+            {
+                // Régi fight: ideiglenesen elrakjuk, nem FINALIZÁLJUK!
+                if ((now - _fightEndRequestedAt) /
+                    (double)Stopwatch.Frequency >= FightEndGraceSeconds)
+                    FinalizeCombat("GraceExpiredBeforeNewTarget");
+                else
+                    SuspendCurrentFight("DifferentTargetDamage", now);
+            }
         }
 
         if (!_fightActive)
         {
             _damageByPlayer.Clear();
             _fightTargets.Clear();
+            _deadFightTargets.Clear();
+            _MobsInCombat.Clear();
+            _MobsInCombat.Add(hit.Target);
 
             _fightStartTimestamp = hitTimestamp;
             _fightLastHitTimestamp = hitTimestamp;
             _fightEndTimestamp = 0;
+            _lastDamageTimestamp = hitTimestamp;
+            _fightEndRequestedAt = 0;
+            _currentMobName = string.Empty;
+            _currentMobTemplateId = 0;
+            _currentBoss = null;
+            _currentBossRuntimeId = 0;
+            _bossStartTimestamp = 0;
+            _bossLastHitTimestamp = 0;
 
             _fightActive = true;
             _fightEndPending = false;
             fightJustStarted = true;
 
             DebugConsole.Log("dpstime",
-                "[DPS] Új fight indult.");
+                $"[FIGHT START] Target={hit.Target} | " +
+                $"PausedFights={_pausedFights.Count}");
         }
         else if (hitTimestamp < _fightStartTimestamp)
         {
             _fightStartTimestamp = hitTimestamp;
         }
 
+        _lastDamageTimestamp = Math.Max(_lastDamageTimestamp, hitTimestamp);
+
         _fightTargets.Add(hit.Target);
+        TrackTargetMetadata(hit.Target);
+        var targetMetadata = ResolveTarget(hit.Target);
+        bool isBossTarget = targetMetadata.Boss is not null;
+        if (isBossTarget)
+        {
+            if (_bossStartTimestamp == 0 || hitTimestamp < _bossStartTimestamp)
+                _bossStartTimestamp = hitTimestamp;
+            _bossLastHitTimestamp = Math.Max(_bossLastHitTimestamp, hitTimestamp);
+        }
+
+        // Csak friss damage írhat felül egy előző haláljelzést.
+        if (!_fightEndPending || hitTimestamp >= _fightEndRequestedAt)
+            _deadFightTargets.Remove(hit.Target);
 
         if (hitTimestamp > _fightLastHitTimestamp)
             _fightLastHitTimestamp = hitTimestamp;
@@ -1826,6 +2163,8 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         }
 
         stats.TotalDamage += hit.Damage;
+        if (isBossTarget)
+            stats.BossDamage += hit.Damage;
         if (stats.Hits.Count < MaxStoredCombatEventsPerPlayer)
         {
             if (stats.Hits.Count > 0 &&
@@ -1841,10 +2180,14 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
                 Amount = hit.Damage,
                 Crit = hit.IsCritical,
                 IsDot = hit.IsDot,
+                TargetRuntimeId = hit.Target,
+                TargetTemplateId = targetMetadata.TemplateId,
+                IsBossTarget = isBossTarget,
             });
         }
 
-        if (fightJustStarted)
+        if (fightJustStarted &&
+            (CompanionSettings.DpsEncounterMode == DpsEncounterMode.All || isBossTarget))
             ShowDpsOverlayForCombat();
     }
 
@@ -1855,7 +2198,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
 
         _dpsOverlayHideTimer.Stop();
 
-        OverlayWindowManager.ShowDps(BuildSnapshot());
+        OverlayWindowManager.ShowDps(BuildOverlaySnapshot());
         _autoManagedDpsOverlay = true;
     }
 
@@ -1870,7 +2213,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
 
     // Pillanatkép az aktuális fightról az overlay számára.
     
-public MeterSnapshot BuildSnapshot()
+public MeterSnapshot BuildSnapshot(bool bossOnly = false)
 {
     long endTs = _fightActive
         ? (_fightEndPending
@@ -1884,6 +2227,13 @@ public MeterSnapshot BuildSnapshot()
             0,
             (endTs - _fightStartTimestamp) /
             (double)Stopwatch.Frequency);
+    double bossStartOffset = _bossStartTimestamp > 0
+        ? Math.Max(0, (_bossStartTimestamp - _fightStartTimestamp) / (double)Stopwatch.Frequency)
+        : 0;
+    double bossDuration = _bossStartTimestamp > 0
+        ? Math.Max(0, (endTs - _bossStartTimestamp) / (double)Stopwatch.Frequency)
+        : 0;
+    double viewDuration = bossOnly && _currentBoss is not null ? bossDuration : duration;
 
     var players = new List<PlayerStat>();
 
@@ -1912,9 +2262,11 @@ public MeterSnapshot BuildSnapshot()
 
         players.Add(ToPlayerStat(
             stats,
-            duration,
+            viewDuration,
             _fightStartTimestamp,
-            db));
+            db,
+            bossOnly,
+            bossStartOffset));
     }
 
 
@@ -1928,8 +2280,9 @@ public MeterSnapshot BuildSnapshot()
             ClassName = _selfClassName,
             ClassColor = _selfClassColor,
             ClassIcon = _selfClassIcon,
-            Duration = duration,
+            Duration = viewDuration,
             Damage = 0,
+            BossDamage = 0,
             Healing = 0
         });
     }
@@ -1955,30 +2308,70 @@ public MeterSnapshot BuildSnapshot()
             ClassName = member.ClassName,
             ClassColor = member.ClassColor,
             ClassIcon = member.ClassIcon,
-            Duration = duration,
+            Duration = viewDuration,
             Damage = 0,
+            BossDamage = 0,
             Healing = 0
         });
+    }
+
+    BossDefinition? boss = _currentBoss;
+    double? hpPercent = null;
+    long? currentHp = null;
+    if (boss is not null && _currentBossRuntimeId != 0 &&
+        _mobHealthRaw.TryGetValue(_currentBossRuntimeId, out uint rawHp))
+    {
+        hpPercent = rawHp <= 100
+            ? rawHp
+            : rawHp <= 10_000 ? rawHp / 100d : null;
+        if (hpPercent.HasValue && boss.MaxHp > 0)
+            currentHp = (long)Math.Round(boss.MaxHp * hpPercent.Value / 100d);
     }
 
     return new MeterSnapshot
     {
         Players = players,
-        Duration = duration,
-        MobMaxHp = 0,
+        Duration = viewDuration,
+        MobMaxHp = boss?.MaxHp ?? 0,
         MobTemplateName = mobName,
+        MobTemplateId = _currentMobTemplateId,
+        IsBossEncounter = boss is not null,
+        BossId = boss?.Id ?? string.Empty,
+        BossHpPercent = hpPercent,
+        BossCurrentHp = currentHp,
+        EnrageSeconds = boss?.EnrageSeconds,
+        EnrageRemainingSeconds = boss?.EnrageSeconds is int enrage
+            ? enrage - bossDuration
+            : null,
+        BossStartOffset = bossOnly ? 0 : bossStartOffset,
+        BossDuration = bossDuration,
         IsDemo = false
     };
 }
+
+private MeterSnapshot BuildOverlaySnapshot()
+{
+    if (CompanionSettings.DpsEncounterMode == DpsEncounterMode.All)
+        return BuildSnapshot();
+
+    return _currentBoss is not null
+        ? BuildSnapshot(bossOnly: true)
+        : _lastBossSnapshot;
+}
 private string GetCurrentMobName()
 {
-    
+    if (_currentBoss is not null)
+        return _currentBoss.LocalizedName(
+            LocalizationService.CurrentLanguageCode,
+            _currentMobName);
+
     foreach (uint runtimeId in _MobsInCombat)
     {
         if (_KnowMobs.TryGetValue(runtimeId, out int templateId) &&
             _forgeDataLoader._mobsDatabase?.GetById(templateId) is { } mob)
         {
             _currentMobName = mob.Name;
+            _currentMobTemplateId = templateId;
             return mob.Name;
         }
     }
@@ -1990,7 +2383,7 @@ private string GetCurrentMobName()
     {
         return c switch
         {
-            "Assasin" => _forgeDataLoader._asssasinDatabase,
+            "Assassin" => _forgeDataLoader._asssasinDatabase,
             "Chanter" => _forgeDataLoader._chanterDatabase,
             "Cleric" => _forgeDataLoader._clericDatabase,
             "Elementalist" => _forgeDataLoader._elementalistDatabse,
@@ -2028,7 +2421,9 @@ private string GetCurrentMobName()
         PlayerDamageStats st,
         double duration,
         long fightStart,
-        SkillDatabase? skillDatabase)
+        SkillDatabase? skillDatabase,
+        bool bossOnly,
+        double bossStartOffset)
     {
         // A fight teljes eseménylistáját nem építjük újra másodpercenként.
         // Csak az előző snapshot óta érkezett találatokat alakítjuk át.
@@ -2055,6 +2450,9 @@ private string GetCurrentMobName()
                 Amount = hit.Amount,
                 Crit = hit.Crit,
                 IsHeal = hit.IsHeal,
+                TargetRuntimeId = hit.TargetRuntimeId,
+                TargetTemplateId = hit.TargetTemplateId,
+                IsBossTarget = hit.IsBossTarget,
             });
         }
 
@@ -2073,9 +2471,26 @@ private string GetCurrentMobName()
             ClassColor = st.ClassColor,
             ClassIcon = st.ClassIcon,
             Duration = duration,
-            Damage = st.TotalDamage,
-            Healing = st.TotalHealing,
-            Events = st.SnapshotEvents,
+            Damage = bossOnly ? st.BossDamage : st.TotalDamage,
+            BossDamage = st.BossDamage,
+            Healing = bossOnly ? st.BossHealing : st.TotalHealing,
+            BossHealing = st.BossHealing,
+            Events = bossOnly
+                ? st.SnapshotEvents
+                    .Where(entry => entry.Time >= bossStartOffset && (entry.IsHeal || entry.IsBossTarget))
+                    .Select(entry => new SkillEvent
+                    {
+                        Time = Math.Max(0, entry.Time - bossStartOffset),
+                        Skill = entry.Skill,
+                        SkillIcon = entry.SkillIcon,
+                        Amount = entry.Amount,
+                        Crit = entry.Crit,
+                        IsHeal = entry.IsHeal,
+                        TargetRuntimeId = entry.TargetRuntimeId,
+                        TargetTemplateId = entry.TargetTemplateId,
+                        IsBossTarget = entry.IsBossTarget,
+                    }).ToList()
+                : st.SnapshotEvents,
         };
     }
 
@@ -2084,7 +2499,7 @@ private string GetCurrentMobName()
         if (OverlayWindowManager.DpsWindow is not { IsVisible: true })
             return;
 
-        OverlayWindowManager.UpdateDps(BuildSnapshot());
+        OverlayWindowManager.UpdateDps(BuildOverlaySnapshot());
     }
 
     private void CountDps()
@@ -2234,7 +2649,9 @@ private string GetCurrentMobName()
         if(opcode == OpcodeId.PetAdded || opcode == OpcodeId.PetLevel || opcode == OpcodeId.PetProgress)
             PetCollectionLiveObserver.Observe(frame);
         
-        if (opcode == OpcodeId.DisengageCombat || opcode == OpcodeId.HP)
+        if (opcode == OpcodeId.LeaveCombat ||
+            opcode == OpcodeId.DisengageCombat ||
+            opcode == OpcodeId.HP)
             CombatEndCheck(frame);
         
         if (opcode == OpcodeId.Self)
@@ -2250,7 +2667,7 @@ private string GetCurrentMobName()
         if (opcode == OpcodeId.Death)
         {
             TryRemoveDeathEntity(frame);
-            CombatEndCheck(frame);
+            CombatDeathCheck(frame);
         }
 
         if (opcode == OpcodeId.Party ||

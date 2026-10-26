@@ -1,0 +1,22 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AION_2_Companion.Views.Overlays.EventTimerToastWindow"
+        Width="390" Height="112" CanResize="False" ShowInTaskbar="False" ShowActivated="False"
+        Topmost="True" SystemDecorations="None" Background="Transparent"
+        TransparencyLevelHint="Transparent" FontFamily="Inter, Segoe UI Variable Text, Segoe UI"
+        Foreground="#EAF7FF">
+  <Window.Styles><StyleInclude Source="avares://AION 2 Companion/Styles/Theme.axaml"/></Window.Styles>
+  <Border Classes="hero" Padding="14" BorderBrush="#8058E0B2" BoxShadow="0 16 44 0 #A0000000">
+    <Grid ColumnDefinitions="52,*,Auto" ColumnSpacing="12">
+      <Border Width="50" Height="50" CornerRadius="14" Background="#322EDBFF" BorderBrush="#6545DFFF" BorderThickness="1">
+        <TextBlock x:Name="IconText" FontSize="25" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+      </Border>
+      <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+        <TextBlock Text="{DynamicResource EventTimerNotificationKicker}" Classes="kicker" FontSize="9"/>
+        <TextBlock x:Name="TitleText" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+        <TextBlock x:Name="MessageText" Classes="body"/>
+      </StackPanel>
+      <Button Grid.Column="2" Classes="ui quiet" Content="×" Click="CloseClick" VerticalAlignment="Top"/>
+    </Grid>
+  </Border>
+</Window>

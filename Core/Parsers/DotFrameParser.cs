@@ -32,7 +32,7 @@ public sealed class DotFrameParser
                 actor == 0 ||
                 actor == target ||
                 damage == 0 ||
-                damage > 99_999_999 ||
+                damage > DamageScanner.MaxAcceptedDamage ||
                 skill == 0 ||
                 skill > 299_999_999)
             {

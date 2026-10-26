@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using Avalonia.Threading;
+using AION_2_Companion.Core;
 using AION_2_Companion.Core.Map.Pets;
 
 namespace AION_2_Companion.Views.Overlays;
@@ -20,6 +21,9 @@ public partial class MapOverlayWindow
             return;
 
         UpdatePetMenuCollectionStatus();
+        UpdatePetMenuToggleVisual();
+        if (panel.Opacity >= 0.5)
+            return;
         panel.Opacity = 0;
 
         Dispatcher.UIThread.Post(() =>
@@ -88,7 +92,9 @@ public partial class MapOverlayWindow
         if (toggle is null || state is null)
             return;
 
-        state.Text = PetFarmEnabled ? "BE" : "KI";
+        state.Text = PetFarmEnabled
+            ? LocalizationService.Get("On")
+            : LocalizationService.Get("Off");
         state.Foreground = PetFarmEnabled
             ? new SolidColorBrush(Color.Parse("#FF43C9FF"))
             : new SolidColorBrush(Color.Parse("#FFFF8FA3"));
@@ -111,25 +117,22 @@ public partial class MapOverlayWindow
         {
             case PetCollectionSyncState.Ready:
                 code.Text = "READY";
-                title.Text = "Teljes lista";
-                description.Text =
-                    "Megérkezett a 00 90; a Hiányzó / Lv. 1 / Lv. 2 / Lv. 3 szűrés teljesen használható.";
+                title.Text = LocalizationService.Get("PetReadyTitle");
+                description.Text = LocalizationService.Get("PetReadyText");
                 color = "#58E0B2";
                 break;
 
             case PetCollectionSyncState.Partial:
                 code.Text = "PARTIAL";
-                title.Text = "Részleges adat";
-                description.Text =
-                    "Megszereztél egy petet, és a 09 90-ből már tudjuk, hogy megvan, de a többiek továbbra is ismeretlenek.";
+                title.Text = LocalizationService.Get("PetPartialTitle");
+                description.Text = LocalizationService.Get("PetPartialText");
                 color = "#45DFFF";
                 break;
 
             default:
                 code.Text = "UNKNOWN";
-                title.Text = "Teljes lista nélkül";
-                description.Text =
-                    "A petek tulajdonosi állapota nem ismert. Az ismeretleneket ideiglenesen mutatjuk.";
+                title.Text = LocalizationService.Get("PetUnknownTitle");
+                description.Text = LocalizationService.Get("PetUnknownText");
                 color = "#FFB454";
                 break;
         }

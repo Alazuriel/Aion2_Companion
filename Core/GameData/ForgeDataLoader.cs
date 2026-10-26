@@ -10,6 +10,7 @@ public class ForgeDataLoader
 {
     public ClassDatabase? _classDatabase;
     public MobsDatabase? _mobsDatabase;
+    public BossesDatabase? _bossesDatabase;
     public PetsDatabase? _elyosPetsDatabase;
     public SkillDatabase? _asssasinDatabase;
     public SkillDatabase? _chanterDatabase;
@@ -20,6 +21,7 @@ public class ForgeDataLoader
     public SkillDatabase? _sorcererDatabase;
     public SkillDatabase? _templarDatabase;
     public OpCodesDatabase? _opcodesDatabase;
+    public EventTimersDatabase? _eventTimersDatabase;
     
     private static T? TryLoad<T>(string path, Func<string, T> load, Func<T, string> info)
         where T : class
@@ -92,6 +94,14 @@ public class ForgeDataLoader
             MobsDatabase.Load,
             db => $"Mobok: {db.Mobs.Count}");
 
+        string bossesPath = Path.Combine(dataDir, "AION2_Bosses.nfg");
+        _bossesDatabase = File.Exists(bossesPath)
+            ? TryLoad<BossesDatabase>(
+                bossesPath,
+                BossesDatabase.Load,
+                db => $"Bossok: {db.Bosses.Count}")
+            : null;
+
         _elyosPetsDatabase = TryLoad<PetsDatabase>(
             Path.Combine(dataDir, "AION2_Pets.nfg"),
             PetsDatabase.Load,
@@ -102,7 +112,13 @@ public class ForgeDataLoader
             OpCodesDatabase.Load,
             db => $"Opcode-ok: {db.Opcodes.Count}");
 
+        _eventTimersDatabase = TryLoad<EventTimersDatabase>(
+            Path.Combine(dataDir, "AION2_EventTimers.nfg"),
+            EventTimersDatabase.Load,
+            db => $"Események: {db.Events.Count} | Régiók: {db.Regions.Count}");
+
         OpcodeCatalog.Initialize(_opcodesDatabase);
+        BossCatalog.Initialize(_bossesDatabase);
 
     }
     

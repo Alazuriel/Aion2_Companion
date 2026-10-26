@@ -1,0 +1,91 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AION_2_Companion.Views.EventTimersView"
+             x:CompileBindings="False">
+  <Grid RowDefinitions="Auto,Auto,*" RowSpacing="16">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+      <StackPanel Spacing="5">
+        <TextBlock Text="{DynamicResource EventTimersKicker}" Classes="kicker"/>
+        <TextBlock Text="{DynamicResource EventTimersTitle}" Classes="h1" FontSize="27"/>
+        <TextBlock Text="{DynamicResource EventTimersSubtitle}" Classes="body"/>
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+        <ComboBox x:Name="RegionCombo" Width="210" SelectionChanged="RegionChanged"/>
+        <Button Classes="ui" Content="{DynamicResource EventTimerOverlayButton}" Click="OverlayClick"/>
+      </StackPanel>
+    </Grid>
+
+    <Border Grid.Row="1" Classes="glass" Padding="14,11">
+      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+        <Border Width="34" Height="34" CornerRadius="10" Background="#2635DFFF" BorderBrush="#6545DFFF" BorderThickness="1">
+          <TextBlock Text="◷" FontSize="20" Foreground="#45DFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+          <TextBlock x:Name="DataStatusTitle" Text="{DynamicResource EventTimerDataReady}" FontWeight="SemiBold"/>
+          <TextBlock x:Name="DataStatusText" Text="{DynamicResource EventTimerDataHint}" Classes="hint"/>
+        </StackPanel>
+        <CheckBox x:Name="ClickThroughToggle" Grid.Column="2"
+                  Content="{DynamicResource EventTimerClickThrough}"
+                  IsCheckedChanged="ClickThroughChanged" VerticalAlignment="Center"/>
+      </Grid>
+    </Border>
+
+    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <ItemsControl ItemsSource="{Binding Rows}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Border Classes="panel" Padding="17" Margin="0,0,0,12">
+              <Grid ColumnDefinitions="58,*,190" RowDefinitions="Auto,Auto" ColumnSpacing="14" RowSpacing="12">
+                <Border Width="52" Height="52" CornerRadius="15"
+                        Background="#D0142537" BorderBrush="#4E6380" BorderThickness="1"
+                        BoxShadow="0 0 18 0 #332EDBFF">
+                  <TextBlock Text="{Binding Icon}" FontSize="25" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+
+                <StackPanel Grid.Column="1" Spacing="5" VerticalAlignment="Center">
+                  <StackPanel Orientation="Horizontal" Spacing="9">
+                    <TextBlock Text="{Binding Name}" FontSize="17" FontWeight="SemiBold"/>
+                    <Border Classes="pill" Padding="8,2" BorderBrush="{Binding StateBrush}">
+                      <TextBlock Text="{Binding StateText}" FontSize="9" FontWeight="SemiBold" Foreground="{Binding StateBrush}"/>
+                    </Border>
+                    <TextBlock Text="{Binding EntryText}" IsVisible="{Binding HasEntryText}" Classes="ok" FontSize="11" VerticalAlignment="Center"/>
+                  </StackPanel>
+                  <TextBlock Text="{Binding Description}" Classes="body" MaxWidth="650"/>
+                  <StackPanel Orientation="Horizontal" Spacing="13">
+                    <TextBlock Text="{Binding Category}" Classes="eyebrow"/>
+                    <TextBlock Text="{Binding NextLocalTime}" Classes="hint"/>
+                  </StackPanel>
+                </StackPanel>
+
+                <Border Grid.Column="2" Classes="inset" Padding="12,9">
+                  <StackPanel Spacing="2" HorizontalAlignment="Right">
+                    <TextBlock Text="{Binding CountdownLabel}" Classes="eyebrow" HorizontalAlignment="Right"/>
+                    <TextBlock Text="{Binding Countdown}" Classes="mono accent" FontSize="23" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                  </StackPanel>
+                </Border>
+
+                <Border Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Classes="inset" Padding="12,9">
+                  <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{DynamicResource EventTimerWarnBefore}" Classes="hint" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ComboBox SelectedIndex="{Binding AlertIndex, Mode=TwoWay}" Width="145" Margin="0,0,14,0">
+                      <ComboBoxItem Content="{DynamicResource EventTimerAlertOff}"/>
+                      <ComboBoxItem Content="1 min"/>
+                      <ComboBoxItem Content="5 min"/>
+                      <ComboBoxItem Content="10 min"/>
+                      <ComboBoxItem Content="15 min"/>
+                      <ComboBoxItem Content="30 min"/>
+                    </ComboBox>
+                    <CheckBox Content="{DynamicResource EventTimerAtStart}" IsChecked="{Binding AlertAtStart, Mode=TwoWay}" Margin="0,0,14,0"/>
+                    <CheckBox Content="{DynamicResource EventTimerSound}" IsChecked="{Binding SoundEnabled, Mode=TwoWay}" Margin="0,0,14,0"/>
+                    <CheckBox Content="{DynamicResource EventTimerVisual}" IsChecked="{Binding VisualEnabled, Mode=TwoWay}" Margin="0,0,14,0"/>
+                    <CheckBox Content="{DynamicResource EventTimerShowIcon}" IsChecked="{Binding ShowInOverlay, Mode=TwoWay}"/>
+                  </WrapPanel>
+                </Border>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

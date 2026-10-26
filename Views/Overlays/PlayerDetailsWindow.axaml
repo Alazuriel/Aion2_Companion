@@ -4,7 +4,7 @@
         x:CompileBindings="False"
         Width="560" Height="580"
         MinWidth="440" MinHeight="360"
-        Title="AION 2 · Játékos"
+        Title="AION 2 · Player"
         Background="Transparent"
         TransparencyLevelHint="Transparent"
         ExtendClientAreaToDecorationsHint="True"
@@ -36,7 +36,7 @@
                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
           </Border>
           <StackPanel Spacing="1">
-            <TextBlock Text="PLAYER ANALYSIS" Classes="kicker" FontSize="9"/>
+            <TextBlock Text="{DynamicResource PlayerAnalysis}" Classes="kicker" FontSize="9"/>
             <TextBlock Name="DetailName" FontSize="17" FontWeight="SemiBold"/>
             <TextBlock Name="DetailMeta" FontSize="11" Foreground="#71879B"/>
           </StackPanel>
@@ -54,19 +54,19 @@
         </Border>
         <Border Grid.Column="1" Classes="inset" CornerRadius="10" Padding="12,9" Margin="0,0,6,0">
           <StackPanel Spacing="2">
-            <TextBlock Text="ÖSSZES SEBZÉS" FontSize="9" FontWeight="SemiBold" Foreground="#71879B"/>
+            <TextBlock Text="{DynamicResource TotalDamage}" FontSize="9" FontWeight="SemiBold" Foreground="#71879B"/>
             <TextBlock Name="DetailDamage" FontSize="18" FontWeight="SemiBold"/>
           </StackPanel>
         </Border>
         <Border Grid.Column="2" Classes="inset" CornerRadius="10" Padding="12,9" Margin="0,0,6,0">
           <StackPanel Spacing="2">
-            <TextBlock Text="A MOB HP-JÁBÓL" FontSize="9" FontWeight="SemiBold" Foreground="#71879B"/>
+            <TextBlock Text="{DynamicResource MobHpShare}" FontSize="9" FontWeight="SemiBold" Foreground="#71879B"/>
             <TextBlock Name="DetailPercent" FontSize="18" FontWeight="SemiBold"/>
           </StackPanel>
         </Border>
         <Border Grid.Column="3" Classes="inset" CornerRadius="10" Padding="12,9">
           <StackPanel Spacing="2">
-            <TextBlock Text="GYÓGYÍTÁS" FontSize="9" FontWeight="SemiBold" Foreground="#71879B"/>
+            <TextBlock Text="{DynamicResource Healing}" FontSize="9" FontWeight="SemiBold" Foreground="#71879B"/>
             <TextBlock Name="DetailHeal" FontSize="18" FontWeight="SemiBold" Foreground="#6BCB8B"/>
           </StackPanel>
         </Border>
@@ -78,10 +78,10 @@
           <Grid ColumnDefinitions="*,70,74,50,46,50" Margin="8,0,8,6">
             <TextBlock Text="SKILL" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496"/>
             <TextBlock Grid.Column="1" Text="DPS" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
-            <TextBlock Grid.Column="2" Text="ÖSSZES" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
-            <TextBlock Grid.Column="3" Text="RÉSZ" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
-            <TextBlock Grid.Column="4" Text="KRIT" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
-            <TextBlock Grid.Column="5" Text="TALÁLAT" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
+            <TextBlock Grid.Column="2" Text="{DynamicResource Total}" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
+            <TextBlock Grid.Column="3" Text="{DynamicResource Share}" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
+            <TextBlock Grid.Column="4" Text="{DynamicResource Crit}" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
+            <TextBlock Grid.Column="5" Text="{DynamicResource Hits}" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
           </Grid>
 
           <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -135,9 +135,9 @@
 
       <!-- 3. Lábléc -->
       <Grid Grid.Row="3" ColumnDefinitions="*,Auto">
-        <TextBlock Text="DPS: a skill sebzése osztva a harc hosszával. RÉSZ: a játékos összes sebzésének aránya."
+        <TextBlock Text="{DynamicResource PlayerAnalysisHint}"
                    FontSize="10" Foreground="#60768A" TextWrapping="Wrap" VerticalAlignment="Center"/>
-        <Button Grid.Column="1" Classes="ui primary" Content="Idővonal" FontSize="12" Click="TimelineClick"/>
+        <Button Grid.Column="1" Classes="ui primary" Content="{DynamicResource Timeline}" FontSize="12" Click="TimelineClick"/>
       </Grid>
     </Grid>
   </Border>

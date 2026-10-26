@@ -1,0 +1,15 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="AION_2_Companion.Views.UnderForgeView">
+  <Grid>
+    <Border Classes="hero" MaxWidth="720" Padding="34" HorizontalAlignment="Center" VerticalAlignment="Center">
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="24">
+        <Border Width="92" Height="92" CornerRadius="24" Background="#162B40" BorderBrush="#426681" BorderThickness="1" BoxShadow="0 0 30 0 #3345DFFF"><TextBlock Text="◇" Foreground="#45DFFF" FontSize="52" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+        <StackPanel Grid.Column="1" Spacing="9" VerticalAlignment="Center">
+          <TextBlock Text="NEXFORGE // MODULE" Classes="kicker"/>
+          <TextBlock Text="{DynamicResource UnderForgeTitle}" Classes="h1" FontSize="29"/>
+          <TextBlock Text="{DynamicResource UnderForgeBody}" Classes="body" FontSize="14" MaxWidth="500"/>
+          <Border Classes="pill" HorizontalAlignment="Left" Margin="0,5,0,0"><TextBlock Text="{DynamicResource StillUnderForge}" Classes="kicker" FontSize="9"/></Border>
+        </StackPanel>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

@@ -76,7 +76,7 @@ public partial class UpdateWindow : Window
                 Dispatcher.UIThread.Post(() => _progress.Value = value * 100));
             string installer = await UpdateService.DownloadAsync(_update, progress);
             SetStatus(LocalizationService.Get("UpdateLaunching"), "#58E0B2");
-            UpdateService.LaunchInstaller(installer);
+            UpdateService.LaunchSilentInstaller(installer);
 
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
                 desktop.Shutdown();

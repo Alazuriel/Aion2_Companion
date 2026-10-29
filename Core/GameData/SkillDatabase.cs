@@ -75,6 +75,21 @@ public sealed class SkillDatabase
         return GetById(numericId);
     }
 
+    public SkillDefinition? FindVariant(uint runtimeSkillId)
+    {
+        SkillDefinition? exact = GetById(runtimeSkillId);
+        if (exact is not null)
+            return exact;
+
+        string id = runtimeSkillId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (id.Length < 4)
+            return null;
+
+        string prefix = id[..4];
+        return Skills.FirstOrDefault(skill =>
+            skill.Id.StartsWith(prefix, StringComparison.Ordinal));
+    }
+
     public IReadOnlyList<SkillDefinition> GetByClass(string className)
     {
         if (string.IsNullOrWhiteSpace(className))

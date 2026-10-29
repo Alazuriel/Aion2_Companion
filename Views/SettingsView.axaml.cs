@@ -7,11 +7,13 @@ using AION_2_Companion.Core;
 using AION_2_Companion.Core.Map.Pets;
 using AION_2_Companion.Core.EventTimers;
 using AION_2_Companion.Core.GameData;
+using AION_2_Companion.Core.Localization;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 
 namespace AION_2_Companion.Views;
 
@@ -37,7 +39,7 @@ public partial class SettingsView : UserControl
     private readonly TextBlock _forgeDataStatusText;
     private readonly TextBlock _forgeDataPathText;
     private readonly Ellipse _forgeDataStatusDot;
-    private readonly Button _testLoginButton;
+    private readonly TextBlock _languageImportStatus;
 
     public SettingsView()
     {
@@ -63,25 +65,11 @@ public partial class SettingsView : UserControl
         _forgeDataStatusText = this.FindControl<TextBlock>("ForgeDataStatusText")!;
         _forgeDataPathText = this.FindControl<TextBlock>("ForgeDataPathText")!;
         _forgeDataStatusDot = this.FindControl<Ellipse>("ForgeDataStatusDot")!;
-        _testLoginButton = this.FindControl<Button>("TestLoginButton")!;
-        if (Program.DeveloperMode)
-        {
-            _testLoginButton.IsEnabled = true;
-            _testLoginButton.Content = LocalizationService.Get("TestLoginAction");
-            ToolTip.SetTip(_testLoginButton, LocalizationService.Get("TestLoginDeveloperHint"));
-        }
+        _languageImportStatus = this.FindControl<TextBlock>("LanguageImportStatus")!;
         this.FindControl<TextBlock>("VersionText")!.Text = $"v{ChangelogService.GetCurrentVersion()}";
         this.FindControl<Border>("DeveloperSettingsPanel")!.IsVisible = Program.DeveloperMode;
 
-        foreach (LanguageOption language in LocalizationService.SupportedLanguages)
-        {
-            _languageCombo.Items.Add(new ComboBoxItem
-            {
-                Content = language.DisplayName,
-                Tag = language.Code,
-            });
-        }
-
+        RefreshLanguageOptions();
         SelectLanguage(CompanionSettings.LanguageCode);
 
         bool isAdministrator = AdministratorAccess.IsRunningAsAdministrator;
@@ -129,8 +117,6 @@ public partial class SettingsView : UserControl
         _eventTimerRegionCombo.SelectionChanged += EventTimerRegionChanged;
         _eventTimerClickThroughToggle.IsCheckedChanged += EventTimerClickThroughChanged;
         _dpsEncounterModeCombo.SelectionChanged += DpsEncounterModeChanged;
-        _testLoginButton.Click += StartTestLoginClick;
-
         UpdateFileLoggingHint();
         UpdatePetCollectionStatus();
         UpdateForgeDataStatus();
@@ -142,17 +128,13 @@ public partial class SettingsView : UserControl
             UpdatePetCollectionStatus();
         };
         DetachedFromVisualTree += (_, _) =>
+        {
             PetCollectionBridge.Changed -= PetCollectionChanged;
+        };
     }
 
     private void OpenDpsClick(object? sender, RoutedEventArgs e) =>
         Overlays.OverlayWindowManager.ToggleDps();
-
-    private void StartTestLoginClick(object? sender, RoutedEventArgs e)
-    {
-        if (Program.DeveloperMode && TopLevel.GetTopLevel(this) is MainWindow mainWindow)
-            mainWindow.StartTestLogin();
-    }
 
     private void OpenEventTimerOverlayClick(object? sender, RoutedEventArgs e) =>
         Overlays.OverlayWindowManager.ToggleEventTimers();
@@ -359,16 +341,73 @@ public partial class SettingsView : UserControl
         UpdateFileLoggingHint();
         UpdatePetCollectionStatus();
         UpdateForgeDataStatus();
-        if (Program.DeveloperMode)
+    }
+
+    private void RefreshLanguageOptions()
+    {
+        string selected = CompanionSettings.LanguageCode;
+        _languageCombo.Items.Clear();
+        foreach (LanguageOption language in LocalizationService.SupportedLanguages)
         {
-            _testLoginButton.Content = LocalizationService.Get("TestLoginAction");
-            ToolTip.SetTip(_testLoginButton, LocalizationService.Get("TestLoginDeveloperHint"));
+            _languageCombo.Items.Add(new ComboBoxItem
+            {
+                Content = language.DisplayName,
+                Tag = language.Code,
+            });
         }
+        SelectLanguage(selected);
+    }
+
+    private async void ImportLanguageClick(object? sender, RoutedEventArgs e)
+    {
+        TopLevel? topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel?.StorageProvider is null)
+            return;
+        IReadOnlyList<IStorageFile> files = await topLevel.StorageProvider.OpenFilePickerAsync(
+            new FilePickerOpenOptions
+            {
+                Title = LocalizationService.Get("ImportLanguage"),
+                AllowMultiple = false,
+                FileTypeFilter =
+                [
+                    new FilePickerFileType("Nexforge Language") { Patterns = ["*.nfl"] },
+                ],
+            });
+        if (files.Count == 0)
+            return;
+        try
+        {
+            string? source = files[0].TryGetLocalPath();
+            if (string.IsNullOrWhiteSpace(source))
+                throw new IOException("The selected file is not available locally.");
+            NflLanguagePack pack = NflLanguagePackService.Import(source);
+            RefreshLanguageOptions();
+            SelectLanguage(pack.Code);
+            _languageImportStatus.Text = LocalizationService.Get("LanguageImportReady");
+            _languageImportStatus.Foreground = new SolidColorBrush(Color.Parse("#58E0B2"));
+            _languageImportStatus.IsVisible = true;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or NflParseException)
+        {
+            _languageImportStatus.Text = LocalizationService.Format("LanguageImportFailed", exception.Message);
+            _languageImportStatus.Foreground = new SolidColorBrush(Color.Parse("#F87171"));
+            _languageImportStatus.IsVisible = true;
+        }
+    }
+
+    private void OpenLanguageFolderClick(object? sender, RoutedEventArgs e)
+    {
+        Directory.CreateDirectory(NflLanguagePackService.CommunityDirectory);
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = NflLanguagePackService.CommunityDirectory,
+            UseShellExecute = true,
+        });
     }
 
     private void UpdateForgeDataStatus()
     {
-        string dataDirectory = System.IO.Path.Combine(AppContext.BaseDirectory, "Data");
+        string dataDirectory = System.IO.Path.Combine(AppContext.BaseDirectory, "Data", "ForgeData");
         _forgeDataPathText.Text = dataDirectory;
 
         int packCount = 0;

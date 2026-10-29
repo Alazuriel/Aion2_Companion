@@ -1,16 +1,12 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Drawing;
+using AION_2_Companion.Core.GameData;
 
 namespace AION_2_Companion.Core.Map.Pets;
 
-// Normalized, flat spawn record. Deliberately NOT grouped by pet.
-// ImageX/Y are pixel coordinates in the same JPG used by MapV2Engine.
 public sealed record PetFarmMapPoint(
     int PetId,
     string PetName,
@@ -89,14 +85,11 @@ public static class PetFarmMapCalibration
     }
 }
 
-/// <summary>
-/// Adapter for existing PetsDatabase.Pets without guessing the namespace
-/// or C# spelling of PetsDefiniton. Uses reflection ONCE during import,
-/// never during tracking or rendering.
-/// </summary>
 public static class PetFarmMapImporter
 {
-    public static PetFarmImportResult FromRecords(IEnumerable records, string mapsDirectory)
+    public static PetFarmImportResult FromRecords(
+        IEnumerable<PetsDefiniton> records,
+        string mapsDirectory)
     {
         if (!Directory.Exists(mapsDirectory))
             throw new DirectoryNotFoundException($"Pet Farm map folder not found: {mapsDirectory}");
@@ -118,52 +111,29 @@ public static class PetFarmMapImporter
         var result = new List<PetFarmMapPoint>();
         var unique = new HashSet<(string Map, int Pet, long Monster, double X, double Y, double Z)>();
         int seen = 0, otherMap = 0, invalid = 0, duplicates = 0;
-        Dictionary<string, Func<object, object?>>? getters = null;
-        Type? currentType = null;
-
-        foreach (object? record in records)
+        foreach (PetsDefiniton? record in records)
         {
             seen++;
             if (record is null) { invalid++; continue; }
-            Type t = record.GetType();
-            if (getters is null || currentType != t)
-            {
-                getters = BuildGetters(t);
-                currentType = t;
-            }
 
-            string mapPath = PetFarmMapCatalog.Normalize(
-                ReadText(record, getters, "MapId", "Map", "MapName", "WorldMap", "WorldId"));
-            // Only exact main-map records belong on a main map. Instance layers and
-            // dungeons have their own coordinate spaces and must never be mixed in.
+            string mapPath = PetFarmMapCatalog.Normalize(record.Map);
             if (!references.TryGetValue(mapPath, out var reference))
             {
                 otherMap++;
                 continue;
             }
 
-            if (!TryNumber(record, getters, out double x, "X", "WorldX", "SpawnX", "PosX", "PositionX", "CoordX") ||
-                !TryNumber(record, getters, out double y, "Y", "WorldY", "SpawnY", "PosY", "PositionY", "CoordY"))
-            {
-                invalid++;
-                continue;
-            }
-            TryNumber(record, getters, out double z, "Z", "WorldZ", "SpawnZ", "PosZ", "PositionZ", "CoordZ");
-            TryNumber(record, getters, out double petId, "PetId", "PetID", "Pet_id");
-            TryNumber(record, getters, out double monsterId, "MonsterId", "MonsterID", "Monster_id", "MobId", "NpcId");
-            string name = ReadText(record, getters, "PetName", "Pet_name", "Name");
-            string category = ReadText(record, getters, "Category", "PetCategory", "PetType", "Type");
-
-            if (!double.IsFinite(x) || !double.IsFinite(y) || !double.IsFinite(z) ||
-                !double.IsFinite(petId) || !double.IsFinite(monsterId) ||
-                petId < 0 || petId > int.MaxValue || monsterId < 0 || monsterId > long.MaxValue)
+            if (record.PetId < 0 || record.MonsterId < 0)
             {
                 invalid++;
                 continue;
             }
 
-            int pid = (int)petId;
-            long mid = (long)monsterId;
+            int pid = record.PetId;
+            long mid = record.MonsterId;
+            double x = record.X;
+            double y = record.Y;
+            double z = record.Z;
             if (!unique.Add((mapPath, pid, mid, x, y, z)))
             {
                 duplicates++;
@@ -172,8 +142,10 @@ public static class PetFarmMapImporter
 
             var (px, py) = PetFarmMapCalibration.WorldToReference(
                 x, y, reference.Width, reference.Height);
-            result.Add(new PetFarmMapPoint(pid, string.IsNullOrWhiteSpace(name) ? $"Pet #{pid}" : name,
-                string.IsNullOrWhiteSpace(category) ? "Unknown" : category,
+            result.Add(new PetFarmMapPoint(
+                pid,
+                string.IsNullOrWhiteSpace(record.PetName) ? $"Pet #{pid}" : record.PetName,
+                string.IsNullOrWhiteSpace(record.Category) ? "Unknown" : record.Category,
                 reference.Map.Id, reference.Map.DisplayName,
                 mid, x, y, z, px, py));
         }
@@ -188,39 +160,4 @@ public static class PetFarmMapImporter
         return new PetFarmImportResult(result.ToArray(), seen, otherMap, invalid, duplicates);
     }
 
-    private static Dictionary<string, Func<object, object?>> BuildGetters(Type t)
-    {
-        var dict = new Dictionary<string, Func<object, object?>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var prop in t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-        {
-            if (prop.GetIndexParameters().Length != 0 || prop.GetMethod is null) continue;
-            dict[Normalize(prop.Name)] = obj => prop.GetValue(obj);
-        }
-        foreach (var field in t.GetFields(BindingFlags.Public | BindingFlags.Instance))
-            dict[Normalize(field.Name)] = obj => field.GetValue(obj);
-        return dict;
-    }
-
-    private static string Normalize(string s) =>
-        new string(s.Where(char.IsLetterOrDigit).ToArray());
-
-    private static object? Get(object obj, Dictionary<string, Func<object, object?>> getters, params string[] aliases)
-    {
-        foreach (string alias in aliases)
-            if (getters.TryGetValue(Normalize(alias), out var getter))
-                return getter(obj);
-        return null;
-    }
-
-    private static string ReadText(object obj, Dictionary<string, Func<object, object?>> getters, params string[] aliases) =>
-        Convert.ToString(Get(obj, getters, aliases), CultureInfo.InvariantCulture) ?? "";
-
-    private static bool TryNumber(object obj, Dictionary<string, Func<object, object?>> getters,
-        out double value, params string[] aliases)
-    {
-        object? raw = Get(obj, getters, aliases);
-        if (raw is null) { value = 0; return false; }
-        return double.TryParse(Convert.ToString(raw, CultureInfo.InvariantCulture),
-            NumberStyles.Float, CultureInfo.InvariantCulture, out value);
-    }
 }

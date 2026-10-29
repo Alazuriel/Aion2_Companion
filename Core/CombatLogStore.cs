@@ -121,7 +121,6 @@ public sealed class CombatLogEntry
                 : null,
             BossStartOffset = bossOnly ? 0 : BossStartOffset,
             BossDuration = BossDuration,
-            IsDemo = false,
         };
     }
 }

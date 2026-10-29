@@ -14,7 +14,6 @@ sealed class Program
     internal static bool AutoCaptureDisabled { get; private set; }
     internal static bool DeveloperMode { get; private set; }
     internal static bool TestLoginRequested { get; private set; }
-    internal static string TestLoginUrl { get; private set; } = "https://nexforge.hu";
     internal static string? RequestedLanguage { get; private set; }
     internal static bool AvaloniaTraceRequested { get; private set; }
 
@@ -43,19 +42,9 @@ sealed class Program
             arg.Equals("--no-auto", StringComparison.OrdinalIgnoreCase));
         DeveloperMode = Array.Exists(args, arg =>
             arg.Equals("--developer", StringComparison.OrdinalIgnoreCase));
+        // Optional startup gate for testing the real account sign-in flow.
         TestLoginRequested = Array.Exists(args, arg =>
             arg.Equals("--test-login", StringComparison.OrdinalIgnoreCase));
-        string? testLoginUrlArgument = Array.Find(args, arg =>
-            arg.StartsWith("--test-login-url=", StringComparison.OrdinalIgnoreCase));
-        if (testLoginUrlArgument is not null)
-        {
-            string candidate = testLoginUrlArgument["--test-login-url=".Length..];
-            if (Uri.TryCreate(candidate, UriKind.Absolute, out Uri? loginUri) &&
-                loginUri.Scheme is "https" or "http")
-            {
-                TestLoginUrl = loginUri.AbsoluteUri;
-            }
-        }
         string? languageArgument = Array.Find(args, arg =>
             arg.StartsWith("--language=", StringComparison.OrdinalIgnoreCase));
         RequestedLanguage = languageArgument is null

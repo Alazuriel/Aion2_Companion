@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="using:AION_2_Companion.Views"
+             x:Class="AION_2_Companion.Views.CharacterSearchView"
+             Background="Transparent">
+  <Grid>
+    <views:UnderForgeView x:Name="UnderForgeContent"/>
+    <ScrollViewer x:Name="DeveloperContent" IsVisible="False" VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="18" MaxWidth="1050" Margin="0,0,8,28">
+        <StackPanel Spacing="4"><TextBlock Text="{DynamicResource CharacterSearchKicker}" Classes="kicker"/><TextBlock Text="{DynamicResource CharacterSearchTitle}" Classes="h1" FontSize="29"/><TextBlock Text="{DynamicResource CharacterSearchSubtitle}" Classes="body"/></StackPanel>
+        <Border Classes="hero" Padding="22">
+          <Grid ColumnDefinitions="*,210,Auto" ColumnSpacing="10">
+            <TextBox Watermark="{DynamicResource CharacterSearchWatermark}" IsEnabled="False"/>
+            <ComboBox Grid.Column="1" IsEnabled="False"/>
+            <Button Grid.Column="2" Classes="ui primary" Content="{DynamicResource Search}" IsEnabled="False"/>
+          </Grid>
+        </Border>
+        <Border Classes="inset" Padding="22"><StackPanel Spacing="8"><Border Classes="goldPill" HorizontalAlignment="Left"><TextBlock Text="{DynamicResource StillUnderForge}" Classes="kicker" FontSize="9"/></Border><TextBlock Text="{DynamicResource SearchNotAvailable}" Classes="body"/></StackPanel></Border>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

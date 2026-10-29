@@ -125,7 +125,6 @@ public sealed class GameMapInputService : IDisposable
     private Thread? _hookThread;
     private uint _hookThreadId;
     private IntPtr _mouseHook;
-    private bool _mDown;
     private bool _dragging;
     private bool _suppressLeftButton;
     private POINT _lastMouse;
@@ -136,7 +135,6 @@ public sealed class GameMapInputService : IDisposable
     private volatile bool _focused;
     private bool _disposed;
 
-    public event Action? MapToggleRequested;
     public event Action<bool>? FocusChanged;
     public event Action<int, int>? MouseDragged;
     public event Action<int, int, int>? MouseWheel;

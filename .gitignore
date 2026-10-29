@@ -3,11 +3,14 @@ obj/
 /artifacts/
 /publish/
 /packages/
+/.tmp-build/
 riderModule.iml
 /_ReSharper.Caches/
 .idea/
 *.sln.DotSettings.user
 DOCS/
+!/NFL/docs/
+!/NFL/docs/**
 # Local source snapshots; the maintained sources live in their normal folders.
 /Styles.zip
 /ViewModels.zip
@@ -17,7 +20,7 @@ DOCS/
 # stored directly under Data are published.
 *.nfg
 *.nfg*.bak
-!/Data/*.nfg
+!/Data/ForgeData/*.nfg
 /Data/.nexforge/
 /Private/
 
@@ -29,6 +32,9 @@ DOCS/
 
 # Local research and data tools are private, including compiled executables.
 /Tools/*
+/NFL/build/
+/NFL/dist/
+/NFL/**/__pycache__/
 /scripts/build-release.ps1
 /.github/workflows/release.yml
 /scripts/get-release-notes.ps1
@@ -51,3 +57,7 @@ publish/installer/
 /*.backup-*
 /Installer/*.backup-*
 /scripts/*.backup-*
+/NFL/
+/scripts/
+/Tools/
+/Installer/

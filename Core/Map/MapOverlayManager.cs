@@ -5,16 +5,12 @@ using AION_2_Companion.Views.Overlays;
 using System.IO;
 using AION_2_Companion.Core.Map.V2;
 using AION_2_Companion.Core.Map.Pets;
-using System.Collections;
+using AION_2_Companion.Core.GameData;
 
 namespace AION_2_Companion.Core.Map;
 
 public sealed class MapOverlayManager : IDisposable
 {
-    // Automatikus térképfelismerés. Kikapcsolva, amíg a kézi toggle stabil.
-    // Kalibrációkor a timer akkor is fut, ha ez false.
-    private const bool AutoDetectEnabled = true;
-
     private readonly MapOverlayWindow _overlay = new();
     private readonly GameWindowCaptureService _gameCapture = new();
     private readonly MapVisibilityDetector _detector;
@@ -37,14 +33,12 @@ public sealed class MapOverlayManager : IDisposable
     private bool _everShown;
     private bool _disposed;
 
-    private double _pendingDx;
-    private double _pendingDy;
 
     private readonly Queue<(int X, int Y, int Delta)>
         _pendingWheels = new();
     
     
-    public void LoadPetFarmSpawns(IEnumerable records)
+    public void LoadPetFarmSpawns(IEnumerable<PetsDefiniton> records)
     {
         if (_disposed || records is null)
             return;
@@ -76,7 +70,6 @@ public sealed class MapOverlayManager : IDisposable
 
         try
         {
-            // FONTOS: Az importer MAPPA útvonalat vár!
             _overlay.ConfigurePetFarm(records, mapsDirectory);
 
             Console.WriteLine(
@@ -137,8 +130,7 @@ public sealed class MapOverlayManager : IDisposable
         _visionTimer.Tick += (_, _) =>
         {
             // Auto-detektálás vagy folyamatban lévő kalibráció esetén fut
-            if (AutoDetectEnabled || _pendingCalibration is not null)
-                UpdateMapVisibility();
+            UpdateMapVisibility();
         };
 
         _renderTimer = new DispatcherTimer
@@ -275,20 +267,6 @@ public sealed class MapOverlayManager : IDisposable
         Console.WriteLine("[PET SEARCH] Opened.");
     }
 
-    private void ToggleOverlay()
-    {
-        if (_disposed)
-            return;
-
-        if (_mapVisible)
-        {
-            HideOverlay();
-            return;
-        }
-
-        ShowOverlay();
-    }
-
     private void ShowOverlay()
     {
         if (_disposed || (_mapVisible && _overlay.IsVisible))
@@ -352,9 +330,6 @@ public sealed class MapOverlayManager : IDisposable
             return;
         }
 
-        if (!AutoDetectEnabled)
-            return;
-
         bool detected;
 
         try
@@ -397,8 +372,6 @@ public sealed class MapOverlayManager : IDisposable
 
     private void ClearPendingInput()
     {
-        _pendingDx = 0;
-        _pendingDy = 0;
         _pendingWheels.Clear();
     }
 

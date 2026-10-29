@@ -8,6 +8,7 @@ using Avalonia.Markup.Xaml;
 using AION_2_Companion.ViewModels;
 using AION_2_Companion.Views;
 using AION_2_Companion.Core;
+using AION_2_Companion.Core.Accounts;
 
 namespace AION_2_Companion;
 
@@ -34,6 +35,9 @@ public partial class App : Application
             if (fileLoggingRequested && !DebugConsole.FileLoggingEnabled)
                 CompanionSettings.FileLoggingEnabled = false;
 
+            AccountService.Shared.ConfigureProtocol(new NexforgeAccountAuthProtocol());
+            _ = AccountService.Shared.InitializeAsync();
+
             CombatLogStore.Shared.StartSession();
             CombatLogStore.Shared.ApplyRetentionLimit();
             bool autoStartCapture = !Program.TestLoginRequested &&
@@ -43,6 +47,7 @@ public partial class App : Application
             desktop.Exit += (_, _) =>
             {
                 mainViewModel.SaveActiveFightForShutdown();
+                AccountService.Shared.Shutdown();
                 DebugConsole.Shutdown();
             };
             desktop.MainWindow = new MainWindow
@@ -56,11 +61,9 @@ public partial class App : Application
 
     private void DisableAvaloniaDataAnnotationValidation()
     {
-        // Get an array of plugins to remove
         var dataValidationPluginsToRemove =
             BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();
 
-        // remove each entry found
         foreach (var plugin in dataValidationPluginsToRemove)
         {
             BindingPlugins.DataValidators.Remove(plugin);

@@ -25,6 +25,7 @@ public sealed class SkillEvent
 
 public sealed class PlayerStat
 {
+    private const double MinimumRateDurationSeconds = 1.0;
     public string Name { get; init; } = string.Empty;
     public int ClassId { get; init; }
     public Bitmap? ClassIcon { get; init; }
@@ -37,8 +38,10 @@ public sealed class PlayerStat
     public long BossHealing { get; init; }
     public IReadOnlyList<SkillEvent> Events { get; init; } = Array.Empty<SkillEvent>();
 
-    public double Dps => Duration > 0 ? Damage / Duration : 0;
-    public double Hps => Duration > 0 ? Healing / Duration : 0;
+    public int DamageEventCount => Events.Count(entry => !entry.IsHeal);
+    public int HealingEventCount => Events.Count(entry => entry.IsHeal);
+    public double Dps => Duration >= MinimumRateDurationSeconds ? Damage / Duration : 0;
+    public double Hps => Duration >= MinimumRateDurationSeconds ? Healing / Duration : 0;
 }
 
 public sealed class MeterSnapshot
@@ -46,7 +49,6 @@ public sealed class MeterSnapshot
     public IReadOnlyList<PlayerStat> Players { get; init; } = Array.Empty<PlayerStat>();
     public double Duration { get; init; }
     public long MobMaxHp { get; init; }
-    public bool IsDemo { get; init; }
     public string? MobTemplateName { get; init; }
     public int MobTemplateId { get; init; }
     public bool IsBossEncounter { get; init; }
@@ -97,7 +99,6 @@ public sealed class MeterSnapshot
             }).ToList(),
             Duration = BossDuration > 0 ? BossDuration : Duration,
             MobMaxHp = MobMaxHp,
-            IsDemo = IsDemo,
             MobTemplateName = MobTemplateName,
             MobTemplateId = MobTemplateId,
             IsBossEncounter = true,
@@ -111,7 +112,6 @@ public sealed class MeterSnapshot
         };
     }
 }
-
 public sealed class MeterRow
 {
     public int Index { get; init; }
@@ -202,8 +202,8 @@ public static class Meter
     public static string GroupLine(MeterSnapshot s, MeterMode m)
     {
         double dur = s.Duration;
-        double dps = dur > 0 ? s.TotalDamage / dur : 0;
-        double hps = dur > 0 ? s.TotalHealing / dur : 0;
+        double dps = dur >= 1 ? s.TotalDamage / dur : 0;
+        double hps = dur >= 1 ? s.TotalHealing / dur : 0;
 
         return m switch
         {
@@ -257,84 +257,12 @@ public static class Visuals
 
     public static IBrush Heal => Brush.Parse("#6BCB8B");
 
-    // Osztály-badge (később a valódi ikon ide cserélhető, pl. ImageBrush).
     public static IBrush ForId(int id) =>
         Brush.Parse(Palette[Math.Abs(id) % Palette.Length]);
 
-    // Skill-badge: név alapján determinisztikus szín.
     public static IBrush ForText(string text)
     {
         int hash = text.Aggregate(17, (acc, c) => unchecked(acc * 31 + c));
         return Brush.Parse(Palette[(hash & 0x7FFFFFFF) % Palette.Length]);
-    }
-}
-
-public static class DemoData
-{
-    private static readonly string[] Names = { "Vexa", "Orin", "Mira", "Dask", "Lyss" };
-    private static readonly string[] SkillNames =
-    {
-        "Lezúzó csapás", "Gyors vágás", "Villámcsapás", "Nyilazás", "Rúnakör",
-    };
-    private const string HealSkill = "Gyógyító fény";
-    private const double EncounterSeconds = 154;
-
-    public static MeterSnapshot Build()
-    {
-        var rnd = new Random(42);
-        var players = new List<PlayerStat>();
-
-        for (int p = 0; p < Names.Length; p++)
-        {
-            var events = new List<SkillEvent>();
-
-            int hits = 60 + rnd.Next(40);
-            for (int i = 0; i < hits; i++)
-            {
-                events.Add(new SkillEvent
-                {
-                    Time = rnd.NextDouble() * EncounterSeconds,
-                    Skill = SkillNames[rnd.Next(SkillNames.Length)],
-                    Amount = rnd.Next(3_000, 9_000),
-                    Crit = rnd.NextDouble() < 0.22,
-                });
-            }
-
-            // Demó gyógyító: a 3. játékos
-            if (p == 2)
-            {
-                for (int i = 0; i < 45; i++)
-                {
-                    events.Add(new SkillEvent
-                    {
-                        Time = rnd.NextDouble() * EncounterSeconds,
-                        Skill = HealSkill,
-                        Amount = rnd.Next(1_500, 4_000),
-                        Crit = rnd.NextDouble() < 0.1,
-                        IsHeal = true,
-                    });
-                }
-            }
-
-            events.Sort((a, b) => a.Time.CompareTo(b.Time));
-
-            players.Add(new PlayerStat
-            {
-                Name = Names[p],
-                ClassId = p + 1,           // placeholder, a te ClassId-d lesz
-                Duration = EncounterSeconds,
-                Damage = events.Where(e => !e.IsHeal).Sum(e => e.Amount),
-                Healing = events.Where(e => e.IsHeal).Sum(e => e.Amount),
-                Events = events,
-            });
-        }
-
-        return new MeterSnapshot
-        {
-            Players = players,
-            Duration = EncounterSeconds,
-            MobMaxHp = 2_840_000,
-            IsDemo = true,
-        };
     }
 }

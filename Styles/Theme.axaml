@@ -129,6 +129,14 @@
     <Setter Property="BoxShadow" Value="0 12 32 0 #52000000"/>
   </Style>
 
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="#C90D1624"/>
+    <Setter Property="BorderBrush" Value="#36506A"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="16"/>
+    <Setter Property="BoxShadow" Value="0 10 28 0 #4A000000"/>
+  </Style>
+
   <Style Selector="Border.inset">
     <Setter Property="Background" Value="#98101A29"/>
     <Setter Property="BorderBrush" Value="#2F465E"/>

@@ -4,6 +4,31 @@ All notable user-facing changes are recorded here. Versions follow Semantic Vers
 
 ## Unreleased
 
+## [0.1.7] - 2026-10-29
+
+### Added
+
+- Added Nexforge Account connection through the default browser, with secure saved sessions, sign out and a cancellable connection flow.
+- Added an account area and character workspace prepared for equipment, skills, stigmas, Daevanion, talents, Arcana and character statistics.
+- Added automatic local character detection for the character workspace while online character data is still being expanded.
+- Added packaged Nexforge Language files for English, Hungarian, German and Polish, plus community language import in Settings.
+- Added the standalone Nexforge NFL Language Editor as an optional release download for community translators.
+- Added healing-only encounter support and healing event tracking alongside damage in the live meter and combat history.
+
+### Changed
+
+- Reworked the main navigation around Home, Account, DPS Meter, DPS Log, Timers and a compact More section.
+- Moved encrypted ForgeData packs into a dedicated runtime folder and kept language packs in `Data/Language`.
+- Expanded localization to cover messages generated while the application is running, not only static interface labels.
+- Prepared reusable image and icon handling for future character equipment and skill data.
+
+### Fixed
+
+- Prevented duplicate combat frames from inflating damage or healing totals.
+- Improved healing recognition so resource restoration and unrelated effects are not counted as healing.
+- Protected DPS and HPS rates from unrealistic values during extremely short encounters.
+- Improved account connection feedback for cancellation, offline use, expired sessions and unavailable services.
+
 ## [0.1.6] - 2026-10-26
 
 ### Added

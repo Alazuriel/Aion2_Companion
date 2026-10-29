@@ -113,6 +113,6 @@ public partial class CommandCenterView : UserControl
     private void OpenCharactersClick(object? sender, RoutedEventArgs e)
     {
         if (TopLevel.GetTopLevel(this) is MainWindow mainWindow)
-            mainWindow.NavigateTo("Characters");
+            mainWindow.NavigateTo("Character");
     }
 }

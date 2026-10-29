@@ -22,19 +22,9 @@ using AION_2_Companion.Core.Parsers;
 using SharpPcap;
 using Avalonia.Threading;
 using AION_2_Companion.Core.Map.Pets;
+using AION_2_Companion.Core.Accounts;
+using AION_2_Companion.Core.Combat;
 
-/*
- *          TODO ÍGY SORBA!
- *
- * A heal nem az aminek hittük, de legalább a szarokat kiszűrjük.
- *
- * A spellek level szintjének vissza fejtése, az id végén található számokból. (Pontosabban azaz extra amit rárakunk! 
- *  Ha ezis megvan, mehet a dps meter-re és a timeline-ra.
- *
- *
- *
- *
- */
 public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly EndpointTracker _endpointTracker = new();
@@ -60,9 +50,9 @@ public partial class MainWindowViewModel : ViewModelBase
     private MeterSnapshot _lastBossSnapshot = new();
     public static PetsDatabase? _ElyosPets;
     private readonly Dictionary<int, (int Level, int Soul)> _ownedPets = new();
-    private bool _petCollectionReady;
     public static MobsDatabase? _mobsDatabaseStatic;
     private readonly HashSet<uint> _pendingSummons = new();
+    private readonly CombatEventDeduplicator _combatEventDeduplicator = new();
     private string _characterName = LocalizationService.Get("WaitingForCharacter");
     private Bitmap? _selfClassIcon;
     private string _selfClassName = string.Empty;
@@ -123,7 +113,7 @@ public partial class MainWindowViewModel : ViewModelBase
     }
     private sealed class PendingDamage
     {
-        public DamageHit Hit { get; init; }
+        public DamageHit Hit { get; init; } = new();
         public long Timestamp { get; init; }
     }
     private void BufferPendingDamage(uint actorId, DamageHit hit)
@@ -303,6 +293,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
     {
         if (_SelfId == 0 || frame.Opcode != OpcodeId.EnterCombat ||
             !CombatStartFrameParser.TryParse(frame.Payload, out var start) ||
+            start is null ||
             start.actorId != _SelfId)
             return;
 
@@ -751,17 +742,20 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         var opcode = frame.Opcode;
 
         if (opcode == OpcodeId.Hit)
-            ApplyHits(DamageScanner.ScanFrame(0x04, 0x38, frame.Payload, minDamage: 1));
+            ApplyHits(frame.Time, DamageScanner.ScanFrame(0x04, 0x38, frame.Payload, minDamage: 1));
         else if (opcode == OpcodeId.DoT)
-            ApplyHits(DamageScanner.ScanFrame(0x05, 0x38, frame.Payload, minDamage: 1));
+            ApplyHits(frame.Time, DamageScanner.ScanFrame(0x05, 0x38, frame.Payload, minDamage: 1));
         else if (opcode == OpcodeId.Characters)
-            ApplyHits(DamageScanner.ScanFrame(0x0B, 0x39, frame.Payload, minDamage: 1));
+            ApplyHits(frame.Time, DamageScanner.ScanFrame(0x0B, 0x39, frame.Payload, minDamage: 1));
     }
 
-    private void ApplyHits(List<DamageHit> hits)
+    private void ApplyHits(DateTimeOffset capturedAt, List<DamageHit> hits)
     {
         foreach (var hit in hits)
-            ApplyDamageHit(hit);
+        {
+            if (_combatEventDeduplicator.ShouldAccept(hit, capturedAt))
+                ApplyDamageHit(hit);
+        }
     }
     
     private void ApplyHealHit(DamageHit hit)
@@ -793,14 +787,16 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
     
     private void RecordHealing(uint ownerId, string ownerName, DamageHit hit, long? eventTimestamp = null)
     {
-        // A heal önmagában nem indíthat fight-ot.
-        if (!_fightActive)
+        long timestamp = eventTimestamp ?? Stopwatch.GetTimestamp();
+
+        if (!_fightActive && !TryStartFightFromHealing(timestamp))
             return;
 
         if (hit.Damage <= 0)
             return;
-        
-        long timestamp = eventTimestamp ?? Stopwatch.GetTimestamp();
+
+        _lastDamageTimestamp = Math.Max(_lastDamageTimestamp, timestamp);
+        _fightLastHitTimestamp = Math.Max(_fightLastHitTimestamp, timestamp);
         
         if (!_damageByPlayer.TryGetValue(ownerId, out var stats))
         {
@@ -851,34 +847,99 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
                 Amount = hit.Damage,
                 Crit = hit.IsCritical,
                 IsDot = false,
-                IsHeal = true
+                IsHeal = true,
+                TargetRuntimeId = hit.Target,
             });
         }
-
-        // Szándékosan nem módosítjuk:
-        // _lastDamageTimestamp
-        // _fightStart
-        // _fightEnd
-        // _fightActive
 
         // Az overlayt a másodpercenkénti meter timer frissíti. Healenként
         // teljes snapshotot építeni hosszú fightnál O(n²) allokációt okozott.
     }
 
-    private bool isSelfOwner(uint ownerId)
+    private bool TryStartFightFromHealing(long timestamp)
     {
-        return ownerId == _SelfId;
+        if (_MobsInCombat.Count == 0)
+            return false;
+
+        _damageByPlayer.Clear();
+        _fightTargets.Clear();
+        _deadFightTargets.Clear();
+        _currentMobName = string.Empty;
+        _currentMobTemplateId = 0;
+        _currentBoss = null;
+        _currentBossRuntimeId = 0;
+        _bossStartTimestamp = 0;
+        _bossLastHitTimestamp = 0;
+
+        foreach (uint target in _MobsInCombat)
+        {
+            _fightTargets.Add(target);
+            TrackTargetMetadata(target);
+        }
+
+        _fightStartTimestamp = timestamp;
+        _fightLastHitTimestamp = timestamp;
+        _lastDamageTimestamp = timestamp;
+        _fightEndTimestamp = 0;
+        _fightEndRequestedAt = 0;
+        _fightEndPending = false;
+        _fightActive = true;
+
+        if (_currentBoss is not null)
+        {
+            _bossStartTimestamp = timestamp;
+            _bossLastHitTimestamp = timestamp;
+        }
+
+        DebugConsole.Log("healing",
+            $"[HEALING FIGHT START] Targets={_fightTargets.Count}");
+
+        if (CompanionSettings.DpsEncounterMode == DpsEncounterMode.All ||
+            _currentBoss is not null)
+        {
+            ShowDpsOverlayForCombat();
+        }
+
+        return true;
     }
 
-    
     private void ApplyDamageHit(DamageHit hit)
     {
-        bool heal = PartyMembers.Any(
-            p => p.Id != 0 && p.Id == hit.Target);
-        if (heal)
-        {
-            ApplyHealHit(hit);
+        if (_SelfId == 0)
             return;
+
+        uint originalActor = hit.Actor;
+        uint ownerId = _summonOwners.TryGetValue(
+            originalActor, out uint summonOwner)
+            ? summonOwner
+            : originalActor;
+
+        bool isSelf = ownerId == _SelfId;
+        PartyMemberEntry? actorMember = PartyMembers.FirstOrDefault(
+            member => member.Id != 0 && member.Id == ownerId);
+        bool isParty = actorMember is not null;
+        bool friendlyTarget = hit.Target == _SelfId || PartyMembers.Any(
+            member => member.Id != 0 && member.Id == hit.Target);
+
+        if ((isSelf || isParty) && friendlyTarget)
+        {
+            string className = isSelf
+                ? _selfClassName
+                : actorMember?.ClassName ?? string.Empty;
+            SkillDefinition? skill = GetSkillDatabase(className)?.FindVariant(hit.Skill);
+
+            if (HealingSemantics.IsHealingHit(hit, skill))
+            {
+                ApplyHealHit(hit);
+                return;
+            }
+
+            if (!hit.IsDot && hit.Type == 2 && (hit.Switch & 0x0F) == 4)
+            {
+                DebugConsole.Log("healing",
+                    $"[HEAL DROP] Skill={hit.Skill} | Actor={hit.Actor} | " +
+                    $"Target={hit.Target} | Reason=NoVerifiedHpHealingDefinition");
+            }
         }
 
         if (hit.Target == hit.Actor || hit.Damage <= 0 ||
@@ -892,20 +953,6 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
             }
             return;
         }
-
-        if (_SelfId == 0)
-            return;
-
-        uint originalActor = hit.Actor;
-
-        uint ownerId = _summonOwners.TryGetValue(
-            originalActor, out uint summonOwner)
-            ? summonOwner
-            : originalActor;
-
-        bool isSelf = ownerId == _SelfId;
-        bool isParty = PartyMembers.Any(
-            p => p.Id != 0 && p.Id == ownerId);
 
         if (!isSelf && !isParty)
         {
@@ -1000,21 +1047,20 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         if (frame.Opcode != OpcodeId.Self)
             return;
 
-        if (!OwnCharacterParser.TryParse(frame.Payload, out var self))
+        if (!OwnCharacterParser.TryParse(frame.Payload, out var self) || self is null)
             return;
         
         PetCollectionBridge.BindCharacter(self.Name);
-        
-        if (_SelfId == self.Id &&
-            string.Equals(_selfName, self.Name, StringComparison.OrdinalIgnoreCase))
-            return;
-        
+
+        bool identityChanged = _SelfId != self.Id ||
+            !string.Equals(_selfName, self.Name, StringComparison.OrdinalIgnoreCase);
         
         _selfName = self.Name;
         _SelfId = self.Id;
         _selfClassId = self.ClassId;
         
-        PushMeter();
+        if (identityChanged)
+            PushMeter();
         
         CharacterName = string.IsNullOrWhiteSpace(self.Name)
             ? "Unknown"
@@ -1023,7 +1069,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         CharacterClass = "—";
         CharacterClassColor = "#9CA3AF";
 
-        string classIcon = "";
+        string? classIconPath = null;
 
         if (self.ClassId is byte jobValue)
         {
@@ -1037,16 +1083,19 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
                 CharacterClass = definition.Name;
                 CharacterClassColor = definition.Color;
 
+                if (!string.Equals(_selfClassName, definition.Name, StringComparison.Ordinal) ||
+                    _selfClassIcon is null)
+                    _selfClassIcon = LoadClassIcon(definition.Icon);
+
                 _selfClassName = definition.Name;
                 _selfClassColor = definition.Color;
-
-                _selfClassIcon = LoadClassIcon(definition.Icon);
+                classIconPath = definition.Icon;
             }
 
             DebugConsole.Log("class",
                 $" RawJobValue={jobValue} | " +
                 $"ResolvedClass={CharacterClass} | " +
-                $"Color={CharacterClassColor} | Icon={classIcon}");
+                $"Color={CharacterClassColor} | Icon={classIconPath}");
         }
         else
         {
@@ -1057,7 +1106,19 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         DebugConsole.Log("self",
             $" Name={_selfName} | ID={_SelfId} | " +
             $"Level={self.Level} | GS={self.Gs} | Class={CharacterClass}");
-        _KnowMobs.Clear();
+
+        DetectedCharacterService.Shared.Update(new DetectedCharacterSnapshot(
+            self.Name,
+            CharacterClass,
+            classIconPath,
+            self.Level,
+            self.Gs == 0 ? null : self.Gs,
+            self.ServerId == 0 ? null : self.ServerId,
+            self.Id,
+            DateTimeOffset.UtcNow));
+
+        if (identityChanged)
+            _KnowMobs.Clear();
     }
     private Bitmap? LoadClassIcon(string? iconPath)
     {
@@ -1236,7 +1297,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         if (id == _SelfId)
             return _selfName;
 
-        return PartyMembers.FirstOrDefault(p => p.Id == id).Name ?? "?";
+        return PartyMembers.FirstOrDefault(p => p.Id == id)?.Name ?? "?";
     }
 
     private void TryRemoveDeathEntity(WireFrame frame)
@@ -1630,35 +1691,6 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
 
 
 
-    private static List<string> ExtractReadableText(byte[] payload)
-    {
-        var results = new List<string>();
-        var current = new System.Text.StringBuilder();
-
-        void Flush()
-        {
-            if (current.Length >= 3)
-                results.Add(current.ToString());
-
-            current.Clear();
-        }
-
-        foreach (byte b in payload)
-        {
-            if (b >= 0x20 && b <= 0x7E)
-            {
-                current.Append((char)b);
-            }
-            else
-            {
-                Flush();
-            }
-        }
-
-        Flush();
-        return results.Distinct().ToList();
-    }
-
     private static string DescribeFrame(WireFrame frame, string name)
     {
         string source = frame.Source;
@@ -1716,17 +1748,6 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
 
     public int LogCount => LogEntries.Count;
 
-    private void AddLogEntry(LogEntry entry)
-    {
-        LogEntries.Insert(0, entry);
-
-        // Ne nőjön korlátlanul a napló.
-        while (LogEntries.Count > 500)
-            LogEntries.RemoveAt(LogEntries.Count - 1);
-
-        OnPropertyChanged(nameof(LogCount));
-    }
-    
     public ObservableCollection<CaptureDeviceOption> CaptureDevices { get; }
         = new();
 
@@ -1769,7 +1790,6 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
                 pet.SoulProgress);
         }
 
-        _petCollectionReady = true;
 
         Console.WriteLine(
             $"[PET LIST] Loaded={_ownedPets.Count} | " +
@@ -1824,7 +1844,6 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
                 $"Name={entry.Value.PetName} | " +
                 $"Category={entry.Value.Category}");
         }
-        _petCollectionReady = true;
 
         PetCollectionBridge.Publish(
             petList.Pets.Select(p =>
@@ -1835,29 +1854,6 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
 
         Console.WriteLine(
             $"[PET BRIDGE] Published={PetCollectionBridge.Snapshot?.Count ?? 0}");
-    }
-
-    private static bool TryReadPetVarint(
-        ReadOnlySpan<byte> data,
-        ref int pos,
-        out int value)
-    {
-        value = 0;
-
-        for (int i = 0; i < 5 && pos < data.Length; i++)
-        {
-            byte b = data[pos++];
-
-            if (i == 4 && (b & 0xF8) != 0)
-                return false;
-
-            value |= (b & 0x7F) << (i * 7);
-
-            if ((b & 0x80) == 0)
-                return true;
-        }
-
-        return false;
     }
 
     public MainWindowViewModel(bool autoStartCapture = false)
@@ -2345,7 +2341,6 @@ public MeterSnapshot BuildSnapshot(bool bossOnly = false)
             : null,
         BossStartOffset = bossOnly ? 0 : bossStartOffset,
         BossDuration = bossDuration,
-        IsDemo = false
     };
 }
 
@@ -2398,24 +2393,7 @@ private string GetCurrentMobName()
         SkillDatabase? db,
         uint skillId)
     {
-        if (db is null)
-            return null;
-
-        var exact = db.GetById(skillId);
-
-        if (exact is not null)
-            return exact;
-
-        string id = skillId.ToString(
-            CultureInfo.InvariantCulture);
-
-        if (id.Length < 4)
-            return null;
-
-        string prefix = id[..4];
-
-        return db.Skills.FirstOrDefault(s =>
-            s.Id.StartsWith(prefix, StringComparison.Ordinal));
+        return db?.FindVariant(skillId);
     }
     private static PlayerStat ToPlayerStat(
         PlayerDamageStats st,

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using AION_2_Companion.Core;
 using Avalonia;
 using Avalonia.Controls;
@@ -15,6 +15,7 @@ using Avalonia.VisualTree;
 using System.Threading.Tasks;
 using AION_2_Companion.Core.Map;
 using AION_2_Companion.Core.EventTimers;
+using AION_2_Companion.Core.Accounts;
 using AION_2_Companion.ViewModels;
 using AION_2_Companion.Views.Overlays;
 
@@ -31,7 +32,9 @@ public partial class MainWindow : Window
     private bool _petFarmLoaded;
     private bool _automaticUpdateRunning;
     private bool _startupCompleted;
-    private bool _testLoginBrowserOpened;
+    private bool _testLoginConnecting;
+    private bool _testLoginCanCancel;
+    private CancellationTokenSource? _testLoginCancelDelay;
     private readonly DispatcherTimer _automaticUpdateTimer;
     private readonly DispatcherTimer _onboardingPulseTimer;
     private List<OnboardingStep> _onboardingSteps = new();
@@ -138,45 +141,91 @@ public partial class MainWindow : Window
 
     public void StartTestLogin()
     {
-        _testLoginBrowserOpened = false;
+        _testLoginConnecting = false;
+        _testLoginCanCancel = false;
         this.FindControl<TextBlock>("TestLoginStatusText")!.Text =
             LocalizationService.Get("TestLoginWaiting");
-        this.FindControl<Button>("TestLoginContinueButton")!.IsEnabled = false;
+        Button button = this.FindControl<Button>("TestLoginStartButton")!;
+        button.Content = LocalizationService.Get("TestLoginOpenBrowser");
+        button.IsEnabled = true;
         this.FindControl<Grid>("TestLoginLayer")!.IsVisible = true;
     }
 
-    private void OpenTestLoginBrowserClick(object? sender, RoutedEventArgs e)
+    private async void OpenTestLoginBrowserClick(object? sender, RoutedEventArgs e)
+    {
+        if (_testLoginConnecting)
+        {
+            if (_testLoginCanCancel)
+            {
+                this.FindControl<Button>("TestLoginStartButton")!.IsEnabled = false;
+                AccountService.Shared.CancelConnect();
+            }
+            return;
+        }
+
+        _testLoginConnecting = true;
+        _testLoginCanCancel = false;
+        Button button = this.FindControl<Button>("TestLoginStartButton")!;
+        button.IsEnabled = false;
+        this.FindControl<TextBlock>("TestLoginStatusText")!.Text =
+            LocalizationService.Get("AccountConnecting");
+        ArmTestLoginCancel();
+
+        await AccountService.Shared.ConnectAsync();
+        DisarmTestLoginCancel();
+        AccountServiceSnapshot snapshot = AccountService.Shared.Snapshot;
+        if (snapshot.State == AccountConnectionState.Connected)
+        {
+            this.FindControl<Grid>("TestLoginLayer")!.IsVisible = false;
+            if (await CompleteStartupAsync())
+            {
+                bool shouldStartCapture = !Program.AutoCaptureDisabled &&
+                    (Program.AutoCaptureRequested || CompanionSettings.AutoCaptureEnabled);
+                if (shouldStartCapture && DataContext is MainWindowViewModel viewModel)
+                    viewModel.StartCaptureAfterLogin();
+            }
+        }
+        else
+        {
+            this.FindControl<TextBlock>("TestLoginStatusText")!.Text =
+                LocalizationService.Get(snapshot.StatusKey);
+            button.IsEnabled = snapshot.CanConnect;
+            button.Content = LocalizationService.Get("TestLoginOpenBrowser");
+        }
+        _testLoginConnecting = false;
+    }
+
+    private void ArmTestLoginCancel()
+    {
+        DisarmTestLoginCancel();
+        _testLoginCancelDelay = new CancellationTokenSource();
+        _ = EnableTestLoginCancelAfterDelayAsync(_testLoginCancelDelay.Token);
+    }
+
+    private async Task EnableTestLoginCancelAfterDelayAsync(CancellationToken cancellationToken)
     {
         try
         {
-            Process.Start(new ProcessStartInfo(Program.TestLoginUrl) { UseShellExecute = true });
-            _testLoginBrowserOpened = true;
-            this.FindControl<TextBlock>("TestLoginStatusText")!.Text =
-                LocalizationService.Get("TestLoginBrowserOpened");
-            this.FindControl<Button>("TestLoginContinueButton")!.IsEnabled = true;
+            await Task.Delay(TimeSpan.FromSeconds(15), cancellationToken);
+            if (!_testLoginConnecting)
+                return;
+
+            _testLoginCanCancel = true;
+            Button button = this.FindControl<Button>("TestLoginStartButton")!;
+            button.Content = LocalizationService.Get("CancelSignIn");
+            button.IsEnabled = true;
         }
-        catch (Exception ex)
+        catch (OperationCanceledException)
         {
-            _testLoginBrowserOpened = false;
-            this.FindControl<TextBlock>("TestLoginStatusText")!.Text =
-                LocalizationService.Get("TestLoginBrowserFailed");
-            DebugConsole.Log("auth-test", $"Test login page could not be opened: {ex.Message}");
         }
     }
 
-    private async void CompleteTestLoginClick(object? sender, RoutedEventArgs e)
+    private void DisarmTestLoginCancel()
     {
-        if (!_testLoginBrowserOpened)
-            return;
-
-        this.FindControl<Grid>("TestLoginLayer")!.IsVisible = false;
-        if (!await CompleteStartupAsync())
-            return;
-
-        bool shouldStartCapture = !Program.AutoCaptureDisabled &&
-            (Program.AutoCaptureRequested || CompanionSettings.AutoCaptureEnabled);
-        if (shouldStartCapture && DataContext is MainWindowViewModel viewModel)
-            viewModel.StartCaptureAfterLogin();
+        _testLoginCancelDelay?.Cancel();
+        _testLoginCancelDelay?.Dispose();
+        _testLoginCancelDelay = null;
+        _testLoginCanCancel = false;
     }
 
     private async Task<bool> CheckForUpdatesAsync()
@@ -307,9 +356,11 @@ public partial class MainWindow : Window
         if (this.FindControl<Grid>("TestLoginLayer")!.IsVisible)
         {
             this.FindControl<TextBlock>("TestLoginStatusText")!.Text =
-                LocalizationService.Get(_testLoginBrowserOpened
-                    ? "TestLoginBrowserOpened"
-                    : "TestLoginWaiting");
+                LocalizationService.Get(_testLoginConnecting
+                    ? "AccountConnecting"
+                    : AccountService.Shared.Snapshot.StatusKey);
+            this.FindControl<Button>("TestLoginStartButton")!.Content = LocalizationService.Get(
+                _testLoginCanCancel ? "CancelSignIn" : "TestLoginOpenBrowser");
         }
     }
 
@@ -392,6 +443,7 @@ public partial class MainWindow : Window
         _trayIcon = null;
         _automaticUpdateTimer.Stop();
         _onboardingPulseTimer.Stop();
+        DisarmTestLoginCancel();
         EventTimerService.Shared.NotificationRaised -= EventTimerNotificationRaised;
         EventTimerService.Shared.Stop();
     }
@@ -405,13 +457,18 @@ public partial class MainWindow : Window
         if (host is null)
             return;
 
-        bool isMorePage = page is "Boss" or "Guides" or "Changelog" or "Support";
+        bool isMorePage = page is "Boss" or "Guides" or "CharacterSearch" or
+            "Leaderboards" or "Changelog" or "Support";
         SetMoreMenuExpanded(isMorePage);
 
         host.Content = page switch
         {
             "CombatLog" => new CombatLogWindow(),
-            "Characters" => new CharactersView(),
+            "Account" => CreateAccountView(),
+            "MyCharacters" => CreateMyCharactersView(),
+            "CharacterDetails" => CreateCharacterDetailsView(),
+            "CharacterSearch" => new CharacterSearchView(),
+            "Leaderboards" => new LeaderboardsView(),
             "EventTimers" => new EventTimersView(),
             "Boss" => new UnderForgeView(),
             "Guides" => new UnderForgeView(),
@@ -427,7 +484,10 @@ public partial class MainWindow : Window
         if (host.Content is Control pageView &&
             host.Content is not CombatLogWindow &&
             host.Content is not ChangelogView &&
-            host.Content is not EventTimersView)
+            host.Content is not EventTimersView &&
+            host.Content is not AccountView &&
+            host.Content is not MyCharactersView &&
+            host.Content is not CharacterDetailsView)
             pageView.DataContext = DataContext;
 
         foreach (var button in this.GetVisualDescendants().OfType<Button>())
@@ -435,7 +495,9 @@ public partial class MainWindow : Window
             if (!button.Classes.Contains("nav"))
                 continue;
 
-            var selected = (button.Tag as string) == page;
+            string? tag = button.Tag as string;
+            var selected = tag == page ||
+                           (page is "MyCharacters" or "CharacterDetails" && tag == "Account");
             if (selected)
             {
                 if (!button.Classes.Contains("active"))
@@ -460,6 +522,27 @@ public partial class MainWindow : Window
     }
 
     public void NavigateTo(string page) => ShowPage(page);
+
+    private AccountView CreateAccountView()
+    {
+        var view = new AccountView();
+        view.OpenCharactersRequested += (_, _) => ShowPage("MyCharacters");
+        return view;
+    }
+
+    private MyCharactersView CreateMyCharactersView()
+    {
+        var view = new MyCharactersView();
+        view.OpenCharacterRequested += (_, _) => ShowPage("CharacterDetails");
+        return view;
+    }
+
+    private CharacterDetailsView CreateCharacterDetailsView()
+    {
+        var view = new CharacterDetailsView();
+        view.BackRequested += (_, _) => ShowPage("MyCharacters");
+        return view;
+    }
 
     public void StartOnboarding(bool manual)
     {

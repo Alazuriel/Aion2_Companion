@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AION_2_Companion.ViewModels"
+             xmlns:controls="using:AION_2_Companion.Views.Controls"
+             xmlns:views="using:AION_2_Companion.Views"
+             x:Class="AION_2_Companion.Views.MyCharactersView"
+             x:DataType="vm:MyCharactersViewModel"
+             Background="Transparent">
+  <Grid>
+    <views:UnderForgeView IsVisible="{Binding ShowUnderForge}"/>
+    <ScrollViewer IsVisible="{Binding IsDeveloperMode}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Spacing="18" MaxWidth="1080" Margin="0,0,8,28">
+        <StackPanel Spacing="4"><TextBlock Text="{DynamicResource MyCharactersKicker}" Classes="kicker"/><TextBlock Text="{DynamicResource MyCharactersTitle}" Classes="h1" FontSize="29"/><TextBlock Text="{DynamicResource MyCharactersSubtitle}" Classes="body"/></StackPanel>
+
+        <Border Classes="hero" Padding="28" IsVisible="{Binding HasNoCharacter}">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="22">
+            <controls:ForgeIconView Width="78" Height="78" TooltipText="{DynamicResource NoCharacterText}"/>
+            <StackPanel Grid.Column="1" Spacing="7" VerticalAlignment="Center"><Border Classes="goldPill" HorizontalAlignment="Left"><TextBlock Text="{DynamicResource Unverified}" Classes="kicker" FontSize="9"/></Border><TextBlock Text="{DynamicResource NoCharacterTitle}" Classes="h1" FontSize="23"/><TextBlock Text="{DynamicResource NoCharacterText}" Classes="body"/></StackPanel>
+          </Grid>
+        </Border>
+
+        <Border Classes="hero" Padding="24" IsVisible="{Binding HasCharacter}">
+          <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="22">
+            <controls:ForgeIconView Width="88" Height="88" IconSource="{Binding ClassIconSource}" TooltipText="{Binding CharacterTooltip}" AccentColor="#45DFFF"/>
+            <StackPanel Grid.Column="1" Spacing="7">
+              <StackPanel Orientation="Horizontal" Spacing="9"><TextBlock Text="{Binding Name}" Classes="h1" FontSize="26"/><Border Classes="pill"><TextBlock Text="{DynamicResource DetectedLocally}" Classes="kicker" FontSize="8"/></Border><Border Classes="goldPill"><TextBlock Text="{DynamicResource Unverified}" Classes="kicker" FontSize="8"/></Border></StackPanel>
+              <TextBlock Text="{Binding ClassName}" FontSize="16" Foreground="#45DFFF" FontWeight="SemiBold"/>
+              <WrapPanel><Border Classes="pill" Margin="0,0,7,7"><TextBlock Text="{Binding LevelText}" Classes="body"/></Border><Border Classes="pill" Margin="0,0,7,7"><TextBlock Text="{Binding GearScoreText}" Classes="body"/></Border><Border Classes="pill" Margin="0,0,7,7"><TextBlock Text="{Binding ServerText}" Classes="body"/></Border></WrapPanel>
+              <TextBlock Text="{DynamicResource UnverifiedHint}" Classes="hint"/><TextBlock Text="{Binding DetectedText}" Classes="mono" FontSize="10" Foreground="#647D93"/>
+            </StackPanel>
+            <Button Grid.Column="2" Classes="ui primary" Content="{DynamicResource ViewCharacter}" Click="OpenCharacterClick" VerticalAlignment="Center" MinWidth="160"/>
+          </Grid>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

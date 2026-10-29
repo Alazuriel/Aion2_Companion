@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -9,6 +8,7 @@ using AION_2_Companion.Core.Map.Pets;
 using System.Collections.Generic;
 using AION_2_Companion.Core.Map.V2;
 using AION_2_Companion.ViewModels;
+using AION_2_Companion.Core.GameData;
 
 namespace AION_2_Companion.Views.Overlays;
 
@@ -86,9 +86,10 @@ public partial class MapOverlayWindow
         UpdatePetFarmTooltip();
     }
 
-    public void ConfigurePetFarm(IEnumerable records, string mapsDirectory)
+    public void ConfigurePetFarm(
+        IEnumerable<PetsDefiniton> records,
+        string mapsDirectory)
     {
-        // Executed once AFTER ForgeDataLoader has populated PetsDatabase.Pets.
         PetFarmImportResult imported = PetFarmMapImporter.FromRecords(records, mapsDirectory);
         if (_petFarmLayer is null)
         {
@@ -157,10 +158,6 @@ public partial class MapOverlayWindow
         _petFarmTooltipPhysicalHitRegion = null;
     }
 
-    /// <summary>
-    /// Call this from the EXISTING low-level click event (UI thread).
-    /// The game receives the click too, as in the current test mob.
-    /// </summary>
     public bool HandlePetFarmClick(int physicalX, int physicalY)
     {
         if (!_petFarmEnabled || _petFarmLayer is null || !IsVisible) return false;

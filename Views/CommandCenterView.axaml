@@ -52,7 +52,7 @@
             <Border Classes="goldPill" HorizontalAlignment="Right">
               <TextBlock Text="{DynamicResource StillUnderForge}" Classes="kicker" FontSize="8"/>
             </Border>
-            <Button Classes="ui" Content="{DynamicResource CharactersPreview}"
+            <Button Classes="ui" Content="{DynamicResource CharacterPreview}"
                     Click="OpenCharactersClick"/>
           </StackPanel>
         </Grid>

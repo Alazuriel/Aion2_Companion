@@ -1,0 +1,82 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AION_2_Companion.ViewModels"
+             x:Class="AION_2_Companion.Views.AccountView"
+             x:DataType="vm:AccountPageViewModel"
+             Background="Transparent">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="18" MaxWidth="1080" Margin="0,0,8,28">
+      <StackPanel Spacing="4">
+        <TextBlock Text="{DynamicResource AccountPageKicker}" Classes="kicker"/>
+        <TextBlock Text="{DynamicResource AccountPageTitle}" Classes="h1" FontSize="29"/>
+        <TextBlock Text="{DynamicResource AccountPageSubtitle}" Classes="body"/>
+      </StackPanel>
+
+      <Border Classes="hero" Padding="28" IsVisible="{Binding IsDisconnected}">
+        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="22">
+          <Border Width="82" Height="82" CornerRadius="23" Background="#A00A1422"
+                  BorderBrush="#6545DFFF" BorderThickness="1" BoxShadow="0 0 30 0 #4845DFFF">
+            <Image Source="/Assets/nexforge-companion-icon.png" Margin="4" Stretch="Uniform"/>
+          </Border>
+          <StackPanel Grid.Column="1" Spacing="7" VerticalAlignment="Center">
+            <Border Classes="pill" HorizontalAlignment="Left"><TextBlock Text="{Binding StatusBadge}" Classes="kicker" FontSize="9"/></Border>
+            <TextBlock Text="{DynamicResource AccountNotConnectedTitle}" Classes="h1" FontSize="23"/>
+            <TextBlock Text="{DynamicResource AccountNotConnectedText}" Classes="body" MaxWidth="650"/>
+            <TextBlock Text="{Binding StatusText}" Classes="hint"/>
+          </StackPanel>
+          <StackPanel Grid.Column="2" Spacing="9" VerticalAlignment="Center">
+            <Button Classes="ui primary" Content="{DynamicResource ConnectAccount}" Click="ConnectClick"
+                    IsVisible="{Binding CanConnect}" MinWidth="190"/>
+            <Button Classes="ui" Content="{DynamicResource CancelSignIn}" Click="CancelClick"
+                    IsVisible="{Binding IsConnecting}" MinWidth="190"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <Border Classes="hero" Padding="26" IsVisible="{Binding IsConnected}">
+        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="22">
+          <Border Width="76" Height="76" CornerRadius="21" Background="#A00A1422"
+                  BorderBrush="#6545DFFF" BorderThickness="1" BoxShadow="0 0 26 0 #4845DFFF">
+            <Image Source="/Assets/nexforge-logo.png" Margin="9" Stretch="Uniform"/>
+          </Border>
+          <StackPanel Grid.Column="1" Spacing="7">
+            <StackPanel Orientation="Horizontal" Spacing="9">
+              <TextBlock Text="{DynamicResource AccountConnectedTitle}" Classes="h1" FontSize="23"/>
+              <Border Classes="pill"><TextBlock Text="{Binding StatusBadge}" Classes="kicker" FontSize="9"/></Border>
+            </StackPanel>
+            <TextBlock Text="{Binding Username}" FontSize="18" FontWeight="SemiBold" Foreground="#45DFFF"/>
+            <TextBlock Text="{Binding AccountId}" Classes="mono" FontSize="11" Foreground="#7890A6"/>
+            <TextBlock Text="{Binding StatusText}" Classes="hint"/>
+          </StackPanel>
+          <StackPanel Grid.Column="2" Spacing="9" VerticalAlignment="Center">
+            <Button Classes="ui primary" Content="{DynamicResource OpenAccountCenter}" Click="OpenAccountCenterClick" MinWidth="190"/>
+            <Button Classes="ui" Content="{DynamicResource DisconnectAccount}" Click="DisconnectClick" MinWidth="190" IsEnabled="{Binding CanDisconnect}"/>
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <Border Classes="inset" Padding="18" IsVisible="{Binding HasPairingCode}">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="18">
+          <StackPanel Spacing="5"><TextBlock Text="{DynamicResource PairingWaiting}" Classes="body"/><TextBlock Text="{DynamicResource PairingCode}" Classes="kicker"/></StackPanel>
+          <TextBlock Grid.Column="1" Text="{Binding PairingCode}" Classes="mono" FontSize="25" FontWeight="Bold" Foreground="#D8B96A" VerticalAlignment="Center"/>
+        </Grid>
+      </Border>
+
+      <Grid ColumnDefinitions="*,*" ColumnSpacing="14">
+        <Border Classes="card" Padding="20">
+          <StackPanel Spacing="10">
+            <TextBlock Text="{DynamicResource AccountBenefitsTitle}" Classes="section"/>
+            <TextBlock Text="{DynamicResource AccountBenefitsText}" Classes="body"/>
+          </StackPanel>
+        </Border>
+        <Border Grid.Column="1" Classes="card" Padding="20">
+          <StackPanel Spacing="10">
+            <TextBlock Text="{DynamicResource MyCharactersTitle}" Classes="section"/>
+            <TextBlock Text="{DynamicResource AccountCharactersSummary}" Classes="body"/>
+            <Button Classes="ui gold" Content="{DynamicResource OpenMyCharacters}" Click="OpenCharactersClick" HorizontalAlignment="Left"/>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

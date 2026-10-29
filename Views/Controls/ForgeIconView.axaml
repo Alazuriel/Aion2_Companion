@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="AION_2_Companion.Views.Controls.ForgeIconView"
+             MinWidth="44" MinHeight="44">
+  <Border x:Name="Frame" CornerRadius="10" Background="#D00A1422"
+          BorderBrush="#3B5874" BorderThickness="1" Padding="3">
+    <Grid>
+      <Image x:Name="IconImage" Stretch="UniformToFill"
+             RenderOptions.BitmapInterpolationMode="HighQuality" IsVisible="False"/>
+      <Grid x:Name="FallbackVisual">
+        <Ellipse Width="24" Height="24" Stroke="#48637A" StrokeThickness="1"/>
+        <Path Width="16" Height="16" Stretch="Uniform" Fill="#45DFFF" Opacity="0.55"
+              Data="M8,1 L14,8 L8,15 L2,8 Z M8,5 L11,8 L8,11 L5,8 Z"/>
+      </Grid>
+      <Border x:Name="SelectionGlow" CornerRadius="8" BorderBrush="#45DFFF"
+              BorderThickness="2" BoxShadow="0 0 18 0 #8845DFFF" IsVisible="False"/>
+    </Grid>
+  </Border>
+</UserControl>

@@ -42,7 +42,7 @@ public class ForgeDataLoader
     }
     public void DataLoader()
     {
-        string dataDir = Path.Combine(AppContext.BaseDirectory, "Data");
+        string dataDir = Path.Combine(AppContext.BaseDirectory, "Data", "ForgeData");
         
         _classDatabase = TryLoad<ClassDatabase>(
             Path.Combine(dataDir, "AION2_Class.nfg"),

@@ -107,7 +107,7 @@ public sealed class EventTimerService
     {
         try
         {
-            string path = Path.Combine(AppContext.BaseDirectory, "Data", "AION2_EventTimers.nfg");
+            string path = Path.Combine(AppContext.BaseDirectory, "Data", "ForgeData", "AION2_EventTimers.nfg");
             _database = EventTimersDatabase.Load(path);
             LoadError = null;
 

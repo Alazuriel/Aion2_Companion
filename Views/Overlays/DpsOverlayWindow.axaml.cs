@@ -88,7 +88,6 @@ public partial class DpsOverlayWindow : Window
         UpdateSnapshot(new MeterSnapshot
         {
             Duration = duration,
-            IsDemo = false,
             Players = list.Select(p => new PlayerStat
             {
                 Name = p.Name,

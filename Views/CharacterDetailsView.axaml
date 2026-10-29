@@ -1,0 +1,110 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AION_2_Companion.ViewModels"
+             xmlns:controls="using:AION_2_Companion.Views.Controls"
+             xmlns:views="using:AION_2_Companion.Views"
+             xmlns:accounts="using:AION_2_Companion.Core.Accounts"
+             x:Class="AION_2_Companion.Views.CharacterDetailsView"
+             x:DataType="vm:CharacterDetailsViewModel"
+             Background="Transparent">
+  <UserControl.Styles>
+    <Style Selector="TabItem">
+      <Setter Property="Foreground" Value="#7890A6"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Padding" Value="15,10"/>
+      <Setter Property="FontSize" Value="12"/>
+    </Style>
+    <Style Selector="TabItem:selected">
+      <Setter Property="Foreground" Value="#45DFFF"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+  </UserControl.Styles>
+  <Grid>
+    <views:UnderForgeView IsVisible="{Binding ShowUnderForge}"/>
+    <ScrollViewer IsVisible="{Binding IsDeveloperMode}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Spacing="16" MaxWidth="1120" Margin="0,0,8,28">
+        <Button Classes="ui quiet" HorizontalAlignment="Left" Click="BackClick">
+          <StackPanel Orientation="Horizontal" Spacing="8"><TextBlock Text="←"/><TextBlock Text="{DynamicResource BackToCharacters}" FontSize="12"/></StackPanel>
+        </Button>
+
+        <StackPanel Spacing="4"><TextBlock Text="{DynamicResource CharacterDetailsKicker}" Classes="kicker"/><TextBlock Text="{DynamicResource CharacterDetailsTitle}" Classes="h1" FontSize="29"/><TextBlock Text="{DynamicResource CharacterDetailsSubtitle}" Classes="body"/></StackPanel>
+
+        <Border Classes="hero" Padding="24" IsVisible="{Binding HasNoCharacter}">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="20"><controls:ForgeIconView Width="76" Height="76"/><StackPanel Grid.Column="1" Spacing="7" VerticalAlignment="Center"><TextBlock Text="{DynamicResource NoCharacterTitle}" Classes="h1" FontSize="22"/><TextBlock Text="{DynamicResource NoCharacterText}" Classes="body"/></StackPanel></Grid>
+        </Border>
+
+        <Border Classes="hero" Padding="24" IsVisible="{Binding HasCharacter}">
+          <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="22">
+            <controls:ForgeIconView Width="94" Height="94" IconSource="{Binding ClassIconSource}" TooltipText="{Binding ClassTooltip}" AccentColor="#45DFFF" IsSelected="True"/>
+            <StackPanel Grid.Column="1" Spacing="7">
+              <StackPanel Orientation="Horizontal" Spacing="9"><TextBlock Text="{Binding CharacterName}" Classes="h1" FontSize="29"/><Border Classes="goldPill"><TextBlock Text="{Binding VerificationText}" Classes="kicker" FontSize="8"/></Border></StackPanel>
+              <TextBlock Text="{Binding CharacterClass}" Foreground="#45DFFF" FontSize="17" FontWeight="SemiBold"/>
+              <WrapPanel><Border Classes="pill" Margin="0,0,7,7"><StackPanel><TextBlock Text="{DynamicResource CharacterLevel}" Classes="kicker" FontSize="8"/><TextBlock Text="{Binding LevelText}" FontSize="18"/></StackPanel></Border><Border Classes="pill" Margin="0,0,7,7"><StackPanel><TextBlock Text="{DynamicResource CharacterItemLevel}" Classes="kicker" FontSize="8"/><TextBlock Text="{Binding GearScoreText}" FontSize="18"/></StackPanel></Border><Border Classes="pill" Margin="0,0,7,7"><StackPanel><TextBlock Text="{DynamicResource LeaderboardServer}" Classes="kicker" FontSize="8"/><TextBlock Text="{Binding ServerText}" FontSize="13"/></StackPanel></Border><Border Classes="pill" Margin="0,0,7,7"><StackPanel><TextBlock Text="{DynamicResource Region}" Classes="kicker" FontSize="8"/><TextBlock Text="{Binding RegionText}" FontSize="13"/></StackPanel></Border></WrapPanel>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="5" VerticalAlignment="Center"><TextBlock Text="{DynamicResource LiveIdentity}" Classes="kicker"/><TextBlock Text="{DynamicResource ProfileSourceHint}" Classes="hint" MaxWidth="235"/><TextBlock Text="{Binding UpdatedText}" Classes="mono" FontSize="10" Foreground="#688197"/></StackPanel>
+          </Grid>
+        </Border>
+
+        <Border Classes="panel" Padding="8">
+          <TabControl>
+            <TabItem Header="{DynamicResource OverviewTab}">
+              <StackPanel Spacing="16" Margin="14,18,14,14">
+                <ItemsControl ItemsSource="{Binding StatCards}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:CharacterStatCard"><Border Classes="inset" Width="230" Padding="16" Margin="0,0,12,12"><StackPanel Spacing="7"><TextBlock Text="{Binding Name}" Classes="kicker" FontSize="9"/><TextBlock Text="{Binding Value}" Classes="metric" FontSize="20" Foreground="{Binding AccentColor}"/></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Border Classes="inset" Padding="18"><StackPanel Spacing="7"><TextBlock Text="{DynamicResource Unverified}" Classes="kicker"/><TextBlock Text="{DynamicResource UnverifiedHint}" Classes="body"/></StackPanel></Border>
+              </StackPanel>
+            </TabItem>
+
+            <TabItem Header="{DynamicResource EquipmentTab}">
+              <StackPanel Spacing="16" Margin="14,18,14,14">
+                <ItemsControl ItemsSource="{Binding EquipmentSlots}">
+                  <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:CharacterVisualItem"><Border Classes="inset" Width="126" Height="140" Padding="10" Margin="0,0,10,10"><Grid RowDefinitions="Auto,*,Auto"><controls:ForgeIconView Width="72" Height="72" HorizontalAlignment="Center" IconSource="{Binding IconSource}" TooltipText="{Binding Tooltip}" AccentColor="{Binding AccentColor}"/><Border HorizontalAlignment="Right" VerticalAlignment="Top" Classes="goldPill" Padding="5,2" IsVisible="{Binding HasCornerText}"><TextBlock Text="{Binding CornerText}" Classes="mono" FontSize="9"/></Border><TextBlock Grid.Row="2" Text="{Binding Name}" TextAlignment="Center" TextTrimming="CharacterEllipsis" FontSize="11" Foreground="#AFC4D5"/></Grid></Border></DataTemplate></ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Border Classes="inset" Padding="17" IsVisible="{Binding HasNoEquipmentData}"><StackPanel Spacing="5"><TextBlock Text="{DynamicResource NoItemsLoaded}" Classes="section"/><TextBlock Text="{DynamicResource EquipmentEmptyText}" Classes="body"/></StackPanel></Border>
+              </StackPanel>
+            </TabItem>
+
+            <TabItem Header="{DynamicResource SkillsTab}">
+              <StackPanel Spacing="16" Margin="14,18,14,14">
+                <ItemsControl ItemsSource="{Binding SkillItems}" IsVisible="{Binding HasSkillData}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:CharacterVisualItem"><StackPanel Width="86" Margin="0,0,10,12" Spacing="6"><controls:ForgeIconView Width="70" Height="70" HorizontalAlignment="Center" IconSource="{Binding IconSource}" TooltipText="{Binding Tooltip}" AccentColor="{Binding AccentColor}"/><TextBlock Text="{Binding Name}" TextAlignment="Center" TextTrimming="CharacterEllipsis" FontSize="10"/></StackPanel></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                <ItemsControl ItemsSource="{Binding EmptySkillSlots}" IsVisible="{Binding HasNoSkillData}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:CharacterVisualItem"><controls:ForgeIconView Width="64" Height="64" Margin="0,0,10,10" TooltipText="{Binding Tooltip}" AccentColor="{Binding AccentColor}"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                <Border Classes="inset" Padding="17" IsVisible="{Binding HasNoSkillData}"><StackPanel Spacing="5"><TextBlock Text="{DynamicResource NoSkillsLoaded}" Classes="section"/><TextBlock Text="{DynamicResource SkillsEmptyText}" Classes="body"/></StackPanel></Border>
+              </StackPanel>
+            </TabItem>
+
+            <TabItem Header="{DynamicResource StigmasTab}">
+              <StackPanel Spacing="16" Margin="14,18,14,14"><ItemsControl ItemsSource="{Binding EmptyStigmaSlots}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:CharacterVisualItem"><controls:ForgeIconView Width="70" Height="70" Margin="0,0,12,12" TooltipText="{Binding Tooltip}" AccentColor="{Binding AccentColor}"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl><Border Classes="inset" Padding="17"><StackPanel Spacing="5"><TextBlock Text="{DynamicResource NoStigmasLoaded}" Classes="section"/><TextBlock Text="{DynamicResource StigmasEmptyText}" Classes="body"/></StackPanel></Border></StackPanel>
+            </TabItem>
+
+            <TabItem Header="{DynamicResource DaevanionTab}">
+              <StackPanel Spacing="16" Margin="14,18,14,14">
+                <ItemsControl ItemsSource="{Binding DaevanionItems}" IsVisible="{Binding HasDaevanionData}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:CharacterVisualItem"><controls:ForgeIconView Width="72" Height="72" Margin="0,0,12,12" IconSource="{Binding IconSource}" TooltipText="{Binding Tooltip}" AccentColor="{Binding AccentColor}"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                <Border Classes="inset" Height="300" IsVisible="{Binding HasNoDaevanionData}"><Grid Width="720" HorizontalAlignment="Center"><Canvas><Line StartPoint="92,150" EndPoint="215,80" Stroke="#35526A" StrokeThickness="2"/><Line StartPoint="92,150" EndPoint="215,220" Stroke="#35526A" StrokeThickness="2"/><Line StartPoint="215,80" EndPoint="365,150" Stroke="#35526A" StrokeThickness="2"/><Line StartPoint="215,220" EndPoint="365,150" Stroke="#35526A" StrokeThickness="2"/><Line StartPoint="365,150" EndPoint="515,80" Stroke="#35526A" StrokeThickness="2"/><Line StartPoint="365,150" EndPoint="515,220" Stroke="#35526A" StrokeThickness="2"/><controls:ForgeIconView Canvas.Left="58" Canvas.Top="116" Width="68" Height="68" AccentColor="#566F88" TooltipText="{DynamicResource NoProgressionLoaded}"/><controls:ForgeIconView Canvas.Left="181" Canvas.Top="46" Width="68" Height="68" AccentColor="#566F88" TooltipText="{DynamicResource NoProgressionLoaded}"/><controls:ForgeIconView Canvas.Left="181" Canvas.Top="186" Width="68" Height="68" AccentColor="#566F88" TooltipText="{DynamicResource NoProgressionLoaded}"/><controls:ForgeIconView Canvas.Left="331" Canvas.Top="116" Width="68" Height="68" AccentColor="#D8B96A" TooltipText="{DynamicResource NoProgressionLoaded}"/><controls:ForgeIconView Canvas.Left="481" Canvas.Top="46" Width="68" Height="68" AccentColor="#566F88" TooltipText="{DynamicResource NoProgressionLoaded}"/><controls:ForgeIconView Canvas.Left="481" Canvas.Top="186" Width="68" Height="68" AccentColor="#566F88" TooltipText="{DynamicResource NoProgressionLoaded}"/></Canvas></Grid></Border>
+                <Border Classes="inset" Padding="17" IsVisible="{Binding HasNoDaevanionData}"><StackPanel Spacing="5"><TextBlock Text="{DynamicResource NoProgressionLoaded}" Classes="section"/><TextBlock Text="{DynamicResource DaevanionEmptyText}" Classes="body"/></StackPanel></Border>
+              </StackPanel>
+            </TabItem>
+
+            <TabItem Header="{DynamicResource TalentsTab}">
+              <StackPanel Spacing="16" Margin="14,18,14,14">
+                <ItemsControl ItemsSource="{Binding TalentItems}" IsVisible="{Binding HasTalentData}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:CharacterVisualItem"><controls:ForgeIconView Width="72" Height="72" Margin="0,0,12,12" IconSource="{Binding IconSource}" TooltipText="{Binding Tooltip}" AccentColor="{Binding AccentColor}"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="14" IsVisible="{Binding HasNoTalentData}"><Border Classes="inset" Padding="18"><StackPanel Spacing="15"><TextBlock Text="01" Classes="kicker"/><controls:ForgeIconView Width="66" Height="66" HorizontalAlignment="Center" TooltipText="{DynamicResource NoTalentsLoaded}"/><controls:ForgeIconView Width="66" Height="66" HorizontalAlignment="Center" TooltipText="{DynamicResource NoTalentsLoaded}"/></StackPanel></Border><Border Grid.Column="1" Classes="inset" Padding="18"><StackPanel Spacing="15"><TextBlock Text="02" Classes="kicker"/><controls:ForgeIconView Width="66" Height="66" HorizontalAlignment="Center" TooltipText="{DynamicResource NoTalentsLoaded}"/><controls:ForgeIconView Width="66" Height="66" HorizontalAlignment="Center" TooltipText="{DynamicResource NoTalentsLoaded}"/></StackPanel></Border><Border Grid.Column="2" Classes="inset" Padding="18"><StackPanel Spacing="15"><TextBlock Text="03" Classes="kicker"/><controls:ForgeIconView Width="66" Height="66" HorizontalAlignment="Center" TooltipText="{DynamicResource NoTalentsLoaded}"/><controls:ForgeIconView Width="66" Height="66" HorizontalAlignment="Center" TooltipText="{DynamicResource NoTalentsLoaded}"/></StackPanel></Border></Grid>
+                <Border Classes="inset" Padding="17" IsVisible="{Binding HasNoTalentData}"><StackPanel Spacing="5"><TextBlock Text="{DynamicResource NoTalentsLoaded}" Classes="section"/><TextBlock Text="{DynamicResource TalentsEmptyText}" Classes="body"/></StackPanel></Border>
+              </StackPanel>
+            </TabItem>
+
+            <TabItem Header="{DynamicResource ArcanaTab}">
+              <StackPanel Spacing="16" Margin="14,18,14,14"><ItemsControl ItemsSource="{Binding EmptyArcanaSlots}"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel><ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:CharacterVisualItem"><Border Width="132" Height="184" Classes="inset" Padding="10" Margin="0,0,12,12"><Grid RowDefinitions="*,Auto"><controls:ForgeIconView Width="104" Height="130" TooltipText="{Binding Tooltip}" AccentColor="{Binding AccentColor}"/><TextBlock Grid.Row="1" Text="{DynamicResource NoArcanaLoaded}" Classes="hint" TextAlignment="Center" FontSize="9"/></Grid></Border></DataTemplate></ItemsControl.ItemTemplate></ItemsControl><Border Classes="inset" Padding="17"><StackPanel Spacing="5"><TextBlock Text="{DynamicResource NoArcanaLoaded}" Classes="section"/><TextBlock Text="{DynamicResource ArcanaEmptyText}" Classes="body"/></StackPanel></Border></StackPanel>
+            </TabItem>
+
+            <TabItem Header="{DynamicResource StatsTab}">
+              <StackPanel Spacing="16" Margin="14,18,14,14"><ItemsControl ItemsSource="{Binding AdditionalStats}" IsVisible="{Binding HasStatsData}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="accounts:CharacterStat"><Grid ColumnDefinitions="*,Auto" Margin="4,7"><TextBlock Text="{Binding Name}" Classes="body"/><TextBlock Grid.Column="1" Text="{Binding DisplayValue}" Classes="mono" Foreground="#45DFFF"/></Grid></DataTemplate></ItemsControl.ItemTemplate></ItemsControl><Border Classes="inset" Padding="17" IsVisible="{Binding HasNoStatsData}"><StackPanel Spacing="5"><TextBlock Text="{DynamicResource NoStatsLoaded}" Classes="section"/><TextBlock Text="{DynamicResource StatsEmptyText}" Classes="body"/></StackPanel></Border></StackPanel>
+            </TabItem>
+          </TabControl>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

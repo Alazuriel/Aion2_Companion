@@ -1,14 +1,3 @@
-﻿/*
- * TODO
- *      A Map csak akkor látszodjon ha
- *          1. A játék látható (Ne érzékelje máshogy az M betűt!)
- *          2. Az 1. pont működjön!
- * TODO
- *  borderless fullscreen használatával jó fixen, máshogy nem! 
-    Bele kell ezt írni majd readme.be illetve beállításokba is ha bekapcsolja a helper-t kis I (információs tooltip gomb bizbasz
-    Hogy Lehet nemjó!
- */
-
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -29,8 +18,7 @@ public partial class MapOverlayWindow : Window
     
 
 
-// Ideiglenes érték, később kimérjük!
-    private double ZoomAnimationMs = 250;
+    private double _zoomAnimationMs = 250;
 
     private readonly DispatcherTimer _zoomAnimationTimer = new()
     {
@@ -63,7 +51,6 @@ public partial class MapOverlayWindow : Window
     private const long WS_EX_LAYERED = 0x80000;
     private const long WS_EX_NOACTIVATE = 0x08000000;
     private Screens? _registeredScreens;
-    private Border? _petMenuPanel;
     [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
     private static extern IntPtr GetWindowLongPtr(
         IntPtr hwnd, int index);
@@ -357,7 +344,7 @@ public partial class MapOverlayWindow : Window
         if (nextZoom == previousZoom)
             return;
 
-        ZoomAnimationMs = (previousZoom, nextZoom) switch
+        _zoomAnimationMs = (previousZoom, nextZoom) switch
         {
             (0, 1) => 150,
             (1, 0) => 325,
@@ -407,7 +394,7 @@ public partial class MapOverlayWindow : Window
         Console.WriteLine(
             $"[MAP ZOOM] {previousZoom} -> {nextZoom} | " +
             $"Factor={factor:F3} | " +
-            $"Animation={ZoomAnimationMs}ms");
+            $"Animation={_zoomAnimationMs}ms");
     }
 
     
@@ -418,7 +405,7 @@ public partial class MapOverlayWindow : Window
             .TotalMilliseconds;
 
         double t = Math.Clamp(
-            elapsed / ZoomAnimationMs,
+            elapsed / _zoomAnimationMs,
             0.0,
             1.0);
 

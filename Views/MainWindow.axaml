@@ -87,14 +87,14 @@
               <TextBlock Text="{DynamicResource NavHome}" VerticalAlignment="Center"/>
             </StackPanel>
           </Button>
-          <Button x:Name="CharactersNavButton" Classes="ui nav" Tag="Characters" Click="NavClick">
+          <Button x:Name="AccountNavButton" Classes="ui nav" Tag="Account" Click="NavClick">
             <StackPanel Orientation="Horizontal" Spacing="10">
               <Viewbox Width="15" Height="15">
                 <Path Width="16" Height="16" Fill="Transparent"
                       Stroke="#78BFD2" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round"
                       Data="M8,2.7 A2.6,2.6 0 1 0 8,7.9 A2.6,2.6 0 1 0 8,2.7 M3.1,13.3 C3.6,10.5 5.2,9.2 8,9.2 C10.8,9.2 12.4,10.5 12.9,13.3"/>
               </Viewbox>
-              <TextBlock Text="{DynamicResource NavCharacters}" VerticalAlignment="Center"/>
+              <TextBlock Text="{DynamicResource NavAccount}" VerticalAlignment="Center"/>
             </StackPanel>
           </Button>
           <Button x:Name="DpsNavButton" Classes="ui nav" Tag="DpsOverlay" Click="NavClick">
@@ -148,6 +148,18 @@
               <StackPanel Orientation="Horizontal" Spacing="10">
                 <Viewbox Width="15" Height="15"><Path Width="16" Height="16" Fill="Transparent" Stroke="#78BFD2" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M3,3.5 H7.2 A2.2,2.2 0 0 1 9.2,5.2 V13 H3.6 A1.2,1.2 0 0 1 3,11.6 Z M13,3.5 H8.8 A2.2,2.2 0 0 0 6.8,5.2"/></Viewbox>
                 <TextBlock Text="{DynamicResource NavGuides}" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+            <Button x:Name="CharacterSearchNavButton" Classes="ui nav" Tag="CharacterSearch" Click="NavClick">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Viewbox Width="15" Height="15"><Path Width="16" Height="16" Fill="Transparent" Stroke="#78BFD2" StrokeThickness="1.6" StrokeLineCap="Round" Data="M7,3 A4,4 0 1 0 7,11 A4,4 0 1 0 7,3 M10,10 L14,14"/></Viewbox>
+                <TextBlock Text="{DynamicResource NavCharacterSearch}" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+            <Button x:Name="LeaderboardsNavButton" Classes="ui nav" Tag="Leaderboards" Click="NavClick">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <Viewbox Width="15" Height="15"><Path Width="16" Height="16" Fill="Transparent" Stroke="#78BFD2" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M3,13 V9 H6 V13 M7,13 V5 H10 V13 M11,13 V2 H14 V13"/></Viewbox>
+                <TextBlock Text="{DynamicResource NavLeaderboards}" VerticalAlignment="Center"/>
               </StackPanel>
             </Button>
             <Button x:Name="ChangelogNavButton" Classes="ui nav" Tag="Changelog" Click="NavClick">
@@ -232,7 +244,7 @@
       </Canvas>
     </Grid>
 
-    <!-- UI-only auth rehearsal. Real token validation replaces this manual gate later. -->
+    <!-- Optional startup gate for exercising the real Nexforge desktop auth flow. -->
     <Grid x:Name="TestLoginLayer" Grid.RowSpan="2" Grid.ColumnSpan="2"
           IsVisible="False" ZIndex="2000" Background="#F2050910">
       <Border Width="570" MaxWidth="570" Classes="hero" Padding="32"
@@ -257,12 +269,9 @@
               <TextBlock x:Name="TestLoginStatusText" Classes="hint" TextWrapping="Wrap"/>
             </StackPanel>
           </Border>
-          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-            <Button Classes="ui primary" Content="{DynamicResource TestLoginOpenBrowser}"
+          <Grid ColumnDefinitions="*">
+            <Button x:Name="TestLoginStartButton" Classes="ui primary" Content="{DynamicResource TestLoginOpenBrowser}"
                     Click="OpenTestLoginBrowserClick" HorizontalAlignment="Stretch"/>
-            <Button x:Name="TestLoginContinueButton" Grid.Column="1" Classes="ui gold"
-                    Content="{DynamicResource TestLoginContinue}" Click="CompleteTestLoginClick"
-                    IsEnabled="False"/>
           </Grid>
           <TextBlock Text="{DynamicResource TestLoginFooter}" Classes="hint" FontSize="10"
                      TextAlignment="Center" TextWrapping="Wrap"/>

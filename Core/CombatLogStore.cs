@@ -35,9 +35,16 @@ public sealed class StoredPlayerStat
     public List<StoredSkillEvent> Events { get; set; } = new();
 }
 
+public sealed class StoredEncounterMob
+{
+    public int TemplateId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public int Count { get; set; }
+}
+
 public sealed class CombatLogEntry
 {
-    public int SchemaVersion { get; set; } = 3;
+    public int SchemaVersion { get; set; } = 4;
     public string Id { get; set; } = string.Empty;
     public DateTimeOffset StartedAtUtc { get; set; }
     public DateTimeOffset EndedAtUtc { get; set; }
@@ -45,6 +52,8 @@ public sealed class CombatLogEntry
     public bool IsFavorite { get; set; }
     public string Notes { get; set; } = string.Empty;
     public string MobName { get; set; } = string.Empty;
+    public ushort ServerId { get; set; }
+    public string ServerName { get; set; } = string.Empty;
     public double Duration { get; set; }
     public long MobMaxHp { get; set; }
     public int MobTemplateId { get; set; }
@@ -53,6 +62,9 @@ public sealed class CombatLogEntry
     public int? EnrageSeconds { get; set; }
     public double BossStartOffset { get; set; }
     public double BossDuration { get; set; }
+    public Dictionary<string, string> LeaderboardSubmissionIds { get; set; } =
+        new(StringComparer.OrdinalIgnoreCase);
+    public List<StoredEncounterMob> Mobs { get; set; } = new();
     public List<StoredPlayerStat> Players { get; set; } = new();
 
     public long TotalDamage => Players.Sum(player => player.Damage);
@@ -107,6 +119,14 @@ public sealed class CombatLogEntry
         return new MeterSnapshot
         {
             Players = players,
+            Mobs = (Mobs ?? new List<StoredEncounterMob>()).Select(mob => new EncounterMob
+            {
+                TemplateId = mob.TemplateId,
+                Name = mob.Name,
+                Count = mob.Count,
+            }).ToList(),
+            ServerId = ServerId,
+            ServerName = ServerName,
             Duration = bossOnly && IsBossEncounter && BossDuration > 0
                 ? BossDuration
                 : Duration,
@@ -124,6 +144,11 @@ public sealed class CombatLogEntry
         };
     }
 }
+
+public sealed record CombatLogPage(
+    IReadOnlyList<CombatLogEntry> Entries,
+    int NextOffset,
+    int TotalCount);
 
 public sealed class CombatLogStore
 {
@@ -173,6 +198,8 @@ public sealed class CombatLogStore
             MobName = string.IsNullOrWhiteSpace(snapshot.MobTemplateName)
                 ? "Ismeretlen ellenfél"
                 : snapshot.MobTemplateName,
+            ServerId = snapshot.ServerId,
+            ServerName = snapshot.ServerName,
             Duration = snapshot.Duration,
             MobMaxHp = snapshot.MobMaxHp,
             MobTemplateId = snapshot.MobTemplateId,
@@ -181,6 +208,12 @@ public sealed class CombatLogStore
             EnrageSeconds = snapshot.EnrageSeconds,
             BossStartOffset = snapshot.BossStartOffset,
             BossDuration = snapshot.BossDuration,
+            Mobs = snapshot.Mobs.Select(mob => new StoredEncounterMob
+            {
+                TemplateId = mob.TemplateId,
+                Name = mob.Name,
+                Count = mob.Count,
+            }).ToList(),
             Players = snapshot.Players.Select(player => new StoredPlayerStat
             {
                 Name = player.Name,
@@ -225,7 +258,8 @@ public sealed class CombatLogStore
             return entry;
         }
         catch (Exception ex) when (
-            ex is IOException or UnauthorizedAccessException or JsonException)
+            ex is IOException or UnauthorizedAccessException or JsonException or
+                InvalidDataException or System.Security.Cryptography.CryptographicException)
         {
             DebugConsole.Log("combatlog", $"A fight nem menthető: {ex.Message}");
             return null;
@@ -243,45 +277,19 @@ public sealed class CombatLogStore
                 if (!Directory.Exists(LogDirectory))
                     return entries;
 
-                foreach (string path in Directory.EnumerateFiles(LogDirectory, "*.json"))
+                foreach (string path in EnumerateLogFiles())
                 {
                     try
                     {
-                        string json = File.ReadAllText(path);
-                        CombatLogEntry? entry =
-                            JsonSerializer.Deserialize<CombatLogEntry>(json, JsonOptions);
-
-                        if (entry is null || string.IsNullOrWhiteSpace(entry.Id))
+                        CombatLogEntry? entry = ReadEntryLocked(path);
+                        if (entry is null)
                             continue;
-
-                        entry.Players ??= new List<StoredPlayerStat>();
-                        foreach (StoredPlayerStat player in entry.Players)
-                            player.Events ??= new List<StoredSkillEvent>();
-
-                        BossDefinition? boss = BossCatalog.Find(entry.MobTemplateId, entry.MobName);
-                        if (boss is not null)
-                        {
-                            entry.IsBossEncounter = true;
-                            entry.BossId = string.IsNullOrWhiteSpace(entry.BossId) ? boss.Id : entry.BossId;
-                            entry.MobMaxHp = entry.MobMaxHp > 0 ? entry.MobMaxHp : boss.MaxHp;
-                            entry.EnrageSeconds ??= boss.EnrageSeconds;
-                        }
-
-                        if (entry.Players.Any(player => player.Events.Any(skillEvent =>
-                                !skillEvent.IsHeal &&
-                                skillEvent.Amount > DamageScanner.MaxAcceptedDamage)))
-                        {
-                            DebugConsole.Log(
-                                "combatlog",
-                                $"Hibás, irreális találatot tartalmazó fight elrejtve: " +
-                                Path.GetFileName(path));
-                            continue;
-                        }
 
                         entries.Add(entry);
                     }
                     catch (Exception ex) when (
-                        ex is IOException or UnauthorizedAccessException or JsonException)
+                        ex is IOException or UnauthorizedAccessException or JsonException or
+                            InvalidDataException or System.Security.Cryptography.CryptographicException)
                     {
                         DebugConsole.Log(
                             "combatlog",
@@ -310,6 +318,62 @@ public sealed class CombatLogStore
             .ToList();
     }
 
+    public CombatLogPage LoadPage(int offset, int pageSize)
+    {
+        int safeOffset = Math.Max(0, offset);
+        int safePageSize = Math.Clamp(pageSize, 1, 500);
+        var entries = new List<CombatLogEntry>(safePageSize);
+
+        try
+        {
+            lock (_sync)
+            {
+                if (!Directory.Exists(LogDirectory))
+                    return new CombatLogPage(entries, 0, 0);
+
+                List<string> files = EnumeratePreferredLogFiles()
+                    .OrderByDescending(
+                        path => Path.GetFileNameWithoutExtension(path),
+                        StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                List<string> pageFiles = files
+                    .Skip(safeOffset)
+                    .Take(safePageSize)
+                    .ToList();
+
+                foreach (string path in pageFiles)
+                {
+                    try
+                    {
+                        CombatLogEntry? entry = ReadEntryLocked(path);
+                        if (entry is not null)
+                            entries.Add(entry);
+                    }
+                    catch (Exception ex) when (
+                        ex is IOException or UnauthorizedAccessException or JsonException or
+                            InvalidDataException or System.Security.Cryptography.CryptographicException)
+                    {
+                        DebugConsole.Log(
+                            "combatlog",
+                            $"Sérült vagy nem olvasható fight log kihagyva: " +
+                            $"{Path.GetFileName(path)} | {ex.Message}");
+                    }
+                }
+
+                return new CombatLogPage(
+                    entries.OrderByDescending(entry => entry.EndedAtUtc).ToList(),
+                    safeOffset + pageFiles.Count,
+                    files.Count);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            DebugConsole.Log("combatlog", $"A Combat Log nem olvasható: {ex.Message}");
+            return new CombatLogPage(entries, safeOffset, safeOffset);
+        }
+    }
+
     public bool UpdateMetadata(CombatLogEntry entry)
     {
         if (!IsValidId(entry.Id))
@@ -320,15 +384,17 @@ public sealed class CombatLogStore
             lock (_sync)
             {
                 Directory.CreateDirectory(LogDirectory);
-                entry.SchemaVersion = 3;
+                entry.SchemaVersion = 4;
                 WriteEntryLocked(entry);
+                File.Delete(Path.Combine(LogDirectory, entry.Id + ".json"));
             }
 
             NotifyChanged();
             return true;
         }
         catch (Exception ex) when (
-            ex is IOException or UnauthorizedAccessException or JsonException)
+            ex is IOException or UnauthorizedAccessException or JsonException or
+                InvalidDataException or System.Security.Cryptography.CryptographicException)
         {
             DebugConsole.Log("combatlog", $"A fight adatai nem menthetők: {ex.Message}");
             return false;
@@ -345,10 +411,12 @@ public sealed class CombatLogStore
             lock (_sync)
             {
                 string path = Path.Combine(LogDirectory, id + ".json");
-                if (!File.Exists(path))
+                string nslPath = Path.Combine(LogDirectory, id + ".nsl");
+                if (!File.Exists(path) && !File.Exists(nslPath))
                     return false;
 
                 File.Delete(path);
+                File.Delete(nslPath);
             }
 
             NotifyChanged();
@@ -375,7 +443,8 @@ public sealed class CombatLogStore
 
             NotifyChanged();
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or
+                                   InvalidDataException or System.Security.Cryptography.CryptographicException)
         {
             DebugConsole.Log("combatlog", $"A history limit nem alkalmazható: {ex.Message}");
         }
@@ -388,12 +457,56 @@ public sealed class CombatLogStore
 
     private static void WriteEntryLocked(CombatLogEntry entry)
     {
-        string path = Path.Combine(LogDirectory, entry.Id + ".json");
+        string path = Path.Combine(LogDirectory, entry.Id + ".nsl");
         string temporaryPath = path + ".tmp";
-        string json = JsonSerializer.Serialize(entry, JsonOptions);
-
-        File.WriteAllText(temporaryPath, json);
+        NslCombatLogCodec.Write(temporaryPath, entry);
         File.Move(temporaryPath, path, overwrite: true);
+    }
+
+    private static CombatLogEntry? ReadEntryLocked(string path)
+    {
+        bool legacyJson = string.Equals(
+            Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase);
+        CombatLogEntry? entry = legacyJson
+            ? JsonSerializer.Deserialize<CombatLogEntry>(File.ReadAllText(path), JsonOptions)
+            : NslCombatLogCodec.Read(path);
+
+        if (entry is null || string.IsNullOrWhiteSpace(entry.Id))
+            return null;
+
+        entry.Players ??= new List<StoredPlayerStat>();
+        entry.Mobs ??= new List<StoredEncounterMob>();
+        foreach (StoredPlayerStat player in entry.Players)
+            player.Events ??= new List<StoredSkillEvent>();
+
+        BossDefinition? boss = BossCatalog.Find(entry.MobTemplateId, entry.MobName);
+        if (boss is not null)
+        {
+            entry.IsBossEncounter = true;
+            entry.BossId = string.IsNullOrWhiteSpace(entry.BossId) ? boss.Id : entry.BossId;
+            entry.MobMaxHp = entry.MobMaxHp > 0 ? entry.MobMaxHp : boss.MaxHp;
+            entry.EnrageSeconds ??= boss.EnrageSeconds;
+        }
+
+        if (entry.Players.Any(player => player.Events.Any(skillEvent =>
+                !skillEvent.IsHeal &&
+                skillEvent.Amount > DamageScanner.MaxAcceptedDamage)))
+        {
+            DebugConsole.Log(
+                "combatlog",
+                $"Hibás, irreális találatot tartalmazó fight elrejtve: " +
+                Path.GetFileName(path));
+            return null;
+        }
+
+        if (legacyJson)
+        {
+            entry.SchemaVersion = 4;
+            WriteEntryLocked(entry);
+            File.Delete(path);
+        }
+
+        return entry;
     }
 
     private void ApplyRetentionLimitLocked(int limit)
@@ -402,17 +515,20 @@ public sealed class CombatLogStore
             return;
 
         var entries = new List<(string Path, CombatLogEntry Entry, long Length)>();
-        foreach (string path in Directory.EnumerateFiles(LogDirectory, "*.json"))
+        foreach (string path in EnumerateLogFiles())
         {
             try
             {
-                CombatLogEntry? entry = JsonSerializer.Deserialize<CombatLogEntry>(
-                    File.ReadAllText(path), JsonOptions);
+                CombatLogEntry? entry = string.Equals(
+                    Path.GetExtension(path), ".nsl", StringComparison.OrdinalIgnoreCase)
+                    ? NslCombatLogCodec.Read(path)
+                    : JsonSerializer.Deserialize<CombatLogEntry>(File.ReadAllText(path), JsonOptions);
                 if (entry is not null)
                     entries.Add((path, entry, new FileInfo(path).Length));
             }
             catch (Exception ex) when (
-                ex is IOException or UnauthorizedAccessException or JsonException)
+                ex is IOException or UnauthorizedAccessException or JsonException or
+                    InvalidDataException or System.Security.Cryptography.CryptographicException)
             {
                 DebugConsole.Log(
                     "combatlog",
@@ -437,6 +553,23 @@ public sealed class CombatLogStore
             deleted.Add(oldEntry.Path);
             totalBytes -= oldEntry.Length;
         }
+    }
+
+    private static IEnumerable<string> EnumerateLogFiles()
+    {
+        return Directory.EnumerateFiles(LogDirectory, "*.nsl")
+            .Concat(Directory.EnumerateFiles(LogDirectory, "*.json"));
+    }
+
+    private static IEnumerable<string> EnumeratePreferredLogFiles()
+    {
+        return EnumerateLogFiles()
+            .GroupBy(
+                path => Path.GetFileNameWithoutExtension(path),
+                StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.FirstOrDefault(path =>
+                string.Equals(Path.GetExtension(path), ".nsl", StringComparison.OrdinalIgnoreCase))
+                ?? group.First());
     }
 
     private void NotifyChanged()

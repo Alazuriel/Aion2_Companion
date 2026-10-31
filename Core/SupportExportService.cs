@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -48,14 +49,14 @@ public static class SupportExportService
         if (!includeCombatRecords)
             return;
 
-        foreach (string combatPath in SafeGetFiles(CombatLogStore.LogDirectory, "*.json")
-                     .OrderByDescending(File.GetLastWriteTimeUtc)
+        foreach (CombatLogEntry combat in CombatLogStore.Shared.LoadAll()
+                     .OrderByDescending(entry => entry.EndedAtUtc)
                      .Take(MaxCombatRecords))
         {
-            await AddFileAsync(
+            await AddTextAsync(
                 archive,
-                combatPath,
-                $"combat-history/{Path.GetFileName(combatPath)}",
+                $"combat-history/{combat.Id}.json",
+                JsonSerializer.Serialize(combat, new JsonSerializerOptions { WriteIndented = true }),
                 cancellationToken);
         }
     }

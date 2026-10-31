@@ -37,6 +37,9 @@ public sealed class ForgeDataDocument
 
     [JsonPropertyName("event_timer_regions")]
     public EventTimerRegionDefinition[] EventTimerRegions { get; init; } = [];
+
+    [JsonPropertyName("servers")]
+    public ServerDefinition[] Servers { get; init; } = [];
 }
 
 public static class ForgeDataReader
@@ -260,7 +263,8 @@ public static class ForgeDataReader
         bool hasSpawns = document.Pets is { Length: > 0 };
         bool hasOpcodes = document.Opcodes is { Length: > 0 };
         bool hasEventTimers = document.EventTimers is { Length: > 0 };
-        if (!hasClasses && !hasSkills && !hasMobs && !hasBosses && !hasSpawns && !hasOpcodes && !hasEventTimers)
+        bool hasServers = document.Servers is { Length: > 0 };
+        if (!hasClasses && !hasSkills && !hasMobs && !hasBosses && !hasSpawns && !hasOpcodes && !hasEventTimers && !hasServers)
             throw new InvalidDataException("Az NFG nem tartalmaz támogatott Nexforge adatot.");
         return document;
     }
@@ -317,5 +321,13 @@ public static class ForgeDataReader
         return document.EventTimers is { Length: > 0 } timers
             ? timers
             : throw new InvalidDataException("Az NFG nem tartalmaz eseményidőzítőket.");
+    }
+
+    public static ServerDefinition[] LoadServers(string path)
+    {
+        ForgeDataDocument document = Load(path);
+        return document.Servers is { Length: > 0 } servers
+            ? servers
+            : throw new InvalidDataException("Az NFG nem tartalmaz szervereket.");
     }
 }

@@ -9,6 +9,8 @@ using AION_2_Companion.ViewModels;
 using AION_2_Companion.Views;
 using AION_2_Companion.Core;
 using AION_2_Companion.Core.Accounts;
+using AION_2_Companion.Core.Characters;
+using AION_2_Companion.Core.Characters.Verification;
 
 namespace AION_2_Companion;
 
@@ -37,6 +39,8 @@ public partial class App : Application
 
             AccountService.Shared.ConfigureProtocol(new NexforgeAccountAuthProtocol());
             _ = AccountService.Shared.InitializeAsync();
+            CharacterCenterService.Shared.Start();
+            CharacterVerificationService.Shared.Start();
 
             CombatLogStore.Shared.StartSession();
             CombatLogStore.Shared.ApplyRetentionLimit();
@@ -48,6 +52,8 @@ public partial class App : Application
             {
                 mainViewModel.SaveActiveFightForShutdown();
                 AccountService.Shared.Shutdown();
+                CharacterCenterService.Shared.Dispose();
+                CharacterVerificationService.Shared.Dispose();
                 DebugConsole.Shutdown();
             };
             desktop.MainWindow = new MainWindow

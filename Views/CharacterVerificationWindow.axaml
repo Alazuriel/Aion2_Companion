@@ -1,0 +1,62 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:AION_2_Companion.ViewModels"
+        xmlns:controls="using:AION_2_Companion.Views.Controls"
+        x:Class="AION_2_Companion.Views.CharacterVerificationWindow"
+        x:DataType="vm:CharacterVerificationViewModel"
+        Width="650" Height="680" MinWidth="560" MinHeight="600"
+        WindowStartupLocation="CenterOwner" CanResize="True"
+        SystemDecorations="None" Background="#070C14" Foreground="#EAF7FF"
+        TransparencyLevelHint="Mica,Blur" ExtendClientAreaToDecorationsHint="True">
+  <Window.Styles><StyleInclude Source="avares://AION 2 Companion/Styles/Theme.axaml"/></Window.Styles>
+  <Border BorderBrush="#395D78" BorderThickness="1" CornerRadius="18" Background="#F20A111D">
+    <Grid RowDefinitions="54,*">
+      <Border x:Name="TitleBar" PointerPressed="TitleBarPointerPressed" BorderBrush="#263F57" BorderThickness="0,0,0,1" Padding="18,0">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Text="{DynamicResource VerificationWindowTitle}" Classes="kicker" VerticalAlignment="Center"/>
+          <Button Grid.Column="1" Classes="ui quiet" Content="×" Click="CloseClick"/>
+        </Grid>
+      </Border>
+      <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="26" Spacing="18">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+            <controls:ForgeIconView Width="72" Height="72" IconSource="{Binding ImageUrl}" TooltipText="{Binding Identity.Name}" AccentColor="#45DFFF" IsSelected="True"/>
+            <StackPanel Grid.Column="1" Spacing="5" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Identity.Name}" Classes="h1" FontSize="25"/>
+              <TextBlock Text="{Binding ServerName}" Foreground="#45DFFF" FontSize="14"/>
+              <TextBlock Text="{DynamicResource VerificationTrustNote}" Classes="hint" TextWrapping="Wrap"/>
+            </StackPanel>
+          </Grid>
+
+          <Border Classes="hero" Padding="24" IsVisible="{Binding HasChallenge}">
+            <StackPanel Spacing="14">
+              <Border Classes="goldPill" HorizontalAlignment="Left"><TextBlock Text="{DynamicResource VerificationSelectedSlot}" Classes="kicker" FontSize="9"/></Border>
+              <TextBlock Text="{Binding SlotName}" Classes="h1" FontSize="30" Foreground="#FFCA72"/>
+              <TextBlock Text="{DynamicResource VerificationUnequipInstruction}" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap"/>
+              <TextBlock Text="{DynamicResource VerificationSyncNotice}" Classes="body" TextWrapping="Wrap"/>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="inset" Padding="18" IsVisible="{Binding HasChallenge}">
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="16" RowSpacing="8">
+              <StackPanel Spacing="4"><TextBlock Text="{Binding StatusTitle}" Classes="section"/><TextBlock Text="{Binding StatusText}" Classes="body" TextWrapping="Wrap"/></StackPanel>
+              <TextBlock Grid.Column="1" Text="{Binding ExpiryText}" IsVisible="{Binding IsPending}" Classes="mono" Foreground="#FFCA72" VerticalAlignment="Center"/>
+              <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" IsIndeterminate="{Binding IsChecking}" Height="3"/>
+            </Grid>
+          </Border>
+
+          <Border Classes="inset" Padding="14" IsVisible="{Binding HasMessage}">
+            <TextBlock Text="{Binding Message}" Classes="body" TextWrapping="Wrap"/>
+          </Border>
+
+          <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="9">
+            <TextBlock Text="{DynamicResource VerificationNoPollingHint}" Classes="hint" VerticalAlignment="Center" TextWrapping="Wrap"/>
+            <Button Grid.Column="1" Classes="ui" Content="{DynamicResource Cancel}" Command="{Binding CancelCommand}" IsEnabled="{Binding CanCancel}"/>
+            <Button Grid.Column="2" Classes="ui primary" Content="{DynamicResource VerificationStartAgain}" Command="{Binding StartAgainCommand}" IsVisible="{Binding CanStartAgain}" MinWidth="124"/>
+            <Button Grid.Column="3" Classes="ui primary" Content="{Binding CheckButtonText}" Command="{Binding CheckCommand}" IsEnabled="{Binding CanCheck}" IsVisible="{Binding IsPending}" MinWidth="160"/>
+          </Grid>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </Border>
+</Window>

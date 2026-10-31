@@ -16,6 +16,7 @@ sealed class Program
     internal static bool TestLoginRequested { get; private set; }
     internal static string? RequestedLanguage { get; private set; }
     internal static bool AvaloniaTraceRequested { get; private set; }
+    internal static bool ReadmeScreenshotsRequested { get; private set; }
 
     [STAThread]
     public static void Main(string[] args)
@@ -52,6 +53,8 @@ sealed class Program
             : LocalizationService.NormalizeLanguageCode(languageArgument["--language=".Length..]);
         AvaloniaTraceRequested = Array.Exists(args, arg =>
             arg.Equals("--avalonia-trace", StringComparison.OrdinalIgnoreCase));
+        ReadmeScreenshotsRequested = Array.Exists(args, arg =>
+            arg.Equals("--readme-screenshots", StringComparison.OrdinalIgnoreCase));
 
         DebugConsole.Initialize(args);
 

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
@@ -6,10 +6,10 @@
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <ApplicationIcon>Assets\nexforge-companion.ico</ApplicationIcon>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-        <Version>0.1.7</Version>
-        <AssemblyVersion>0.1.7.0</AssemblyVersion>
-        <FileVersion>0.1.7.0</FileVersion>
-        <InformationalVersion>0.1.7</InformationalVersion>
+        <Version>0.1.8</Version>
+        <AssemblyVersion>0.1.8.0</AssemblyVersion>
+        <FileVersion>0.1.8.0</FileVersion>
+        <InformationalVersion>0.1.8</InformationalVersion>
         <NfgLocalKeyFile Condition="'$(NfgLocalKeyFile)' == '' and Exists('Private\NfgMaster.key')">Private\NfgMaster.key</NfgLocalKeyFile>
         <NfgLocalKeyFile Condition="'$(NfgLocalKeyFile)' == '' and '$(NEXFORGE_NFG_MASTER_KEY)' != ''">$(IntermediateOutputPath)NfgMaster.key</NfgLocalKeyFile>
     </PropertyGroup>
@@ -28,6 +28,9 @@
         <AvaloniaResource Include="Data\Assets\**\*" />
         <AvaloniaResource Include="Data\Assets\Icons\**\*" />
         <Content Include="Data\Assets\Pets\*.webp" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="Data\Assets\Deviations\*.png" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="Data\Assets\icons\*.webp" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="Data\Assets\icons\*.png" CopyToOutputDirectory="PreserveNewest" />
         <Content Include="Data\Language\*.nfl" CopyToOutputDirectory="PreserveNewest" />
         <EmbeddedResource Include="$(NfgLocalKeyFile)" LogicalName="Nexforge.NfgMasterKey" Condition="'$(NfgLocalKeyFile)' != ''" />
         <Compile Remove="Core\Wire\OpcodeRegistry.cs" />
@@ -67,6 +70,7 @@
 <ItemGroup>
   <Compile Remove="Nexforge.Installer\**\*.cs" />
   <Compile Remove="Tests\**\*.cs" />
+  <Compile Remove="Tools\SkillIconPack\**\*.cs" />
   <AvaloniaResource Remove="Nexforge.Installer\**\*.axaml" />
   <None Remove="Nexforge.Installer\**\*" />
 </ItemGroup>

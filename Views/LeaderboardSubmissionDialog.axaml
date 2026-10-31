@@ -1,0 +1,142 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AION_2_Companion.Views.LeaderboardSubmissionDialog"
+        Width="760" Height="740" MinWidth="650" MinHeight="650"
+        CanResize="True" ShowInTaskbar="False"
+        Title="Nexforge · Submit boss result"
+        Icon="/Assets/nexforge-companion.ico"
+        Background="#07111D" Foreground="#ECEFF5"
+        FontFamily="Segoe UI Variable Text, Segoe UI"
+        WindowStartupLocation="CenterOwner">
+  <Window.Styles>
+    <StyleInclude Source="avares://AION 2 Companion/Styles/Theme.axaml"/>
+  </Window.Styles>
+
+  <Grid RowDefinitions="Auto,*,Auto" Margin="24">
+    <!-- The fight's origin is read-only; player can only choose a participant from this log. -->
+    <StackPanel Spacing="6" Margin="2,0,2,18">
+      <TextBlock Text="NEXFORGE   /   COMMUNITY LEADERBOARD" Foreground="#43D9FD"
+                 FontWeight="Bold" FontSize="11"/>
+      <TextBlock Text="Review your submission" FontSize="27" FontWeight="SemiBold"/>
+      <TextBlock Text="Review the captured encounter before sharing. The server decides whether it can be auto-approved."
+                 Foreground="#9BB2C6" FontSize="12" TextWrapping="Wrap"/>
+    </StackPanel>
+
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="12">
+        <!-- Fight identity -->
+        <Border Background="#0C1C2E" BorderBrush="#245374" BorderThickness="1" CornerRadius="15" Padding="17">
+          <StackPanel Spacing="16">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+              <StackPanel Spacing="6">
+                <TextBlock Text="CAPTURED BOSS FIGHT" Classes="kicker"/>
+                <TextBlock x:Name="BossText" FontSize="24" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                <TextBlock x:Name="DateText" Foreground="#9EB4C5" FontSize="12"/>
+              </StackPanel>
+              <Border Grid.Column="1" Background="#0F3345" BorderBrush="#226783" BorderThickness="1"
+                      CornerRadius="20" Padding="12,7" VerticalAlignment="Top">
+                <TextBlock Text="READ-ONLY FIGHT DATA" Foreground="#4DE0FB" FontSize="10" FontWeight="Bold"/>
+              </Border>
+            </Grid>
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="9">
+              <Border Background="#091626" CornerRadius="10" BorderBrush="#243A51" BorderThickness="1" Padding="13,11">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="DURATION" Classes="kicker"/>
+                  <TextBlock x:Name="DurationText" FontSize="19" FontWeight="SemiBold" Foreground="#EAF4FF"/>
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Background="#091626" CornerRadius="10" BorderBrush="#243A51" BorderThickness="1" Padding="13,11">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="YOUR DAMAGE" Classes="kicker"/>
+                  <TextBlock x:Name="DamageText" FontSize="19" FontWeight="SemiBold" Foreground="#EAF4FF"/>
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Background="#091626" CornerRadius="10" BorderBrush="#243A51" BorderThickness="1" Padding="13,11">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="YOUR DPS" Classes="kicker"/>
+                  <TextBlock x:Name="DpsText" FontSize="19" FontWeight="SemiBold" Foreground="#43D9FD"/>
+                </StackPanel>
+              </Border>
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <!-- Immutable character properties; player choice only comes from stored fight participants. -->
+        <Border Background="#0A1727" BorderBrush="#263E54" BorderThickness="1" CornerRadius="14" Padding="17">
+          <StackPanel Spacing="12">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="CHARACTER IDENTITY" Classes="kicker"/>
+              <TextBlock Grid.Column="1" Text="FROM THE ENCOUNTER" Foreground="#7F9BAD" FontSize="10"/>
+            </Grid>
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="14">
+              <StackPanel Spacing="5">
+                <TextBlock Text="Submit as" Foreground="#9CB3C7" FontSize="12"/>
+                <ComboBox x:Name="PlayerBox" MinHeight="38" SelectionChanged="PlayerChanged"/>
+                <TextBlock Text="Only players recorded in this fight" Foreground="#7793A6" FontSize="10"/>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="5">
+                <TextBlock Text="Class · captured" Foreground="#9CB3C7" FontSize="12"/>
+                <Border Background="#102238" BorderBrush="#2A4156" BorderThickness="1" CornerRadius="8" Padding="11,10">
+                  <TextBlock x:Name="ClassText" Text="—" FontWeight="SemiBold" Foreground="#F1F7FC"/>
+                </Border>
+                <TextBlock Text="Cannot be edited" Foreground="#7793A6" FontSize="10"/>
+              </StackPanel>
+            </Grid>
+            <Border Background="#0C2533" BorderBrush="#256078" BorderThickness="1" CornerRadius="9" Padding="13,11">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="SERVER · CAPTURE / NFG" Foreground="#55DFF6" FontWeight="Bold" FontSize="10"/>
+                  <TextBlock x:Name="ServerText" Text="—" FontSize="17" FontWeight="SemiBold"/>
+                  <TextBlock x:Name="ServerMetaText" Text="Server ID not available" Foreground="#9FB6C7" FontSize="11"/>
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="LOCKED" Foreground="#68D6E9" FontWeight="Bold"
+                           FontSize="10" VerticalAlignment="Center" Margin="12,0,0,0"/>
+              </Grid>
+            </Border>
+          </StackPanel>
+        </Border>
+
+        <!-- What will actually be transmitted and what happens afterward. -->
+        <Border Background="#0B1B2B" BorderBrush="#28445C" BorderThickness="1" CornerRadius="14" Padding="17">
+          <StackPanel Spacing="10">
+            <TextBlock Text="SUBMISSION CHECK" Classes="kicker"/>
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+              <StackPanel Spacing="4">
+                <TextBlock Text="SERVER REVIEW" Foreground="#819EB1" FontSize="10"/>
+                <TextBlock x:Name="ReviewText" Text="Pending or automatic review" Foreground="#F3BF6E"
+                           FontWeight="SemiBold" TextWrapping="Wrap"/>
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="4">
+                <TextBlock Text="COMBAT EVIDENCE" Foreground="#819EB1" FontSize="10"/>
+                <TextBlock x:Name="EvidenceText" Text="Checking saved hits…" Foreground="#D9E7F1"
+                           FontWeight="SemiBold" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Grid>
+            <TextBlock x:Name="EvidenceHintText" Text="Approval is determined by the server after submission."
+                       Foreground="#88A6BB" FontSize="11" TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+
+        <Border Background="#091523" BorderBrush="#293C54" BorderThickness="1" CornerRadius="12" Padding="14">
+          <StackPanel Spacing="8">
+            <CheckBox x:Name="ConsentBox" Content="I agree to submit this result to the Nexforge community leaderboard."
+                      IsCheckedChanged="ConsentChanged"/>
+            <TextBlock Text="Only the encounter summary and, if available, compact damage-hit evidence are uploaded. No packets, coordinates or complete NSL file are sent."
+                       Foreground="#8CA5BA" FontSize="11" TextWrapping="Wrap" Margin="4,0,0,0"/>
+          </StackPanel>
+        </Border>
+        <TextBlock x:Name="StatusText" Foreground="#F4B66B" TextWrapping="Wrap" MinHeight="22"/>
+      </StackPanel>
+    </ScrollViewer>
+
+    <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" Margin="0,16,0,0" ColumnSpacing="10">
+      <StackPanel VerticalAlignment="Center" Spacing="3">
+        <TextBlock Text="NEXFORGE   //   FAIR PLAY" Foreground="#43D9FD" FontSize="11" FontWeight="Bold"/>
+        <TextBlock Text="No upload until you confirm." Foreground="#7794A9" FontSize="10"/>
+      </StackPanel>
+      <Button Grid.Column="1" Classes="ui" Content="Cancel" Click="CloseClick" MinWidth="84"/>
+      <Button Grid.Column="2" x:Name="SubmitButton" Classes="ui primary" Content="Submit result"
+              Click="SubmitClick" MinWidth="140"/>
+    </Grid>
+  </Grid>
+</Window>

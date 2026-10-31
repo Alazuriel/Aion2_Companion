@@ -69,7 +69,7 @@
 
       <Border Grid.Row="2" Name="BossStatusPanel" Classes="inset" CornerRadius="9"
               Padding="9,6" Margin="0,7,0,0" IsVisible="False">
-        <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto">
+        <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto">
           <TextBlock Text="{DynamicResource BossHp}" Classes="eyebrow" FontSize="8"/>
           <TextBlock Grid.Column="1" Name="EnrageText" Classes="mono" FontSize="9" Foreground="#FF9B52"/>
           <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto" Margin="0,4,0,0">
@@ -77,6 +77,15 @@
                          Background="#263A50" Foreground="#45DFFF" VerticalAlignment="Center"/>
             <TextBlock Grid.Column="1" Name="BossHpText" Classes="mono" FontSize="10"
                        Margin="8,0,0,0" VerticalAlignment="Center"/>
+          </Grid>
+          <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto" Margin="0,6,0,0">
+            <TextBlock Text="{DynamicResource DeathPrediction}" Classes="eyebrow" FontSize="8"
+                       VerticalAlignment="Center"/>
+            <TextBlock Grid.Column="1" Name="DeathPredictionText" Classes="mono" FontSize="10"
+                       Foreground="#58E0B2" Margin="8,0" VerticalAlignment="Center"/>
+            <Button Grid.Column="2" Name="DeathPredictionToggle" Classes="ui quiet" Content="◉"
+                    FontSize="8" MinHeight="22" Padding="7,1" Click="DeathPredictionToggleClick"
+                    ToolTip.Tip="{DynamicResource ToggleDeathPrediction}"/>
           </Grid>
         </Grid>
       </Border>

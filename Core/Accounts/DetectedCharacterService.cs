@@ -9,6 +9,8 @@ public sealed record DetectedCharacterSnapshot(
     byte? Level,
     uint? GearScore,
     ushort? ServerId,
+    string ServerName,
+    string Region,
     uint SessionEntityId,
     DateTimeOffset DetectedAtUtc);
 
@@ -35,6 +37,8 @@ public sealed class DetectedCharacterService
             Current.Level == character.Level &&
             Current.GearScore == character.GearScore &&
             Current.ServerId == character.ServerId &&
+            Current.ServerName == character.ServerName &&
+            Current.Region == character.Region &&
             Current.SessionEntityId == character.SessionEntityId)
             return;
 

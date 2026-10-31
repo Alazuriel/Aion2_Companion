@@ -4,6 +4,50 @@ All notable user-facing changes are recorded here. Versions follow Semantic Vers
 
 ## Unreleased
 
+## [Unreleased] — v0.1.8 candidate
+
+### Added
+- Introduced Character Center with character search, detailed profiles, local caching, and offline access to previously fetched character data.
+- Added Nexforge Account-based character verification workflow with a dedicated verification window and persisted challenge state.
+- Added class-specific skill catalog integration using local ForgeData packs.
+- Added in-app Leaderboards with boss, class, metric and search filters, public rankings, and account submission history.
+- Added leaderboard submissions from saved boss encounters, including available recorded combat evidence and submission withdrawal support.
+- Added an encrypted NSL combat history format with integrity verification.
+- Added server identification support using the encrypted `AION2_Servers.nfg` data pack.
+- Added boss HP tracking, estimated time-to-defeat calculations, and combat-ending rule helpers.
+- Added new character-related UI assets and character/verification test coverage.
+
+### Changed
+- Reworked the Characters section, character search, character details and associated navigation.
+- Redesigned the Leaderboards interface and submission review dialog.
+- Improved combat history presentation and saved encounter metadata.
+- Updated combat history storage to use NSL files for new and updated encounters.
+- Expanded localization support for character-related functionality.
+- Improved local skill artwork resolution and asset packaging.
+
+### Fixed
+- Improved reporting of Leaderboard API and network errors instead of displaying only a generic unavailable message.
+- Improved protection against duplicate or inconsistent combat evidence in leaderboard submissions.
+- Refined damage, HP and encounter-ending processing for supported combat events.
+- Improved character refresh handling with cooldowns, cached data and cancellation of outdated profile requests.
+
+### Security
+- Added authenticated, integrity-checked storage for local combat history files.
+- Restricted leaderboard submission identity fields to available encounter and server data rather than arbitrary manual server-name entry.
+
+### Migration
+- Existing JSON combat history files remain readable and are migrated to NSL when processed by the new storage implementation.
+- The new combat history encryption key is tied to the local Windows user environment. Backup and recovery behavior must be verified before release.
+
+### Known limitations
+- Online character information depends on the availability of the companion API and its upstream data sources.
+- Leaderboard submission and approval require a compatible backend deployment.
+- Some skill artwork requires separately prepared local asset packs.
+- Automated tests, installer validation and production API integration are not yet confirmed for this release candidate.
+
+### Verification status
+Source implementation reviewed. Final build, regression testing, deployment verification, and Project Lead approval remain pending.
+
 ## [0.1.7] - 2026-10-29
 
 ### Added

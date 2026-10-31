@@ -18,8 +18,18 @@ var tests = new (string Name, Action Run)[]
     ("summon healing source", SummonHealingSource),
     ("short fight rate guard", ShortFightRateGuard),
     ("duplicate frame guard", DuplicateFrameGuard),
+    ("direct damage frame is counted once", DirectDamageFrameIsCountedOnce),
+    ("nested damage requires an opcode marker", NestedDamageRequiresOpcodeMarker),
+    ("runtime skill variants are matched narrowly", RuntimeSkillVariantsAreMatchedNarrowly),
     ("missing actor or skill rejected", MissingFieldsRejected),
     ("legacy combat log loads", LegacyCombatLogLoads),
+    ("combat log keeps encounter mobs", CombatLogKeepsEncounterMobs),
+    ("server ForgeData loads", ServerForgeDataLoads),
+    ("NSL roundtrip and tamper detection", NslRoundTripAndTamperDetection),
+    ("verified HP packet parsing", VerifiedHpPacketParsing),
+    ("invalid HP cannot replace the last verified value", InvalidHpDoesNotOverwrite),
+    ("boss death and inactivity close fights", CombatEndRulesWork),
+    ("boss death prediction uses stable average DPS", BossDeathPredictionWorks),
 };
 
 int failures = 0;
@@ -168,6 +178,54 @@ static void DuplicateFrameGuard()
     True(guard.ShouldAccept(hit, now.AddMilliseconds(200)));
 }
 
+static void DirectDamageFrameIsCountedOnce()
+{
+    const string payload = "D9E00116008611644CF4009C028000021BD76D5F01000000FC5C800B0100";
+    List<DamageHit> hits = DamageScanner.ScanFrame(
+        0x04, 0x38, Convert.FromHexString(payload), 1);
+
+    Equal(1, hits.Count);
+    Equal(28761u, hits[0].Target);
+    Equal(2182u, hits[0].Actor);
+    Equal(16010340u, hits[0].Skill);
+    Equal(1408u, hits[0].Damage);
+}
+
+static void NestedDamageRequiresOpcodeMarker()
+{
+    byte[] record = Convert.FromHexString(
+        "D9E00116008611644CF4009C028000021BD76D5F01000000FC5C800B0100");
+    byte[] wrapped = [0xAA, 0x04, 0x38, .. record, 0xBB];
+
+    Equal(1, DamageScanner.ScanFrame(0x0B, 0x39, wrapped, 1).Count);
+    Equal(0, DamageScanner.ScanFrame(0x0B, 0x39, record, 1).Count);
+}
+
+static void RuntimeSkillVariantsAreMatchedNarrowly()
+{
+    var constructor = typeof(SkillDatabase).GetConstructor(
+        System.Reflection.BindingFlags.Instance |
+        System.Reflection.BindingFlags.NonPublic,
+        binder: null,
+        [typeof(SkillDefinition[])],
+        modifiers: null) ?? throw new InvalidOperationException("SkillDatabase constructor missing.");
+
+    var database = (SkillDatabase)constructor.Invoke(
+    [
+        new SkillDefinition[]
+        {
+            new() { Id = "16010000", Name = "Cold Shock" },
+            new() { Id = "16150000", Name = "Jointstrike" },
+            new() { Id = "16155100", Name = "Spirit Break" },
+        },
+    ]);
+
+    Equal("Cold Shock", database.FindVariant(16010340)!.Name);
+    Equal("Jointstrike", database.FindVariant(16150010)!.Name);
+    Equal("Spirit Break", database.FindVariant(16155123)!.Name);
+    True(database.FindVariant(16090000) is null);
+}
+
 static void MissingFieldsRejected()
 {
     Equal(0, DamageScanner.ScanFrame(0x04, 0x38, [1, 4, 0, 0, 0, 0], 1).Count);
@@ -189,6 +247,120 @@ static void LegacyCombatLogLoads()
     MeterSnapshot snapshot = entry!.ToSnapshot();
     Equal(1234L, snapshot.TotalDamage);
     Equal(0L, snapshot.TotalHealing);
+}
+
+static void CombatLogKeepsEncounterMobs()
+{
+    var entry = new CombatLogEntry
+    {
+        Mobs =
+        [
+            new StoredEncounterMob { TemplateId = 10, Name = "Raider", Count = 2 },
+            new StoredEncounterMob { TemplateId = 20, Name = "Guard", Count = 1 },
+        ],
+    };
+
+    MeterSnapshot snapshot = entry.ToSnapshot();
+    Equal(2, snapshot.Mobs.Count);
+    Equal(3, snapshot.Mobs.Sum(mob => mob.Count));
+}
+
+static void ServerForgeDataLoads()
+{
+    ServersDatabase servers = ServersDatabase.Load(
+        Path.Combine("Data", "ForgeData", "AION2_Servers.nfg"));
+    Equal(716, servers.Servers.Count);
+    Equal("Siel", servers.GetById(1101)!.Name);
+}
+
+static void NslRoundTripAndTamperDetection()
+{
+    string directory = Path.Combine(".tmp-build", "nsl-tests");
+    Directory.CreateDirectory(directory);
+    string path = Path.Combine(directory, $"{Guid.NewGuid():N}.nsl");
+    byte[] key = System.Security.Cryptography.RandomNumberGenerator.GetBytes(32);
+    try
+    {
+        var source = new CombatLogEntry
+        {
+            Id = "nsl-roundtrip",
+            ServerId = 1101,
+            ServerName = "Siel",
+            MobName = "Test enemy",
+            Duration = 12.5,
+        };
+        NslCombatLogCodec.WriteForTest(path, source, key);
+        CombatLogEntry loaded = NslCombatLogCodec.ReadForTest(path, key);
+        Equal(source.Id, loaded.Id);
+        Equal(source.ServerName, loaded.ServerName);
+
+        byte[] tampered = File.ReadAllBytes(path);
+        tampered[^1] ^= 0x01;
+        File.WriteAllBytes(path, tampered);
+        bool rejected = false;
+        try
+        {
+            _ = NslCombatLogCodec.ReadForTest(path, key);
+        }
+        catch (InvalidDataException)
+        {
+            rejected = true;
+        }
+        True(rejected);
+    }
+    finally
+    {
+        File.Delete(path);
+    }
+}
+
+static void VerifiedHpPacketParsing()
+{
+    byte[] payload = [42, 1, 2, 3, .. BitConverter.GetBytes(160_000_000u)];
+    True(HpFrameParser.TryParse(payload, out Hp? hp, out string failure));
+    Equal(string.Empty, failure);
+    True(hp is not null);
+    Equal(42u, hp!.Target);
+    Equal(160_000_000u, hp.Health);
+}
+
+static void InvalidHpDoesNotOverwrite()
+{
+    var tracker = new BossHpTracker();
+    True(tracker.TryUpdate(42, 160_000_000, 100, 200_000_000, out BossHpSample accepted));
+    Equal(160_000_000u, accepted.RawValue);
+    False(tracker.TryUpdate(42, 210_000_000, 200, 200_000_000, out _));
+    False(tracker.TryUpdate(42, 150_000_000, 99, 200_000_000, out _));
+    True(tracker.TryGet(42, out BossHpSample retained));
+    Equal(160_000_000u, retained.RawValue);
+
+    True(tracker.TryUpdate(99, uint.MaxValue, 100, null, out BossHpSample worldBoss));
+    Equal(uint.MaxValue, worldBoss.RawValue);
+
+    byte[] invalidPayload = [42, 1, 2, 3, 0, 0, 0];
+    False(HpFrameParser.TryParse(invalidPayload, out _, out string failure));
+    Equal("PayloadTooShort", failure);
+}
+
+static void CombatEndRulesWork()
+{
+    uint[] targets = [100, 200];
+    var onlyAddDead = new HashSet<uint> { 200 };
+    False(CombatEndRules.ShouldRequestEndForDeath(200, 100, targets, onlyAddDead));
+
+    var bossDead = new HashSet<uint> { 100 };
+    True(CombatEndRules.ShouldRequestEndForDeath(100, 100, targets, bossDead));
+    False(CombatEndRules.HasReachedInactivityTimeout(1_000, 9_499, 1_000, 8.5));
+    True(CombatEndRules.HasReachedInactivityTimeout(1_000, 9_500, 1_000, 8.5));
+}
+
+static void BossDeathPredictionWorks()
+{
+    Equal(25d, BossDeathPrediction.EstimateSeconds(50_000, 20_000, 10, true)!.Value);
+    True(BossDeathPrediction.EstimateSeconds(50_000, 20_000, 2, true) is null);
+    True(BossDeathPrediction.EstimateSeconds(null, 20_000, 10, true) is null);
+    True(BossDeathPrediction.EstimateSeconds(50_000, 20_000, 10, false) is null);
+    True(BossDeathPrediction.EstimateSeconds(50_000, 0, 10, true) is null);
 }
 
 static DamageHit ParseSingle(string hex)

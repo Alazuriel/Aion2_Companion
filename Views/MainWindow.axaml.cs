@@ -511,6 +511,7 @@ public partial class MainWindow : Window
         // konstruktoraban beallitott DataContextet a foablakeval.
         if (host.Content is Control pageView &&
             host.Content is not CombatLogWindow &&
+            host.Content is not LeaderboardsView &&
             host.Content is not ChangelogView &&
             host.Content is not EventTimersView &&
             host.Content is not AccountView &&

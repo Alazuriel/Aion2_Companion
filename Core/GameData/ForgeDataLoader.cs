@@ -22,6 +22,7 @@ public class ForgeDataLoader
     public SkillDatabase? _templarDatabase;
     public OpCodesDatabase? _opcodesDatabase;
     public EventTimersDatabase? _eventTimersDatabase;
+    public ServersDatabase? _serversDatabase;
     
     private static T? TryLoad<T>(string path, Func<string, T> load, Func<T, string> info)
         where T : class
@@ -116,6 +117,11 @@ public class ForgeDataLoader
             Path.Combine(dataDir, "AION2_EventTimers.nfg"),
             EventTimersDatabase.Load,
             db => $"Események: {db.Events.Count} | Régiók: {db.Regions.Count}");
+
+        _serversDatabase = TryLoad<ServersDatabase>(
+            Path.Combine(dataDir, "AION2_Servers.nfg"),
+            ServersDatabase.Load,
+            db => $"Szerverek: {db.Servers.Count}");
 
         OpcodeCatalog.Initialize(_opcodesDatabase);
         BossCatalog.Initialize(_bossesDatabase);

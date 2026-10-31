@@ -1,22 +1,64 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:views="using:AION_2_Companion.Views"
+             xmlns:vm="using:AION_2_Companion.ViewModels"
+             xmlns:characters="using:AION_2_Companion.Core.Characters"
+             xmlns:controls="using:AION_2_Companion.Views.Controls"
              x:Class="AION_2_Companion.Views.CharacterSearchView"
-             Background="Transparent">
-  <Grid>
-    <views:UnderForgeView x:Name="UnderForgeContent"/>
-    <ScrollViewer x:Name="DeveloperContent" IsVisible="False" VerticalScrollBarVisibility="Auto">
-      <StackPanel Spacing="18" MaxWidth="1050" Margin="0,0,8,28">
-        <StackPanel Spacing="4"><TextBlock Text="{DynamicResource CharacterSearchKicker}" Classes="kicker"/><TextBlock Text="{DynamicResource CharacterSearchTitle}" Classes="h1" FontSize="29"/><TextBlock Text="{DynamicResource CharacterSearchSubtitle}" Classes="body"/></StackPanel>
-        <Border Classes="hero" Padding="22">
-          <Grid ColumnDefinitions="*,210,Auto" ColumnSpacing="10">
-            <TextBox Watermark="{DynamicResource CharacterSearchWatermark}" IsEnabled="False"/>
-            <ComboBox Grid.Column="1" IsEnabled="False"/>
-            <Button Grid.Column="2" Classes="ui primary" Content="{DynamicResource Search}" IsEnabled="False"/>
-          </Grid>
-        </Border>
-        <Border Classes="inset" Padding="22"><StackPanel Spacing="8"><Border Classes="goldPill" HorizontalAlignment="Left"><TextBlock Text="{DynamicResource StillUnderForge}" Classes="kicker" FontSize="9"/></Border><TextBlock Text="{DynamicResource SearchNotAvailable}" Classes="body"/></StackPanel></Border>
-      </StackPanel>
-    </ScrollViewer>
-  </Grid>
+             x:DataType="vm:CharacterSearchViewModel" Background="Transparent">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="18" MaxWidth="1080" Margin="0,0,8,28">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+        <StackPanel Spacing="4">
+          <TextBlock Text="{DynamicResource CharacterCenterKicker}" Classes="kicker"/>
+          <TextBlock Text="{DynamicResource CharacterCenterTitle}" Classes="h1" FontSize="29"/>
+          <TextBlock Text="{DynamicResource CharacterSearchSubtitle}" Classes="body"/>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Button Classes="ui" Content="{DynamicResource CharacterSelfTab}" Click="OpenSelfClick"/>
+          <Button Classes="ui primary" Content="{DynamicResource CharacterSearchTab}" IsEnabled="False"/>
+        </StackPanel>
+      </Grid>
+
+      <Border Classes="hero" Padding="20">
+        <Grid ColumnDefinitions="*,120,Auto,Auto" ColumnSpacing="10">
+          <TextBox Text="{Binding Query}" Watermark="{DynamicResource CharacterSearchWatermark}"/>
+          <ComboBox Grid.Column="1" ItemsSource="{Binding Regions}" SelectedItem="{Binding Region}"/>
+          <Button Grid.Column="2" Classes="ui primary" Content="{DynamicResource Search}" Command="{Binding SearchCommand}" MinWidth="105"/>
+          <Button Grid.Column="3" Classes="ui" Content="{Binding RefreshText}" Command="{Binding RefreshCommand}" IsEnabled="{Binding CanRefresh}" MinWidth="120"/>
+        </Grid>
+      </Border>
+
+      <Border Classes="inset" Padding="14" IsVisible="{Binding HasStatus}">
+        <TextBlock Text="{Binding StatusText}" Classes="body" TextWrapping="Wrap"/>
+      </Border>
+
+      <ItemsControl ItemsSource="{Binding Results}" IsVisible="{Binding HasResults}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="characters:CharacterSearchResult">
+            <Border Classes="hero" Padding="18" Margin="0,0,0,10">
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+                <controls:ForgeIconView Width="58" Height="58" IconSource="{Binding DisplayImageUrl}" TooltipText="{Binding CharacterName}" AccentColor="#45DFFF"/>
+                <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding CharacterName}" Classes="h1" FontSize="20"/>
+                  <WrapPanel>
+                    <TextBlock Text="{Binding ServerName}" Classes="body" Margin="0,0,12,0"/>
+                    <TextBlock Text="{Binding ServerId, StringFormat='ID {0}'}" Classes="mono" Foreground="#718DA5" Margin="0,0,12,0"/>
+                    <TextBlock Text="{Binding ClassName}" Classes="body" Foreground="#45DFFF"/>
+                  </WrapPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <Button Classes="ui" Content="{DynamicResource CharacterUseAsSelf}" Tag="{Binding}" Click="SelectSelfClick"/>
+                  <Button Classes="ui primary" Content="{DynamicResource ViewCharacter}" Tag="{Binding}" Click="OpenProfileClick"/>
+                </StackPanel>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <Border Classes="inset" Padding="24" IsVisible="{Binding HasNoResults}">
+        <TextBlock Text="{DynamicResource CharacterSearchHint}" Classes="body" TextAlignment="Center" TextWrapping="Wrap"/>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
 </UserControl>

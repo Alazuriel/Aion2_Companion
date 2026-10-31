@@ -82,12 +82,37 @@ public sealed class SkillDatabase
             return exact;
 
         string id = runtimeSkillId.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        if (id.Length < 4)
+        if (id.Length != 8)
             return null;
 
+        // A játék az alap skill négyjegyű családazonosítója mögött kódolja a
+        // futásidejű szintet és variánst (például 16010000 -> 16010340).
+        // Egy családon belül a numerikusan legközelebbi ismert definíció adja
+        // a helyes nevet; így a summon-variánsok sem az első találat nevét
+        // öröklik meg automatikusan.
         string prefix = id[..4];
-        return Skills.FirstOrDefault(skill =>
-            skill.Id.StartsWith(prefix, StringComparison.Ordinal));
+        SkillDefinition? closest = null;
+        uint closestDistance = uint.MaxValue;
+        foreach (SkillDefinition skill in Skills)
+        {
+            if (skill.Id.Length != 8 ||
+                !skill.Id.StartsWith(prefix, StringComparison.Ordinal) ||
+                !uint.TryParse(skill.Id, out uint knownId))
+            {
+                continue;
+            }
+
+            uint distance = knownId > runtimeSkillId
+                ? knownId - runtimeSkillId
+                : runtimeSkillId - knownId;
+            if (distance >= closestDistance)
+                continue;
+
+            closest = skill;
+            closestDistance = distance;
+        }
+
+        return closest;
     }
 
     public IReadOnlyList<SkillDefinition> GetByClass(string className)

@@ -46,7 +46,9 @@ public partial class MainWindowViewModel : ViewModelBase
     private uint _currentBossRuntimeId;
     private long _bossStartTimestamp;
     private long _bossLastHitTimestamp;
-    private readonly Dictionary<uint, uint> _mobHealthRaw = new();
+    private readonly BossHpTracker _bossHpTracker = new();
+    private long _lastRejectedHpDiagnostic;
+    private int _suppressedRejectedHpPackets;
     private MeterSnapshot _lastBossSnapshot = new();
     public static PetsDatabase? _ElyosPets;
     private readonly Dictionary<int, (int Level, int Soul)> _ownedPets = new();
@@ -58,6 +60,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private string _selfClassName = string.Empty;
     private string _selfClassColor = "#9CA3AF";
     private ForgeDataLoader _forgeDataLoader;
+    private ushort _currentServerId;
+    private string _currentServerName = string.Empty;
     private const double FightEndGraceSeconds = 8.5;
 
     private bool _fightEndPending;
@@ -314,13 +318,31 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         Opcode opcode = frame.Opcode;
         if (opcode == OpcodeId.HP)
         {
-            if (HpFrameParser.TryParse(frame.Payload, out var hp) && hp is not null && hp.Target != 0)
+            if (!HpFrameParser.TryParse(frame.Payload, out var hp, out string failure) ||
+                hp is null)
             {
-                _mobHealthRaw[hp.Target] = hp.Health;
-                TrackTargetMetadata(hp.Target);
-                if (hp.Health == 0)
-                    ConfirmCombatTargetDeath(hp.Target, "HP=0");
+                LogRejectedHpPacket(frame.Payload, failure);
+                return;
             }
+
+            TrackTargetMetadata(hp.Target);
+            BossDefinition? hpBoss = ResolveTarget(hp.Target).Boss;
+            if (!_bossHpTracker.TryUpdate(
+                    hp.Target,
+                    hp.Health,
+                    Stopwatch.GetTimestamp(),
+                    hpBoss?.MaxHp,
+                    out BossHpSample sample))
+            {
+                string reason = hpBoss?.MaxHp is > 0 && hp.Health > hpBoss.MaxHp
+                    ? $"HealthExceedsVerifiedMaximum(Current={hp.Health},Max={hpBoss.MaxHp})"
+                    : "StaleHpSample";
+                LogRejectedHpPacket(frame.Payload, reason);
+                return;
+            }
+
+            if (sample.RawValue == 0)
+                ConfirmCombatTargetDeath(hp.Target, "HP=0");
             return;
         }
 
@@ -337,6 +359,27 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
                     "IgnoredAsFightEnd=True");
             }
         }
+    }
+
+    private void LogRejectedHpPacket(byte[] payload, string failure)
+    {
+        long now = Stopwatch.GetTimestamp();
+        if (_lastRejectedHpDiagnostic != 0 &&
+            (now - _lastRejectedHpDiagnostic) / (double)Stopwatch.Frequency < 5)
+        {
+            _suppressedRejectedHpPackets++;
+            return;
+        }
+
+        int tailLength = Math.Min(16, payload.Length);
+        string tail = tailLength == 0
+            ? "empty"
+            : Convert.ToHexString(payload.AsSpan(payload.Length - tailLength, tailLength));
+        DebugConsole.Log("hp",
+            $"[HP PACKET REJECTED] Reason={failure} | Length={payload.Length} | " +
+            $"Tail={tail} | Suppressed={_suppressedRejectedHpPackets}");
+        _lastRejectedHpDiagnostic = now;
+        _suppressedRejectedHpPackets = 0;
     }
 
     private (int TemplateId, string Name, BossDefinition? Boss) ResolveTarget(uint runtimeId)
@@ -430,8 +473,16 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
             $"[COMBAT TARGET DEAD] Target={entityId} | Via={signal} | " +
             $"Confirmed={_deadFightTargets.Count}/{_fightTargets.Count}");
 
-        // Egy add halála NEM zárhatja le az élő bosst.
-        StopCombat();
+        // A boss halála akkor is lezárási jel, ha a fightban addok is voltak.
+        // Egy add önmagában csak akkor zár, ha már minden sebzett célpont halott.
+        if (CombatEndRules.ShouldRequestEndForDeath(
+                entityId,
+                _currentBossRuntimeId,
+                _fightTargets,
+                _deadFightTargets))
+        {
+            RequestFightEnd(signal, entityId);
+        }
     }
     
     private void CheckCombatTimeout()
@@ -457,10 +508,14 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         if (_lastDamageTimestamp == 0)
             return;
 
-        double inactiveSeconds =
-            (now - _lastDamageTimestamp) / (double)Stopwatch.Frequency;
-        if (inactiveSeconds >= CombatInactivityTimeoutSeconds)
+        if (CombatEndRules.HasReachedInactivityTimeout(
+                _lastDamageTimestamp,
+                now,
+                Stopwatch.Frequency,
+                CombatInactivityTimeoutSeconds))
         {
+            double inactiveSeconds =
+                (now - _lastDamageTimestamp) / (double)Stopwatch.Frequency;
             DebugConsole.Log("dpstime",
                 $"[COMBAT IDLE] NoDamage={inactiveSeconds:F1}s | " +
                 $"Targets={_fightTargets.Count}");
@@ -468,20 +523,16 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         }
     }
 
-    private void StopCombat()
+    private void RequestFightEnd(string signal, uint entityId)
     {
         if (!_fightActive || _fightEndPending || _fightTargets.Count == 0)
-            return;
-
-        // Egy boss add halála nem zárja le az egész fightot.
-        if (!_fightTargets.All(_deadFightTargets.Contains))
             return;
 
         _fightEndPending = true;
         _fightEndRequestedAt = Stopwatch.GetTimestamp();
 
         DebugConsole.Log("dpstime",
-            $"[FIGHT PAUSED] Reason=AllDamagedTargetsHP0OrDeath | " +
+            $"[FIGHT PAUSED] Reason={signal} | Entity={entityId} | " +
             $"Targets={_fightTargets.Count} | " +
             $"RecoverableFor={FightEndGraceSeconds:F1}s");
     }
@@ -604,6 +655,8 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         _deadFightTargets.Remove(targetId);  // téves HP=0 feloldása
         _MobsInCombat.Add(targetId);
 
+        _bossHpTracker.Remove(targetId);
+
         DebugConsole.Log("dpstime",
             $"[FIGHT RESTORED] Target={targetId} | " +
             $"OriginalStart={previous.StartTimestamp} | " +
@@ -633,7 +686,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
             $"Duration={snapshot.Duration:F2}s");
 
         foreach (uint target in paused.Targets)
-            _mobHealthRaw.Remove(target);
+            _bossHpTracker.Remove(target);
 
         if (snapshot.Duration <= 0 ||
             (snapshot.TotalDamage <= 0 && snapshot.TotalHealing <= 0))
@@ -678,7 +731,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         CountDps();
 
         foreach (uint target in _fightTargets)
-            _mobHealthRaw.Remove(target);
+            _bossHpTracker.Remove(target);
 
         // A snapshot elkészítése UTÁN törlünk, hogy a boss nevét ne veszítsük el.
         _MobsInCombat.Clear();
@@ -795,7 +848,11 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         if (hit.Damage <= 0)
             return;
 
-        _lastDamageTimestamp = Math.Max(_lastDamageTimestamp, timestamp);
+        // A boss haláljelzése után érkező heal ne indítsa újra az órát.
+        // A fightot csak ugyanarra a célpontra érkező hiteles sebzés nyithatja vissza.
+        if (_fightEndPending && timestamp >= _fightEndRequestedAt)
+            return;
+
         _fightLastHitTimestamp = Math.Max(_fightLastHitTimestamp, timestamp);
         
         if (!_damageByPlayer.TryGetValue(ownerId, out var stats))
@@ -960,10 +1017,11 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
             return;
         }
 
-        // Közvetlen játékostalálatnál csak a kaszt NFG-jében ténylegesen
-        // szereplő skill fogadható el. A korábbi kétjegyű prefix-ellenőrzés
-        // véletlen payloadokat is valódi skillnek nézett. Summonok saját
-        // skilljei nem feltétlenül szerepelnek a játékos kasztadatbázisában.
+        // Közvetlen játékostalálatnál csak a kaszt NFG-jében szereplő skill
+        // vagy annak runtime variánsa fogadható el. A játék a szint/variáns
+        // adatait az alap skill ID utolsó négy számjegyében is kódolhatja.
+        // Summonok saját skilljei nem feltétlenül szerepelnek a játékos
+        // kasztadatbázisában.
         if (originalActor == ownerId)
         {
             PartyMemberEntry? member = isSelf
@@ -971,7 +1029,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
                 : PartyMembers.FirstOrDefault(p => p.Id != 0 && p.Id == ownerId);
             string className = isSelf ? _selfClassName : member?.ClassName ?? string.Empty;
             SkillDatabase? database = GetSkillDatabase(className);
-            if (database is not null && database.GetById(hit.Skill) is null)
+            if (database is not null && database.FindVariant(hit.Skill) is null)
             {
                 DebugConsole.Log("skill",
                     $"[SKILL DROP] Skill={hit.Skill} | Owner={ownerId} | " +
@@ -1058,6 +1116,11 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         _selfName = self.Name;
         _SelfId = self.Id;
         _selfClassId = self.ClassId;
+        _currentServerId = self.ServerId;
+        ServerDefinition? currentServer = _forgeDataLoader._serversDatabase?.GetById(self.ServerId);
+        _currentServerName = currentServer?.Name ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(_currentServerName))
+            CompanionSettings.LeaderboardServerName = _currentServerName;
         
         if (identityChanged)
             PushMeter();
@@ -1114,6 +1177,8 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
             self.Level,
             self.Gs == 0 ? null : self.Gs,
             self.ServerId == 0 ? null : self.ServerId,
+            _currentServerName,
+            currentServer?.Region ?? "eu",
             self.Id,
             DateTimeOffset.UtcNow));
 
@@ -2056,6 +2121,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
                     _fightEndPending = false;
                     _fightEndRequestedAt = 0;
                     _deadFightTargets.Remove(hit.Target);
+                    _bossHpTracker.Remove(hit.Target);
                     _MobsInCombat.Add(hit.Target);
                     DebugConsole.Log("dpstime",
                         $"[FIGHT RESUMED] Target={hit.Target} | Via=SameTargetDamage");
@@ -2315,18 +2381,26 @@ public MeterSnapshot BuildSnapshot(bool bossOnly = false)
     double? hpPercent = null;
     long? currentHp = null;
     if (boss is not null && _currentBossRuntimeId != 0 &&
-        _mobHealthRaw.TryGetValue(_currentBossRuntimeId, out uint rawHp))
+        _bossHpTracker.TryGet(_currentBossRuntimeId, out BossHpSample hpSample))
     {
-        hpPercent = rawHp <= 100
-            ? rawHp
-            : rawHp <= 10_000 ? rawHp / 100d : null;
-        if (hpPercent.HasValue && boss.MaxHp > 0)
-            currentHp = (long)Math.Round(boss.MaxHp * hpPercent.Value / 100d);
+        currentHp = hpSample.RawValue;
+        if (boss.MaxHp > 0)
+            hpPercent = Math.Clamp(currentHp.Value / (double)boss.MaxHp * 100d, 0, 100);
     }
+
+    long accumulatedBossDamage = players.Sum(player => player.BossDamage);
+    double? estimatedDeathSeconds = BossDeathPrediction.EstimateSeconds(
+        currentHp,
+        accumulatedBossDamage,
+        bossDuration,
+        _fightActive && !_fightEndPending);
 
     return new MeterSnapshot
     {
         Players = players,
+        Mobs = BuildEncounterMobs(),
+        ServerId = _currentServerId,
+        ServerName = _currentServerName,
         Duration = viewDuration,
         MobMaxHp = boss?.MaxHp ?? 0,
         MobTemplateName = mobName,
@@ -2335,6 +2409,7 @@ public MeterSnapshot BuildSnapshot(bool bossOnly = false)
         BossId = boss?.Id ?? string.Empty,
         BossHpPercent = hpPercent,
         BossCurrentHp = currentHp,
+        EstimatedDeathSeconds = estimatedDeathSeconds,
         EnrageSeconds = boss?.EnrageSeconds,
         EnrageRemainingSeconds = boss?.EnrageSeconds is int enrage
             ? enrage - bossDuration
@@ -2373,6 +2448,32 @@ private string GetCurrentMobName()
     if(_currentMobName == "")
         return "—";
     return _currentMobName;
+}
+
+private IReadOnlyList<EncounterMob> BuildEncounterMobs()
+{
+    return _fightTargets
+        .Select(runtimeId =>
+        {
+            var target = ResolveTarget(runtimeId);
+            return new
+            {
+                target.TemplateId,
+                Name = target.Boss?.LocalizedName(
+                    LocalizationService.CurrentLanguageCode,
+                    target.Name) ?? target.Name,
+            };
+        })
+        .GroupBy(target => new { target.TemplateId, target.Name })
+        .Select(group => new EncounterMob
+        {
+            TemplateId = group.Key.TemplateId,
+            Name = group.Key.Name,
+            Count = group.Count(),
+        })
+        .OrderByDescending(mob => mob.Count)
+        .ThenBy(mob => mob.Name, StringComparer.CurrentCultureIgnoreCase)
+        .ToList();
 }
     private SkillDatabase? GetSkillDatabase(string c)
     {

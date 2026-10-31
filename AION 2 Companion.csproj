@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
@@ -28,6 +28,9 @@
         <AvaloniaResource Include="Data\Assets\**\*" />
         <AvaloniaResource Include="Data\Assets\Icons\**\*" />
         <Content Include="Data\Assets\Pets\*.webp" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="Data\Assets\Deviations\*.png" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="Data\Assets\icons\*.webp" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="Data\Assets\icons\*.png" CopyToOutputDirectory="PreserveNewest" />
         <Content Include="Data\Language\*.nfl" CopyToOutputDirectory="PreserveNewest" />
         <EmbeddedResource Include="$(NfgLocalKeyFile)" LogicalName="Nexforge.NfgMasterKey" Condition="'$(NfgLocalKeyFile)' != ''" />
         <Compile Remove="Core\Wire\OpcodeRegistry.cs" />
@@ -67,6 +70,7 @@
 <ItemGroup>
   <Compile Remove="Nexforge.Installer\**\*.cs" />
   <Compile Remove="Tests\**\*.cs" />
+  <Compile Remove="Tools\SkillIconPack\**\*.cs" />
   <AvaloniaResource Remove="Nexforge.Installer\**\*.axaml" />
   <None Remove="Nexforge.Installer\**\*" />
 </ItemGroup>

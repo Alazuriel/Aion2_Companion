@@ -10,6 +10,13 @@ using Avalonia.Media;
 
 public enum MeterMode { Damage, Dps, Heal, Hps }
 
+public sealed class EncounterMob
+{
+    public int TemplateId { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public int Count { get; init; }
+}
+
 public sealed class SkillEvent
 {
     public double Time { get; init; }
@@ -47,6 +54,9 @@ public sealed class PlayerStat
 public sealed class MeterSnapshot
 {
     public IReadOnlyList<PlayerStat> Players { get; init; } = Array.Empty<PlayerStat>();
+    public IReadOnlyList<EncounterMob> Mobs { get; init; } = Array.Empty<EncounterMob>();
+    public ushort ServerId { get; init; }
+    public string ServerName { get; init; } = string.Empty;
     public double Duration { get; init; }
     public long MobMaxHp { get; init; }
     public string? MobTemplateName { get; init; }
@@ -55,6 +65,7 @@ public sealed class MeterSnapshot
     public string BossId { get; init; } = string.Empty;
     public double? BossHpPercent { get; init; }
     public long? BossCurrentHp { get; init; }
+    public double? EstimatedDeathSeconds { get; init; }
     public int? EnrageSeconds { get; init; }
     public double BossStartOffset { get; init; }
     public double BossDuration { get; init; }
@@ -97,6 +108,9 @@ public sealed class MeterSnapshot
                         IsBossTarget = entry.IsBossTarget,
                     }).ToList(),
             }).ToList(),
+            Mobs = Mobs,
+            ServerId = ServerId,
+            ServerName = ServerName,
             Duration = BossDuration > 0 ? BossDuration : Duration,
             MobMaxHp = MobMaxHp,
             MobTemplateName = MobTemplateName,
@@ -105,6 +119,7 @@ public sealed class MeterSnapshot
             BossId = BossId,
             BossHpPercent = BossHpPercent,
             BossCurrentHp = BossCurrentHp,
+            EstimatedDeathSeconds = EstimatedDeathSeconds,
             EnrageSeconds = EnrageSeconds,
             EnrageRemainingSeconds = EnrageRemainingSeconds,
             BossStartOffset = 0,

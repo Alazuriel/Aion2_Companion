@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using AION_2_Companion.Core;
 using AION_2_Companion.Views.Overlays;
 using Avalonia;
@@ -63,6 +64,7 @@ public sealed class CombatLogSkillRow
 
 public partial class CombatLogWindow : UserControl
 {
+    private const int LogPageSize = 40;
     private readonly CombatLogStore _store = CombatLogStore.Shared;
     private readonly List<CombatLogEntry> _allEntries = new();
     private CombatLogEntry? _selectedEntry;
@@ -70,6 +72,10 @@ public partial class CombatLogWindow : UserControl
     private PlayerStat? _selectedPlayer;
     private CombatLogEntry? _comparisonBase;
     private bool _deleteArmed;
+    private bool _isLoadingLogs;
+    private int _nextLogOffset;
+    private int _totalLogCount;
+    private int _loadGeneration;
 
     public ObservableCollection<CombatLogListRow> Fights { get; } = new();
     public ObservableCollection<CombatLogPlayerRow> Players { get; } = new();
@@ -93,7 +99,11 @@ public partial class CombatLogWindow : UserControl
         RefreshLogs();
     }
 
-    private void LanguageChanged(object? sender, EventArgs e) => RefreshLogs();
+    private void LanguageChanged(object? sender, EventArgs e)
+    {
+        ApplyFilter(_selectedEntry?.Id);
+        UpdateSessionSummary();
+    }
 
     private void StoreChanged(object? sender, EventArgs e) =>
         Dispatcher.UIThread.Post(RefreshLogs);
@@ -107,13 +117,59 @@ public partial class CombatLogWindow : UserControl
 
     private bool BossOnly => CompanionSettings.DpsEncounterMode == DpsEncounterMode.Bosses;
 
-    private void RefreshLogs()
+    private async void RefreshLogs()
     {
         string? selectedId = _selectedEntry?.Id;
+        int generation = ++_loadGeneration;
+        int reloadCount = Math.Max(LogPageSize, _nextLogOffset);
+        SetLogLoading(true);
+
+        CombatLogPage page = await Task.Run(() => _store.LoadPage(0, reloadCount));
+        if (generation != _loadGeneration)
+            return;
+
         _allEntries.Clear();
-        _allEntries.AddRange(_store.LoadAll());
+        _allEntries.AddRange(page.Entries);
+        _nextLogOffset = page.NextOffset;
+        _totalLogCount = page.TotalCount;
+        SetLogLoading(false);
         ApplyFilter(selectedId);
         UpdateSessionSummary();
+    }
+
+    private async void LoadOlderFightsClick(object? sender, RoutedEventArgs e)
+    {
+        if (_isLoadingLogs || _nextLogOffset >= _totalLogCount)
+            return;
+
+        int generation = _loadGeneration;
+        SetLogLoading(true);
+        CombatLogPage page = await Task.Run(() =>
+            _store.LoadPage(_nextLogOffset, LogPageSize));
+        if (generation != _loadGeneration)
+            return;
+
+        var knownIds = _allEntries.Select(entry => entry.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        _allEntries.AddRange(page.Entries.Where(entry => knownIds.Add(entry.Id)));
+        _nextLogOffset = page.NextOffset;
+        _totalLogCount = page.TotalCount;
+        SetLogLoading(false);
+        ApplyFilter(_selectedEntry?.Id);
+        UpdateSessionSummary();
+    }
+
+    private void SetLogLoading(bool loading)
+    {
+        _isLoadingLogs = loading;
+        Button? button = this.FindControl<Button>("LoadOlderFightsButton");
+        if (button is null)
+            return;
+
+        button.IsEnabled = !loading;
+        button.Content = LocalizationService.Get(
+            loading ? "LoadingFights" : "LoadOlderFights");
+        button.IsVisible = loading || _nextLogOffset < _totalLogCount;
     }
 
     private void ApplyFilter(string? preferredId = null)
@@ -141,10 +197,15 @@ public partial class CombatLogWindow : UserControl
         this.FindControl<Button>("BossEncountersButton")!.Classes.Set("primary", BossOnly);
 
         this.FindControl<TextBlock>("FightCountText")!.Text =
-            Fights.Count == _allEntries.Count
-                ? LocalizationService.Format("FightCount", Fights.Count)
-                : LocalizationService.Format("FightCountFiltered", Fights.Count, _allEntries.Count);
-        this.FindControl<TextBlock>("EmptyLogText")!.IsVisible = Fights.Count == 0;
+            _totalLogCount > _allEntries.Count
+                ? LocalizationService.Format(
+                    "FightCountLoaded", Fights.Count, _allEntries.Count, _totalLogCount)
+                : Fights.Count == _allEntries.Count
+                    ? LocalizationService.Format("FightCount", Fights.Count)
+                    : LocalizationService.Format("FightCountFiltered", Fights.Count, _allEntries.Count);
+        this.FindControl<TextBlock>("EmptyLogText")!.IsVisible =
+            Fights.Count == 0 && !_isLoadingLogs;
+        SetLogLoading(_isLoadingLogs);
 
         string? wantedId = preferredId ?? _selectedEntry?.Id;
         CombatLogListRow? selection = Fights.FirstOrDefault(row => row.Entry.Id == wantedId)
@@ -160,8 +221,25 @@ public partial class CombatLogWindow : UserControl
         string playerText = string.Join(' ', entry.Players.Select(player =>
             $"{player.Name} {player.ClassName}"));
         DateTimeOffset local = entry.EndedAtUtc.ToLocalTime();
-        return $"{entry.MobName} {entry.Notes} {playerText} " +
+        string mobText = string.Join(' ', entry.Mobs.Select(mob => mob.Name));
+        return $"{entry.MobName} {entry.ServerName} {mobText} {entry.Notes} {playerText} " +
                $"{local:yyyy.MM.dd} {local:yyyy-MM-dd} {local:yyyy MMMM dd}";
+    }
+
+    private void DetailsTabClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string section })
+            return;
+
+        bool breakdown = section == "Breakdown";
+        bool notes = section == "Notes";
+        bool enemies = section == "Enemies";
+        this.FindControl<Grid>("DetailsBreakdownPanel")!.IsVisible = breakdown;
+        this.FindControl<Border>("NotesContentPanel")!.IsVisible = notes;
+        this.FindControl<Border>("EncounterEnemiesPanel")!.IsVisible = enemies;
+        this.FindControl<Button>("BreakdownTabButton")!.Classes.Set("selected", breakdown);
+        this.FindControl<Button>("NotesTabButton")!.Classes.Set("selected", notes);
+        this.FindControl<Button>("EnemiesTabButton")!.Classes.Set("selected", enemies);
     }
 
     private void SearchTextChanged(object? sender, TextChangedEventArgs e) => ApplyFilter();
@@ -183,6 +261,7 @@ public partial class CombatLogWindow : UserControl
             return;
 
         _deleteArmed = false;
+        this.FindControl<TextBlock>("ActionStatusText")!.Text = string.Empty;
         this.FindControl<Button>("DeleteButton")!.Content = LocalizationService.Get("Delete");
         _selectedEntry = row.Entry;
         _selectedSnapshot = row.Entry.ToSnapshot(BossOnly);
@@ -191,7 +270,11 @@ public partial class CombatLogWindow : UserControl
         this.FindControl<TextBlock>("EncounterMeta")!.Text =
             $"{row.DateText}  ·  {row.DurationText}  ·  " +
             LocalizationService.Format("PlayerCount", row.Entry.Players.Count) +
+            (string.IsNullOrWhiteSpace(row.Entry.ServerName)
+                ? string.Empty
+                : $"  ·  {row.Entry.ServerName}") +
             (row.Entry.Completed ? string.Empty : $"  ·  {LocalizationService.Get("Interrupted")}");
+        this.FindControl<TextBlock>("EncounterMobsText")!.Text = FormatEncounterMobs(row.Entry);
 
         double duration = Math.Max(0.001, row.Entry.Duration);
         this.FindControl<TextBlock>("TotalDamageText")!.Text = Meter.Num(_selectedSnapshot.TotalDamage);
@@ -207,6 +290,9 @@ public partial class CombatLogWindow : UserControl
             Players.Add(new CombatLogPlayerRow { Player = player });
 
         SetFightButtonsEnabled(true);
+        this.FindControl<Button>("ShareButton")!.IsEnabled =
+            row.Entry.Completed && row.Entry.IsBossEncounter &&
+            (row.Entry.BossDuration > 0 ? row.Entry.BossDuration : row.Entry.Duration) is >= 3 and <= 7200;
         this.FindControl<ListBox>("PlayerList")!.SelectedItem = Players.FirstOrDefault();
         if (Players.Count == 0)
             ClearPlayerDetails();
@@ -250,6 +336,26 @@ public partial class CombatLogWindow : UserControl
         UpdateRecordText(row.Player);
         this.FindControl<Button>("PlayerDetailsButton")!.IsEnabled = true;
         this.FindControl<Button>("TimelineButton")!.IsEnabled = true;
+    }
+
+    private static string FormatEncounterMobs(CombatLogEntry entry)
+    {
+        List<StoredEncounterMob> mobs = entry.Mobs
+            .Where(mob => mob.Count > 0)
+            .ToList();
+        int total = mobs.Sum(mob => mob.Count);
+        if (total == 0)
+            return LocalizationService.Get("EncounterMobsUnavailable");
+
+        string names = string.Join(", ", mobs.Select(mob =>
+        {
+            string name = string.IsNullOrWhiteSpace(mob.Name)
+                ? LocalizationService.Get("UnknownEnemy")
+                : mob.Name;
+            return mob.Count > 1 ? $"{name} ×{mob.Count}" : name;
+        }));
+
+        return $"{LocalizationService.Format("MobCount", total)}  ·  {names}";
     }
 
     private void UpdateRecordText(PlayerStat selectedPlayer)
@@ -327,6 +433,7 @@ public partial class CombatLogWindow : UserControl
         Skills.Clear();
         this.FindControl<TextBlock>("EncounterName")!.Text = LocalizationService.Get("NoSelectedFight");
         this.FindControl<TextBlock>("EncounterMeta")!.Text = "—";
+        this.FindControl<TextBlock>("EncounterMobsText")!.Text = "—";
         this.FindControl<TextBlock>("TotalDamageText")!.Text = "—";
         this.FindControl<TextBlock>("TotalDpsText")!.Text = "—";
         this.FindControl<TextBlock>("TotalHealingText")!.Text = "—";
@@ -341,7 +448,7 @@ public partial class CombatLogWindow : UserControl
         foreach (string name in new[]
                  {
                      "OpenDpsButton", "FavoriteButton", "CopyButton", "CompareButton",
-                     "DeleteButton", "SaveNotesButton"
+                     "DeleteButton", "ShareButton", "SaveNotesButton"
                  })
             this.FindControl<Button>(name)!.IsEnabled = enabled;
     }
@@ -459,6 +566,18 @@ public partial class CombatLogWindow : UserControl
     {
         if (_selectedSnapshot is not null)
             OverlayWindowManager.ToggleDps(_selectedSnapshot);
+    }
+
+    private async void ShareResultClick(object? sender, RoutedEventArgs e)
+    {
+        if (_selectedEntry is null)
+            return;
+
+        var dialog = new LeaderboardSubmissionDialog(_selectedEntry);
+        if (TopLevel.GetTopLevel(this) is Window owner)
+            await dialog.ShowDialog<bool>(owner);
+        else
+            dialog.Show();
     }
 
     private void OpenPlayerDetailsClick(object? sender, RoutedEventArgs e)

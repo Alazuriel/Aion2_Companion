@@ -168,6 +168,27 @@ public static class CompanionSettings
         }
     }
 
+    public static bool ShowBossDeathPrediction
+    {
+        get
+        {
+            lock (Sync)
+                return Load().ShowBossDeathPrediction;
+        }
+        set
+        {
+            lock (Sync)
+            {
+                SettingsData data = Load();
+                if (data.ShowBossDeathPrediction == value)
+                    return;
+
+                data.ShowBossDeathPrediction = value;
+                Save(data);
+            }
+        }
+    }
+
     public static DpsEncounterMode DpsEncounterMode
     {
         get
@@ -293,6 +314,20 @@ public static class CompanionSettings
                 data.CombatLogLimit = normalized;
                 Save(data);
             }
+        }
+    }
+
+    public static string LeaderboardServerName
+    {
+        get => Load().LeaderboardServerName ?? string.Empty;
+        set
+        {
+            string normalized = value?.Trim() ?? string.Empty;
+            var data = Load();
+            if (string.Equals(data.LeaderboardServerName, normalized, StringComparison.Ordinal))
+                return;
+            data.LeaderboardServerName = normalized;
+            Save(data);
         }
     }
 
@@ -488,12 +523,14 @@ public static class CompanionSettings
         public bool FileLoggingEnabled { get; set; }
         public bool AutoManageDpsOverlay { get; set; } = true;
         public bool AutoCaptureEnabled { get; set; } = true;
+        public bool ShowBossDeathPrediction { get; set; } = true;
         public DpsEncounterMode DpsEncounterMode { get; set; } = DpsEncounterMode.All;
         public string LanguageCode { get; set; } = "en";
         public bool CheckUpdatesAutomatically { get; set; } = true;
         public DateTimeOffset? LastUpdateCheckUtc { get; set; }
         public string? LastSeenOnboardingVersion { get; set; }
         public int CombatLogLimit { get; set; } = 500;
+        public string LeaderboardServerName { get; set; } = string.Empty;
         public string EventTimerRegion { get; set; } = "europe";
         public bool EventTimerOverlayClickThrough { get; set; }
         public Dictionary<string, EventTimerPreference> EventTimerPreferences { get; set; }

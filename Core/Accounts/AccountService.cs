@@ -340,6 +340,51 @@ public sealed class AccountService
         }
     }
 
+    public async Task<string?> GetAccessTokenAsync(
+        bool forceRefresh = false,
+        CancellationToken cancellationToken = default)
+    {
+        await _operationLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_session is null)
+                return null;
+
+            bool needsRefresh = forceRefresh ||
+                string.IsNullOrWhiteSpace(_session.Tokens.AccessToken) ||
+                _session.Tokens.ExpiresAtUtc <= DateTimeOffset.UtcNow.Add(RefreshLeadTime);
+            if (!needsRefresh)
+                return _session.Tokens.AccessToken;
+
+            RefreshSessionResult result = await TryRefreshSessionAsync(cancellationToken);
+            if (result == RefreshSessionResult.Refreshed)
+            {
+                SetSnapshot(AccountConnectionState.Connected, _session.Profile,
+                    "AccountConnected", false, true);
+                ScheduleRefreshForCurrentSession();
+                return _session.Tokens.AccessToken;
+            }
+
+            if (result == RefreshSessionResult.Offline)
+            {
+                SetSnapshot(AccountConnectionState.Offline, _session.Profile,
+                    "AccountOffline", false, true);
+                ScheduleRefresh(OfflineRetryDelay);
+                return null;
+            }
+
+            await _tokenStore.DeleteAsync();
+            _session = null;
+            SetSnapshot(AccountConnectionState.SessionExpired, Snapshot.Profile,
+                "AccountSessionExpired", true, true);
+            return null;
+        }
+        finally
+        {
+            _operationLock.Release();
+        }
+    }
+
     public async Task DisconnectAsync(CancellationToken cancellationToken = default)
     {
         CancelConnect();

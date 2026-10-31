@@ -1,0 +1,84 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AION_2_Companion.ViewModels"
+             x:Class="AION_2_Companion.Views.Characters"
+             x:DataType="vm:CharactersViewModel"
+             Background="Transparent">
+  <UserControl.Styles>
+    <Style Selector="ListBox#DeviationBoardTabs ListBoxItem">
+      <Setter Property="Margin" Value="0,0,8,8"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector="ListBox#DeviationBoardTabs ListBoxItem:selected">
+      <Setter Property="Background" Value="#263748"/>
+    </Style>
+  </UserControl.Styles>
+  <StackPanel Spacing="15" Margin="0,3,0,8">
+    <StackPanel Spacing="4">
+      <TextBlock Text="DAEVANION · DEVIATION BOARDS" FontSize="10" Foreground="#45DFFF" FontWeight="Bold"/>
+      <TextBlock Text="Fejlődési táblák" FontSize="22" FontWeight="SemiBold" Foreground="#E8F4FF"/>
+      <TextBlock Text="Válassz táblát. A cellák színei a ritkaságot mutatják; a feloldott útvonalhoz részletes API-adatok szükségesek."
+                 FontSize="11" Foreground="#90A9BB" TextWrapping="Wrap"/>
+    </StackPanel>
+    <ListBox x:Name="DeviationBoardTabs" ItemsSource="{Binding Boards}"
+             SelectedItem="{Binding SelectedBoard, Mode=TwoWay}"
+             Background="Transparent" BorderThickness="0"
+             HorizontalAlignment="Stretch">
+      <ListBox.ItemsPanel>
+        <ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+      </ListBox.ItemsPanel>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:DeviationBoard">
+          <Border Width="146" Padding="10,11" Background="#152332" BorderBrush="#39536A" BorderThickness="1" CornerRadius="7">
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="6" RowSpacing="5">
+              <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" Foreground="#E7F1FF"/>
+              <TextBlock Grid.Column="1" Text="{Binding UnlockText}" FontSize="9" Foreground="#D8B96A"/>
+              <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding ProgressText}" FontSize="10" Foreground="#8DAABD"/>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+    <Border Background="#111517" BorderBrush="#304354" BorderThickness="1" CornerRadius="9" Padding="13">
+      <StackPanel Spacing="12">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+          <StackPanel Spacing="3">
+            <TextBlock Text="{Binding SelectedBoard.Name}" FontSize="18" FontWeight="Bold" Foreground="#F4EDDE"/>
+            <TextBlock Text="{Binding SelectedBoard.FullCostText}" FontSize="11" Foreground="#9EB4C4"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Spacing="3" HorizontalAlignment="Right">
+            <TextBlock Text="{Binding SelectedBoard.ProgressText}" Foreground="#45DFFF" FontWeight="SemiBold" FontSize="13" HorizontalAlignment="Right"/>
+            <TextBlock Text="NYITOTT CSOMÓPONTOK" Foreground="#7792A5" FontSize="9" HorizontalAlignment="Right"/>
+          </StackPanel>
+        </Grid>
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+          <ItemsControl Width="{Binding SelectedBoard.BoardWidth}"
+                        HorizontalAlignment="Center" ItemsSource="{Binding SelectedBoard.Cells}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:DeviationCell">
+                <Grid Width="62" Height="62" ToolTip.Tip="{Binding Tooltip}">
+                  <Image Width="56" Height="56" Stretch="Uniform"
+                         Source="{Binding Art}" IsVisible="{Binding HasNode}"
+                         RenderOptions.BitmapInterpolationMode="HighQuality"/>
+                  <Border Width="48" Height="48" CornerRadius="24" BorderBrush="#99D8B96A"
+                          BorderThickness="1" IsVisible="{Binding IsStart}" IsHitTestVisible="False"/>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+        <Border Background="#172531" CornerRadius="5" Padding="10">
+          <TextBlock Text="{Binding SelectedBoard.LayoutStatusText}" Foreground="#AFC3CF"
+                     FontSize="11" TextWrapping="Wrap"/>
+        </Border>
+      </StackPanel>
+    </Border>
+    <TextBlock Text="Common = 1 pont  ·  Rare = 2 pont  ·  Legend = 3 pont  ·  Unique = 4 pont  ·  közép = kezdő node"
+               Foreground="#93AABE" FontSize="10" TextWrapping="Wrap"/>
+  </StackPanel>
+</UserControl>

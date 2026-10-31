@@ -1,22 +1,164 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:views="using:AION_2_Companion.Views"
              x:Class="AION_2_Companion.Views.LeaderboardsView"
+             x:CompileBindings="False"
              Background="Transparent">
-  <Grid>
-    <views:UnderForgeView x:Name="UnderForgeContent"/>
-    <ScrollViewer x:Name="DeveloperContent" IsVisible="False" VerticalScrollBarVisibility="Auto">
-      <StackPanel Spacing="18" MaxWidth="1080" Margin="0,0,8,28">
-        <StackPanel Spacing="4"><TextBlock Text="{DynamicResource LeaderboardsKicker}" Classes="kicker"/><TextBlock Text="{DynamicResource LeaderboardsTitle}" Classes="h1" FontSize="29"/><TextBlock Text="{DynamicResource LeaderboardsSubtitle}" Classes="body"/></StackPanel>
-        <Border Classes="hero" Padding="18"><WrapPanel><ComboBox Width="200" IsEnabled="False" Margin="0,0,10,0"/><ComboBox Width="200" IsEnabled="False" Margin="0,0,10,0"/><ComboBox Width="200" IsEnabled="False"/></WrapPanel></Border>
-        <Border Classes="panel" Padding="18">
-          <StackPanel Spacing="12">
-            <Grid ColumnDefinitions="54,1.3*,1.2*,120,150" ColumnSpacing="10"><TextBlock Text="#" Classes="kicker"/><TextBlock Grid.Column="1" Text="{DynamicResource LeaderboardPlayer}" Classes="kicker"/><TextBlock Grid.Column="2" Text="{DynamicResource LeaderboardBoss}" Classes="kicker"/><TextBlock Grid.Column="3" Text="{DynamicResource LeaderboardDps}" Classes="kicker"/><TextBlock Grid.Column="4" Text="{DynamicResource LeaderboardServer}" Classes="kicker"/></Grid>
-            <Border Classes="rowline"/>
-            <StackPanel Spacing="8" Margin="0,38"><Border Classes="goldPill" HorizontalAlignment="Center"><TextBlock Text="{DynamicResource StillUnderForge}" Classes="kicker" FontSize="9"/></Border><TextBlock Text="{DynamicResource LeaderboardsNotAvailable}" Classes="body" TextAlignment="Center"/></StackPanel>
-          </StackPanel>
-        </Border>
+  <Grid RowDefinitions="Auto,Auto,Auto,*">
+    <Grid ColumnDefinitions="*,Auto" Margin="0,0,8,16">
+      <StackPanel Spacing="4">
+        <TextBlock Text="{DynamicResource LeaderboardsKicker}" Classes="kicker"/>
+        <TextBlock Text="{DynamicResource LeaderboardsTitle}" Classes="h1" FontSize="29"/>
+        <TextBlock Text="{DynamicResource LeaderboardsSubtitle}" Classes="body"/>
       </StackPanel>
-    </ScrollViewer>
+      <Border Grid.Column="1" Classes="inset" Padding="4" VerticalAlignment="Bottom">
+        <StackPanel Orientation="Horizontal" Spacing="4">
+          <Button x:Name="PublicTabButton" Classes="ui primary"
+                  Content="{DynamicResource LeaderboardPublicTab}" Click="PublicTabClick"/>
+          <Button x:Name="MineTabButton" Classes="ui"
+                  Content="{DynamicResource LeaderboardMineTab}" Click="MineTabClick"/>
+        </StackPanel>
+      </Border>
+    </Grid>
+
+    <Border Grid.Row="1" Classes="hero" Padding="16" Margin="0,0,8,14">
+      <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto" ColumnSpacing="10">
+        <StackPanel Spacing="5">
+          <TextBlock Text="{DynamicResource LeaderboardBoss}" Classes="kicker"/>
+          <ComboBox x:Name="BossFilter" Width="220" MinHeight="34"
+                    SelectionChanged="FilterSelectionChanged"/>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Spacing="5">
+          <TextBlock Text="{DynamicResource LeaderboardMetric}" Classes="kicker"/>
+          <ComboBox x:Name="MetricFilter" Width="130" MinHeight="34"
+                    SelectionChanged="FilterSelectionChanged"/>
+        </StackPanel>
+        <StackPanel Grid.Column="2" Spacing="5">
+          <TextBlock Text="{DynamicResource LeaderboardClass}" Classes="kicker"/>
+          <ComboBox x:Name="ClassFilter" Width="160" MinHeight="34"
+                    SelectionChanged="FilterSelectionChanged"/>
+        </StackPanel>
+        <StackPanel Grid.Column="3" Spacing="5">
+          <TextBlock Text="{DynamicResource Search}" Classes="kicker"/>
+          <TextBox x:Name="SearchBox" Watermark="{DynamicResource LeaderboardSearch}"
+                   MinHeight="34" KeyUp="SearchKeyUp"/>
+        </StackPanel>
+        <Button Grid.Column="4" Classes="ui primary" Content="{DynamicResource LeaderboardRefresh}"
+                VerticalAlignment="Bottom" MinHeight="34" Click="RefreshClick"/>
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="2" x:Name="LeaderboardNetworkBanner" IsVisible="False"
+            Background="#342A1F1C" BorderBrush="#8A5D3C" BorderThickness="1"
+            CornerRadius="10" Padding="13,10" Margin="0,0,8,12">
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+        <TextBlock Text="!" Foreground="#FFBD6B" FontWeight="Bold" FontSize="16"/>
+        <TextBlock Grid.Column="1" x:Name="LeaderboardNetworkStatus"
+                   Foreground="#FFD3A5" FontSize="12" TextWrapping="Wrap"/>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="3">
+      <Grid x:Name="PublicPanel" RowDefinitions="*,Auto,Auto" Margin="0,0,8,24">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <Grid>
+            <ItemsControl ItemsSource="{Binding PublicEntries}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="panel" Padding="15" Margin="0,0,0,8">
+                    <Grid ColumnDefinitions="54,1.4*,1.1*,1.1*,120,120" ColumnSpacing="12">
+                      <Border Classes="badge" Width="36" Height="36" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding RankText}" Classes="mono accent"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                      </Border>
+                      <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding CharacterName}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding AccountText}" Classes="hint"/>
+                      </StackPanel>
+                      <StackPanel Grid.Column="2" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding ClassName}" FontWeight="Medium"/>
+                        <TextBlock Text="{Binding ServerName}" Classes="hint"/>
+                      </StackPanel>
+                      <StackPanel Grid.Column="3" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding BossName}" FontWeight="Medium"/>
+                        <TextBlock Text="{Binding DateText}" Classes="hint"/>
+                      </StackPanel>
+                      <StackPanel Grid.Column="4" Spacing="3" VerticalAlignment="Center" HorizontalAlignment="Right">
+                        <TextBlock Text="{DynamicResource LeaderboardDps}" Classes="kicker"/>
+                        <TextBlock Text="{Binding DpsText}" Classes="mono accent" FontSize="15"/>
+                      </StackPanel>
+                      <StackPanel Grid.Column="5" Spacing="3" VerticalAlignment="Center" HorizontalAlignment="Right">
+                        <TextBlock Text="{DynamicResource LeaderboardDamage}" Classes="kicker"/>
+                        <TextBlock Text="{Binding DamageText}" Classes="mono" FontSize="14"/>
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Border x:Name="PublicEmptyState" Classes="panel" Padding="30" IsVisible="False">
+              <StackPanel Spacing="8" HorizontalAlignment="Center">
+                <TextBlock Text="◇" Classes="accent" FontSize="27" HorizontalAlignment="Center"/>
+                <TextBlock x:Name="PublicEmptyText" Text="{DynamicResource LeaderboardNoBosses}"
+                           Classes="body" TextAlignment="Center"/>
+              </StackPanel>
+            </Border>
+          </Grid>
+        </ScrollViewer>
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
+          <Button x:Name="PreviousButton" Classes="ui" Content="{DynamicResource LeaderboardPrevious}"
+                  Click="PreviousClick"/>
+          <TextBlock Grid.Column="1" x:Name="PageText" HorizontalAlignment="Center"
+                     VerticalAlignment="Center" Classes="hint"/>
+          <Button Grid.Column="2" x:Name="NextButton" Classes="ui"
+                  Content="{DynamicResource LeaderboardNext}" Click="NextClick"/>
+        </Grid>
+        <TextBlock Grid.Row="2" Text="{DynamicResource LeaderboardTrust}" Classes="hint"
+                   TextAlignment="Center" Margin="0,10,0,0"/>
+      </Grid>
+
+      <Grid x:Name="MinePanel" IsVisible="False" RowDefinitions="*,Auto" Margin="0,0,8,24">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <Grid>
+            <ItemsControl ItemsSource="{Binding MineEntries}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="panel" Padding="15" Margin="0,0,0,8">
+                    <Grid ColumnDefinitions="1.35*,1.05*,110,110,130,Auto" ColumnSpacing="12">
+                      <StackPanel Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding CharacterName}" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding BossName}" Classes="hint"/>
+                      </StackPanel>
+                      <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding ClassName}" FontWeight="Medium"/>
+                        <TextBlock Text="{Binding ServerName}" Classes="hint"/>
+                      </StackPanel>
+                      <StackPanel Grid.Column="2" Spacing="3" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <TextBlock Text="{DynamicResource LeaderboardDps}" Classes="kicker"/>
+                        <TextBlock Text="{Binding DpsText}" Classes="mono accent"/>
+                      </StackPanel>
+                      <StackPanel Grid.Column="3" Spacing="3" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <TextBlock Text="{DynamicResource LeaderboardDamage}" Classes="kicker"/>
+                        <TextBlock Text="{Binding DamageText}" Classes="mono"/>
+                      </StackPanel>
+                      <StackPanel Grid.Column="4" Spacing="3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding StatusText}" Foreground="{Binding StatusColor}" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding ReviewText}" Classes="hint" TextWrapping="Wrap"/>
+                      </StackPanel>
+                      <Button Grid.Column="5" Classes="ui" Content="{DynamicResource LeaderboardWithdraw}"
+                              IsVisible="{Binding CanWithdraw}" Tag="{Binding Entry}" Click="WithdrawClick"/>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Border x:Name="MineEmptyState" Classes="panel" Padding="30" IsVisible="False">
+              <TextBlock x:Name="MineEmptyText" Text="{DynamicResource LeaderboardSignIn}"
+                         Classes="body" TextAlignment="Center" HorizontalAlignment="Center"/>
+            </Border>
+          </Grid>
+        </ScrollViewer>
+        <TextBlock Grid.Row="1" x:Name="ActionStatusText" Classes="hint" TextAlignment="Center" Margin="0,10,0,0"/>
+      </Grid>
+    </Grid>
   </Grid>
 </UserControl>

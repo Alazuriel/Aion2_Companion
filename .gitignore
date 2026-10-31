@@ -20,6 +20,7 @@ DOCS/
 # stored directly under Data are published.
 *.nfg
 *.nfg*.bak
+*.nsl
 !/Data/ForgeData/*.nfg
 /Data/.nexforge/
 /Private/
@@ -61,3 +62,35 @@ publish/installer/
 /scripts/
 /Tools/
 /Installer/
+
+
+# Local secrets and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.pfx
+*.p12
+*.key
+*.secret
+secrets.json
+appsettings.Local.json
+
+# Visual Studio / Rider local state
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Local logs and temporary files
+*.log
+*.tmp
+*.temp
+*.dmp
+
+# Keep NFL documentation public, hide other NFL sources
+!/NFL/
+/NFL/*
+!/NFL/docs/
+!/NFL/docs/**

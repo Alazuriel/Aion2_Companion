@@ -11,19 +11,31 @@ namespace AION_2_Companion.Core.Accounts;
 public sealed record CharacterProfile(
     string CharacterId,
     string Name,
+    ushort ServerId,
     string ServerName,
     string Region,
     string ClassName,
     int Level,
+    int? CombatPower,
     int? ItemLevel,
     string? Race,
+    string? GuildName,
+    string? TitleName,
+    Uri? ImageUri,
     string VerificationStatus,
     DateTimeOffset UpdatedAtUtc,
+    bool IsCached,
+    bool IsOffline,
+    bool IsPartial,
+    IReadOnlyList<string> Warnings,
     IReadOnlyList<CharacterStat> Stats,
     IReadOnlyList<CharacterGearItem> Gear,
     IReadOnlyList<CharacterTalent> Talents,
     IReadOnlyList<CharacterDevotion> Devotions,
-    IReadOnlyList<CharacterSkill> Skills);
+    IReadOnlyList<CharacterSkill> Skills,
+    IReadOnlyList<string> Titles,
+    string? PetName,
+    string? WingName);
 
 public sealed record CharacterStat(string Key, string Name, string DisplayValue);
 
@@ -34,7 +46,8 @@ public sealed record CharacterGearItem(
     string? Rarity,
     int? ItemLevel,
     int? EnchantLevel,
-    Uri? IconUri);
+    Uri? IconUri,
+    string? Details = null);
 
 public sealed record CharacterTalent(
     string TalentId,
@@ -49,14 +62,17 @@ public sealed record CharacterDevotion(
     string Name,
     string? Category,
     int Rank,
-    Uri? IconUri);
+    Uri? IconUri,
+    int? CompletionPercent = null);
 
 public sealed record CharacterSkill(
     string SkillId,
     string Name,
     int Level,
     string? Grade,
-    Uri? IconUri);
+    Uri? IconUri,
+    string? Category = null,
+    bool? Equipped = null);
 
 public sealed class CharacterProfileService
 {

@@ -40,6 +40,7 @@ public partial class MainWindow : Window
     private List<OnboardingStep> _onboardingSteps = new();
     private int _onboardingIndex = -1;
     private bool _onboardingPulseHigh;
+    private string _characterDetailsReturnPage = "MyCharacters";
 
     private sealed record OnboardingStep(
         string PageKey,
@@ -113,12 +114,39 @@ public partial class MainWindow : Window
 
     private async void MainWindowOpened(object? sender, EventArgs e)
     {
+        if (Program.ReadmeScreenshotsRequested)
+        {
+            await CaptureReadmeScreenshotsAsync();
+            return;
+        }
+
         EnsureTrayIcon();
 
         if (Program.TestLoginRequested)
             return;
 
         await CompleteStartupAsync();
+    }
+
+    private async Task CaptureReadmeScreenshotsAsync()
+    {
+        try
+        {
+            string directory = await ReadmeScreenshotService.CaptureAsync(this);
+            DebugConsole.Log("readme", $"Screenshots saved: {directory}");
+        }
+        catch (Exception ex)
+        {
+            DebugConsole.Log("readme", $"Screenshot capture failed: {ex.Message}");
+        }
+        finally
+        {
+            _forceExit = true;
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+                desktop.Shutdown();
+            else
+                Close();
+        }
     }
 
     private async Task<bool> CompleteStartupAsync()
@@ -467,7 +495,7 @@ public partial class MainWindow : Window
             "Account" => CreateAccountView(),
             "MyCharacters" => CreateMyCharactersView(),
             "CharacterDetails" => CreateCharacterDetailsView(),
-            "CharacterSearch" => new CharacterSearchView(),
+            "CharacterSearch" => CreateCharacterSearchView(),
             "Leaderboards" => new LeaderboardsView(),
             "EventTimers" => new EventTimersView(),
             "Boss" => new UnderForgeView(),
@@ -487,6 +515,7 @@ public partial class MainWindow : Window
             host.Content is not EventTimersView &&
             host.Content is not AccountView &&
             host.Content is not MyCharactersView &&
+            host.Content is not CharacterSearchView &&
             host.Content is not CharacterDetailsView)
             pageView.DataContext = DataContext;
 
@@ -533,14 +562,31 @@ public partial class MainWindow : Window
     private MyCharactersView CreateMyCharactersView()
     {
         var view = new MyCharactersView();
-        view.OpenCharacterRequested += (_, _) => ShowPage("CharacterDetails");
+        view.OpenCharacterRequested += (_, _) =>
+        {
+            _characterDetailsReturnPage = "MyCharacters";
+            ShowPage("CharacterDetails");
+        };
+        view.OpenSearchRequested += (_, _) => ShowPage("CharacterSearch");
+        return view;
+    }
+
+    private CharacterSearchView CreateCharacterSearchView()
+    {
+        var view = new CharacterSearchView();
+        view.OpenSelfRequested += (_, _) => ShowPage("MyCharacters");
+        view.OpenProfileRequested += (_, _) =>
+        {
+            _characterDetailsReturnPage = "CharacterSearch";
+            ShowPage("CharacterDetails");
+        };
         return view;
     }
 
     private CharacterDetailsView CreateCharacterDetailsView()
     {
         var view = new CharacterDetailsView();
-        view.BackRequested += (_, _) => ShowPage("MyCharacters");
+        view.BackRequested += (_, _) => ShowPage(_characterDetailsReturnPage);
         return view;
     }
 

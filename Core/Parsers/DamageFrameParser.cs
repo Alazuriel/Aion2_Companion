@@ -63,19 +63,35 @@ public static class DamageScanner
         if (!isHit && !isNested)
             return found;
 
-        var origin = isHit ? HitOrigin.HitOpcode : HitOrigin.NestedInWrapper;
-
-        int off = 0;
-        while (off < payload.Length)
+        if (isHit)
         {
-            if (TryParseHit(payload, off, origin, out var hit) && hit.Damage >= minDamage)
+            // A 04 38 payload pontosan egy találati rekorddal kezdődik. Az
+            // eltolt újrapróbálás ugyanazt a találatot több, hamis actor/target
+            // párral is felismerhette és többször beszámíthatta.
+            if (TryParseHit(payload, 0, HitOrigin.HitOpcode, out var hit) &&
+                hit.Damage >= minDamage)
+                found.Add(hit);
+
+            return found;
+        }
+
+        // A Characters wrapperben csak a tényleges, beágyazott 04 38 marker
+        // után próbálunk rekordot olvasni. A teljes payload minden offsetjének
+        // vizsgálata véletlen varint-egyezésekből hamis sebzéseket gyártott.
+        for (int marker = 0; marker + 2 < payload.Length; marker++)
+        {
+            if (payload[marker] != HitOp0 || payload[marker + 1] != HitOp1)
+                continue;
+
+            int recordStart = marker + 2;
+            if (TryParseHit(
+                    payload,
+                    recordStart,
+                    HitOrigin.NestedInWrapper,
+                    out var hit) &&
+                hit.Damage >= minDamage)
             {
                 found.Add(hit);
-                off += Math.Max(1, hit.Consumed); // a rekord bájtjain belül nincs újabb rekord
-            }
-            else
-            {
-                off++;
             }
         }
 

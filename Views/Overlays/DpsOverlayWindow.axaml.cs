@@ -139,10 +139,10 @@ public partial class DpsOverlayWindow : Window
         {
             double percent = Math.Clamp(s.BossHpPercent ?? 0, 0, 100);
             this.FindControl<ProgressBar>("BossHpBar")!.Value = percent;
-            this.FindControl<TextBlock>("BossHpText")!.Text = s.BossHpPercent.HasValue
-                ? s.BossCurrentHp.HasValue && s.MobMaxHp > 0
+            this.FindControl<TextBlock>("BossHpText")!.Text = s.BossCurrentHp.HasValue
+                ? s.BossHpPercent.HasValue && s.MobMaxHp > 0
                     ? $"{Meter.Num(s.BossCurrentHp.Value)} / {Meter.Num(s.MobMaxHp)}  ·  {percent:F1}%"
-                    : $"{percent:F1}%"
+                    : Meter.Num(s.BossCurrentHp.Value)
                 : s.MobMaxHp > 0
                     ? $"— / {Meter.Num(s.MobMaxHp)}"
                     : LocalizationService.Get("BossHpWaiting");
@@ -153,6 +153,17 @@ public partial class DpsOverlayWindow : Window
                 double remaining => LocalizationService.Format("EnrageIn", FormatTime(remaining)),
                 _ => LocalizationService.Get("EnrageUnknown"),
             };
+
+            bool predictionEnabled = CompanionSettings.ShowBossDeathPrediction;
+            this.FindControl<Button>("DeathPredictionToggle")!.Classes.Set(
+                "primary", predictionEnabled);
+            this.FindControl<TextBlock>("DeathPredictionText")!.Text = !predictionEnabled
+                ? LocalizationService.Get("Off")
+                : s.EstimatedDeathSeconds is double estimate
+                    ? FormatPredictionTime(estimate)
+                    : s.BossCurrentHp.HasValue
+                        ? LocalizationService.Get("DeathPredictionCalculating")
+                        : LocalizationService.Get("DeathPredictionUnavailable");
         }
 
         // Rangsor
@@ -272,6 +283,16 @@ public partial class DpsOverlayWindow : Window
         return $"{total / 60:00}:{total % 60:00}";
     }
 
+    private static string FormatPredictionTime(double seconds)
+    {
+        int total = Math.Max(0, (int)Math.Ceiling(seconds));
+        if (total >= 3600)
+            return $"{total / 3600}:{total / 60 % 60:00}:{total % 60:00}";
+        return total >= 60
+            ? $"{total / 60}:{total % 60:00}"
+            : $"{total}s";
+    }
+
     // ---------- Vezérlők ----------
 
     private void PrevModeClick(object? sender, RoutedEventArgs e)
@@ -313,6 +334,13 @@ public partial class DpsOverlayWindow : Window
             : DpsEncounterMode.All;
     }
 
+    private void DeathPredictionToggleClick(object? sender, RoutedEventArgs e)
+    {
+        CompanionSettings.ShowBossDeathPrediction =
+            !CompanionSettings.ShowBossDeathPrediction;
+        Refresh();
+    }
+
     private void OpacityClick(object? sender, RoutedEventArgs e)
     {
         _opacityIndex = (_opacityIndex + 1) % Opacities.Length;
@@ -323,7 +351,7 @@ public partial class DpsOverlayWindow : Window
     {
         _collapsed = !_collapsed;
         this.FindControl<Grid>("Body")!.IsVisible = !_collapsed;
-        Height = _collapsed ? 132 : 408;
+        Height = _collapsed ? 150 : 408;
     }
 
     private void RowPressed(object? sender, PointerPressedEventArgs e)

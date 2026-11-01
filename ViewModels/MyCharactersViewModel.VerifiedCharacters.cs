@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using AION_2_Companion.Core;
 using AION_2_Companion.Core.Accounts;
 using AION_2_Companion.Core.Characters;
 using AION_2_Companion.Core.Characters.Verification;
@@ -22,7 +23,7 @@ public sealed partial class MyCharactersViewModel
     private DateTimeOffset _nextAutomaticVerifiedSync = DateTimeOffset.MinValue;
     private int _verifiedGeneration;
     private bool _verifiedIsLoading;
-    private string _verifiedStatusText = "Connect a Nexforge account to see your verified characters.";
+    private string _verifiedStatusText = LocalizationService.Get("UiMyCharactersConnectNexforgeAccountSeeVerifiedCharacters");
     private bool _verifiedDisposed;
 
     public ObservableCollection<VerifiedCharacterSummary> VerifiedCharacters { get; } = new();
@@ -56,6 +57,21 @@ public sealed partial class MyCharactersViewModel
         VerifiedAccountChanged(this, EventArgs.Empty);
     }
 
+    private void RefreshVerifiedStatusLocalization()
+    {
+        if (_verifiedDisposed || VerifiedIsLoading) return;
+        if (string.IsNullOrWhiteSpace(_verifiedAccountId))
+        {
+            VerifiedStatusText = AccountService.Shared.Snapshot.State == AccountConnectionState.Offline
+                ? LocalizationService.Get("UiMyCharactersConnectNexforgeConfirmVerifiedCharacters")
+                : LocalizationService.Get("UiMyCharactersConnectNexforgeAccountSeeVerifiedCharacters");
+        }
+        else if (VerifiedCharacters.Count == 0)
+        {
+            VerifiedStatusText = LocalizationService.Get("UiMyCharactersNoServerVerifiedCharactersAreLinkedThisAccountYet");
+        }
+    }
+
     private void VerifiedAccountChanged(object? sender, EventArgs e) => Dispatcher.UIThread.Post(() =>
     {
         if (_verifiedDisposed) return;
@@ -68,8 +84,8 @@ public sealed partial class MyCharactersViewModel
             _verifiedAccountId = null;
             ClearVerifiedCharacters();
             VerifiedStatusText = snapshot.State == AccountConnectionState.Offline
-                ? "Connect to Nexforge to confirm your verified characters."
-                : "Connect a Nexforge account to see your verified characters.";
+                ? LocalizationService.Get("UiMyCharactersConnectNexforgeConfirmVerifiedCharacters")
+                : LocalizationService.Get("UiMyCharactersConnectNexforgeAccountSeeVerifiedCharacters");
             SyncVerifiedCharactersCommand.NotifyCanExecuteChanged();
             return;
         }
@@ -146,7 +162,7 @@ public sealed partial class MyCharactersViewModel
         OnPropertyChanged(nameof(IsVerified));
         OnPropertyChanged(nameof(VerificationBadge));
         VerifiedIsLoading = true;
-        VerifiedStatusText = "Syncing verified characters...";
+        VerifiedStatusText = LocalizationService.Get("UiMyCharactersSyncingVerifiedCharacters");
 
         try
         {
@@ -157,8 +173,8 @@ public sealed partial class MyCharactersViewModel
                 if (!IsCurrentVerifiedRequest(generation, accountId)) return;
                 foreach (VerifiedCharacterSummary entry in result) VerifiedCharacters.Add(entry);
                 VerifiedStatusText = result.Count == 0
-                    ? "No server-verified characters are linked to this account yet."
-                    : $"{result.Count} Nexforge-verified character(s).";
+                    ? LocalizationService.Get("UiMyCharactersNoServerVerifiedCharactersAreLinkedThisAccountYet")
+                    : LocalizationService.Format("UiMyCharacters0NexforgeVerifiedCharacterS", result.Count);
                 OnPropertyChanged(nameof(HasVerifiedCharacters));
                 OnPropertyChanged(nameof(IsVerified));
                 OnPropertyChanged(nameof(VerificationBadge));
@@ -177,7 +193,7 @@ public sealed partial class MyCharactersViewModel
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 if (IsCurrentVerifiedRequest(generation, accountId))
-                    VerifiedStatusText = "Could not confirm verified characters right now. Please retry the sync.";
+                    VerifiedStatusText = LocalizationService.Get("UiMyCharactersCouldNotConfirmVerifiedCharactersRightNowPleaseRetrySy");
             });
         }
         finally

@@ -7,8 +7,8 @@
 
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
         <StackPanel Spacing="4" VerticalAlignment="Center">
-          <TextBlock Text="Capture (fejlesztői)" Classes="h1"/>
-          <TextBlock Text="Fejlesztői nézet: élő forgalom és opcode-felismerés. A végleges verzióban automatikusan fut, és innen eltűnik."
+          <TextBlock Text="{DynamicResource UiCaptureCaptureDeveloper}" Classes="h1"/>
+          <TextBlock Text="{DynamicResource UiCaptureDeveloperViewLiveTrafficOpcodeRecognitionFinalVersionI}"
                      Classes="body"/>
         </StackPanel>
         <Border Grid.Column="1" Classes="pill" Padding="12,6" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -23,8 +23,8 @@
       <Border Classes="panel" Padding="18">
         <Grid ColumnDefinitions="*,176" ColumnSpacing="24">
           <StackPanel Spacing="8">
-            <TextBlock Text="Packet capture" Classes="section"/>
-            <TextBlock Text="Élő hálózati forgalom és OPCODE-felismerés" Classes="body"/>
+            <TextBlock Text="{DynamicResource UiCapturePacketCapture}" Classes="section"/>
+            <TextBlock Text="{DynamicResource UiCaptureLiveNetworkTrafficOpcodeRecognition}" Classes="body"/>
             <TextBlock Text="{Binding CaptureDescription}" Classes="hint"/>
             <ComboBox ItemsSource="{Binding CaptureDevices}"
                       SelectedItem="{Binding SelectedCaptureDevice}"
@@ -42,24 +42,24 @@
           </StackPanel>
           <StackPanel Grid.Column="1" Spacing="8" VerticalAlignment="Center">
             <Button Classes="ui primary"
-                    Content="Start capture"
+                    Content="{DynamicResource UiCaptureStartCapture}"
                     Command="{Binding StartCaptureCommand}"
                     IsEnabled="{Binding CanStartCapture}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"/>
             <Button Classes="ui"
-                    Content="Stop capture"
+                    Content="{DynamicResource UiCaptureStopCapture}"
                     Command="{Binding StopCaptureCommand}"
                     IsEnabled="{Binding IsCapturing}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"/>
             <Button Classes="ui"
-                    Content="Export raw"
+                    Content="{DynamicResource UiCaptureExportRaw}"
                     Command="{Binding ExportOpcodeProbeCommand}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"/>
             <Button Classes="ui"
-                    Content="Export opcodes"
+                    Content="{DynamicResource UiCaptureExportOpcodes}"
                     Command="{Binding ExportDecodedFramesCommand}"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"/>
@@ -71,22 +71,22 @@
       <Border Classes="panel" Padding="0">
         <Grid ColumnDefinitions="*,*,*">
           <StackPanel Margin="20,16" Spacing="6">
-            <TextBlock Text="Received frames" Classes="eyebrow"/>
+            <TextBlock Text="{DynamicResource UiCaptureReceivedFrames}" Classes="eyebrow"/>
             <TextBlock Text="{Binding ReceivedFrames}" Classes="metric" FontSize="26"/>
-            <TextBlock Text="Beérkezett frame-ek" Classes="hint"/>
+            <TextBlock Text="{DynamicResource UiCaptureReceivedFrames}" Classes="hint"/>
           </StackPanel>
           <Border Grid.Column="1" BorderBrush="#242A34" BorderThickness="1,0,0,0">
             <StackPanel Margin="20,16" Spacing="6">
-              <TextBlock Text="Opcode activity" Classes="eyebrow"/>
+              <TextBlock Text="{DynamicResource UiCaptureOpcodeActivity}" Classes="eyebrow"/>
               <TextBlock Text="{Binding ParsedOpcodes}" Classes="metric accent" FontSize="26"/>
-              <TextBlock Text="Feldolgozott események" Classes="hint"/>
+              <TextBlock Text="{DynamicResource UiCaptureProcessedEvents}" Classes="hint"/>
             </StackPanel>
           </Border>
           <Border Grid.Column="2" BorderBrush="#242A34" BorderThickness="1,0,0,0">
             <StackPanel Margin="20,16" Spacing="6">
-              <TextBlock Text="Unknown opcodes" Classes="eyebrow"/>
+              <TextBlock Text="{DynamicResource UiCaptureUnknownOpcodes}" Classes="eyebrow"/>
               <TextBlock Text="{Binding UnknownOpcodes}" Classes="metric warn" FontSize="26"/>
-              <TextBlock Text="Még nem értelmezett" Classes="hint"/>
+              <TextBlock Text="{DynamicResource UiCaptureNotYetDecoded}" Classes="hint"/>
             </StackPanel>
           </Border>
         </Grid>
@@ -96,8 +96,8 @@
       <Border Classes="panel" Padding="18">
         <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="*,*" RowSpacing="14" ColumnSpacing="16">
           <StackPanel Spacing="2">
-            <TextBlock Text="Protocol explorer" Classes="section"/>
-            <TextBlock Text="Amit a Companion eddig kiolvasott." Classes="body"/>
+            <TextBlock Text="{DynamicResource UiCaptureProtocolExplorer}" Classes="section"/>
+            <TextBlock Text="{DynamicResource UiCaptureWhatCompanionHasDecodedSoFar}" Classes="body"/>
           </StackPanel>
           <Border Grid.Column="1" Classes="pill" HorizontalAlignment="Right" VerticalAlignment="Center">
             <TextBlock Text="{Binding LatestConfidence}" Classes="accent" FontSize="12" FontWeight="Medium"/>
@@ -108,13 +108,13 @@
           </StackPanel>
           <Border Grid.Row="2" Classes="inset" Padding="16" MinHeight="168">
             <StackPanel Spacing="8">
-              <TextBlock Text="Party name" Classes="eyebrow"/>
+              <TextBlock Text="{DynamicResource UiCapturePartyName}" Classes="eyebrow"/>
               <TextBlock Text="{Binding PartyName}"
                          FontSize="15"
                          FontWeight="Medium"
                          Classes="accent"
                          TextWrapping="Wrap"/>
-              <TextBlock Text="Party members" Classes="eyebrow" Margin="0,6,0,0"/>
+              <TextBlock Text="{DynamicResource UiCapturePartyMembers}" Classes="eyebrow" Margin="0,6,0,0"/>
               <ItemsControl ItemsSource="{Binding PartyMembers}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate>
@@ -149,8 +149,8 @@
         <Grid RowDefinitions="Auto,Auto,*">
           <Grid ColumnDefinitions="*,Auto" Margin="18,14,18,12">
             <StackPanel Spacing="2">
-              <TextBlock Text="Live event stream" Classes="section"/>
-              <TextBlock Text="A beérkező és felismert csomagok naplója" Classes="hint"/>
+              <TextBlock Text="{DynamicResource UiCaptureLiveEventStream}" Classes="section"/>
+              <TextBlock Text="{DynamicResource UiCaptureLogIncomingRecognizedPackets}" Classes="hint"/>
             </StackPanel>
             <Border Grid.Column="1" Classes="pill" VerticalAlignment="Center">
               <TextBlock Text="{Binding LogCount, StringFormat='{}{0} events'}"
@@ -164,11 +164,11 @@
                   BorderThickness="0,1,0,1"
                   Padding="18,8">
             <Grid ColumnDefinitions="96,148,84,64,*" ColumnSpacing="12">
-              <TextBlock Text="Time" Classes="eyebrow"/>
-              <TextBlock Grid.Column="1" Text="Direction" Classes="eyebrow"/>
-              <TextBlock Grid.Column="2" Text="Opcode" Classes="eyebrow"/>
-              <TextBlock Grid.Column="3" Text="Length" Classes="eyebrow"/>
-              <TextBlock Grid.Column="4" Text="Event" Classes="eyebrow"/>
+              <TextBlock Text="{DynamicResource UiCaptureTime}" Classes="eyebrow"/>
+              <TextBlock Grid.Column="1" Text="{DynamicResource UiCaptureDirection}" Classes="eyebrow"/>
+              <TextBlock Grid.Column="2" Text="{DynamicResource UiCaptureOpcode}" Classes="eyebrow"/>
+              <TextBlock Grid.Column="3" Text="{DynamicResource UiCaptureLength}" Classes="eyebrow"/>
+              <TextBlock Grid.Column="4" Text="{DynamicResource UiCaptureEvent}" Classes="eyebrow"/>
             </Grid>
           </Border>
           <ScrollViewer Grid.Row="2" MaxHeight="320">

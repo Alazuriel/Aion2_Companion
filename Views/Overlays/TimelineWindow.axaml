@@ -31,7 +31,7 @@
       <!-- 0. Fejléc -->
       <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Background="Transparent" PointerPressed="HeaderDrag">
         <StackPanel Spacing="2">
-          <TextBlock Text="COMBAT TIMELINE" Classes="kicker" FontSize="9"/>
+          <TextBlock Text="{DynamicResource UiTimelineCombatTimeline}" Classes="kicker" FontSize="9"/>
           <TextBlock Name="TimelineTitle" FontSize="18" FontWeight="SemiBold"/>
           <TextBlock Name="TimelineSub" FontSize="11" Foreground="#71879B"/>
         </StackPanel>
@@ -40,9 +40,9 @@
 
       <!-- 1. Metrika váltó -->
       <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6" Margin="0,12,0,0">
-        <Button Name="ModeDps" Tag="Dps" Classes="ui" Content="DPS" FontSize="12" Click="ModeClick"/>
+        <Button Name="ModeDps" Tag="Dps" Classes="ui" Content="{DynamicResource DpsMeter}" FontSize="12" Click="ModeClick"/>
         <Button Name="ModeDamage" Tag="Damage" Classes="ui" Content="{DynamicResource TimelineTotalDamage}" FontSize="12" Click="ModeClick"/>
-        <Button Name="ModeHps" Tag="Hps" Classes="ui" Content="HPS" FontSize="12" Click="ModeClick"/>
+        <Button Name="ModeHps" Tag="Hps" Classes="ui" Content="{DynamicResource UiTimelineHps}" FontSize="12" Click="ModeClick"/>
         <Button Name="ModeHeal" Tag="Heal" Classes="ui" Content="{DynamicResource TimelineTotalHealing}" FontSize="12" Click="ModeClick"/>
       </StackPanel>
 

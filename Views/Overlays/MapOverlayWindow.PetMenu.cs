@@ -116,21 +116,21 @@ public partial class MapOverlayWindow
         switch (PetFarmCollectionStatus)
         {
             case PetCollectionSyncState.Ready:
-                code.Text = "READY";
+                code.Text = LocalizationService.Get("PetReady");
                 title.Text = LocalizationService.Get("PetReadyTitle");
                 description.Text = LocalizationService.Get("PetReadyText");
                 color = "#58E0B2";
                 break;
 
             case PetCollectionSyncState.Partial:
-                code.Text = "PARTIAL";
+                code.Text = LocalizationService.Get("PetPartial");
                 title.Text = LocalizationService.Get("PetPartialTitle");
                 description.Text = LocalizationService.Get("PetPartialText");
                 color = "#45DFFF";
                 break;
 
             default:
-                code.Text = "UNKNOWN";
+                code.Text = LocalizationService.Get("PetUnknown");
                 title.Text = LocalizationService.Get("PetUnknownTitle");
                 description.Text = LocalizationService.Get("PetUnknownText");
                 color = "#FFB454";

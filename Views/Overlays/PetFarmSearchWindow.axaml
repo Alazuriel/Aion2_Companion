@@ -57,7 +57,7 @@
           <Ellipse x:Name="CollectionStatusDot" Width="9" Height="9" Fill="#FFB454"
                    VerticalAlignment="Center"/>
           <StackPanel Grid.Column="1" Spacing="1" MinWidth="150">
-            <TextBlock x:Name="CollectionStatusCode" Text="UNKNOWN" Classes="kicker" FontSize="9"/>
+            <TextBlock x:Name="CollectionStatusCode" Text="{DynamicResource PetUnknown}" Classes="kicker" FontSize="9"/>
             <TextBlock x:Name="CollectionStatusTitle" Text="{DynamicResource PetUnknownTitle}"
                        FontSize="13" FontWeight="SemiBold"/>
           </StackPanel>

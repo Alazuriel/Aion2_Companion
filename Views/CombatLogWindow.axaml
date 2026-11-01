@@ -47,7 +47,7 @@
         <TextBlock Text="{DynamicResource CombatLogSubtitle}" Classes="body"/>
       </StackPanel>
       <StackPanel Grid.Column="1" Width="230" Spacing="5" VerticalAlignment="Bottom" Margin="14,0,0,0">
-        <TextBlock Text="LOCAL STORAGE" Classes="eyebrow" TextAlignment="Right"/>
+        <TextBlock Text="{DynamicResource UiCombatLogLocalStorage}" Classes="eyebrow" TextAlignment="Right"/>
         <TextBlock Name="StorageText" Classes="hint" TextAlignment="Right"
                    TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
       </StackPanel>
@@ -77,7 +77,7 @@
       <Border Classes="panel" Padding="12">
         <Grid RowDefinitions="Auto,Auto,*,Auto">
           <StackPanel Spacing="5" Margin="5,4,5,12">
-            <TextBlock Text="FIGHT LIBRARY" Classes="kicker"/>
+            <TextBlock Text="{DynamicResource UiCombatLogFightLibrary}" Classes="kicker"/>
             <TextBlock Text="{DynamicResource SavedFights}" FontSize="18" FontWeight="SemiBold"/>
             <TextBlock Name="FightCountText" Classes="hint" TextWrapping="Wrap"/>
           </StackPanel>
@@ -127,7 +127,7 @@
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
             <StackPanel Spacing="6">
-              <TextBlock Text="SELECTED ENCOUNTER" Classes="kicker"/>
+              <TextBlock Text="{DynamicResource UiCombatLogSelectedEncounter}" Classes="kicker"/>
               <TextBlock Name="EncounterName" Text="{DynamicResource NoSelectedFight}"
                          FontSize="25" FontWeight="Bold"/>
               <TextBlock Name="EncounterMeta" Text="—" Classes="body" TextWrapping="Wrap"/>
@@ -180,11 +180,11 @@
 
           <!-- Use regular child Grids rather than lazy TabControl Content templates so FindControl works. -->
           <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="10" Margin="0,0,0,12">
-            <Button Name="BreakdownTabButton" Classes="logTab selected" Content="PERFORMANCE"
+            <Button Name="BreakdownTabButton" Classes="logTab selected" Content="{DynamicResource UiCombatLogPerformance}"
                     Tag="Breakdown" Click="DetailsTabClick"/>
-            <Button Name="NotesTabButton" Classes="logTab" Content="NOTES"
+            <Button Name="NotesTabButton" Classes="logTab" Content="{DynamicResource UiCombatLogNotes}"
                     Tag="Notes" Click="DetailsTabClick"/>
-            <Button Name="EnemiesTabButton" Classes="logTab" Content="ENCOUNTER INFO"
+            <Button Name="EnemiesTabButton" Classes="logTab" Content="{DynamicResource UiCombatLogEncounterInfo}"
                     Tag="Enemies" Click="DetailsTabClick"/>
           </StackPanel>
 
@@ -194,7 +194,7 @@
                 <Grid RowDefinitions="Auto,*">
                   <StackPanel Margin="4,0,4,12" Spacing="4">
                     <TextBlock Text="{DynamicResource Players}" Classes="section"/>
-                    <TextBlock Text="Select a player to inspect damage and healing" Classes="hint" TextWrapping="Wrap"/>
+                    <TextBlock Text="{DynamicResource UiCombatLogSelectPlayerInspectDamageHealing}" Classes="hint" TextWrapping="Wrap"/>
                   </StackPanel>
                   <ListBox Grid.Row="1" Name="PlayerList" ItemsSource="{Binding Players}"
                            SelectionChanged="PlayerSelectionChanged">
@@ -232,7 +232,7 @@
                     </WrapPanel>
                   </Grid>
                   <Grid Grid.Row="1" ColumnDefinitions="*,80,48,50" Margin="4,18,4,9">
-                    <TextBlock Text="SKILL" Classes="eyebrow"/>
+                    <TextBlock Text="{DynamicResource UiCombatLogSkill}" Classes="eyebrow"/>
                     <TextBlock Grid.Column="1" Text="{DynamicResource Total}" Classes="eyebrow" TextAlignment="Right"/>
                     <TextBlock Grid.Column="2" Text="{DynamicResource Hit}" Classes="eyebrow" TextAlignment="Right"/>
                     <TextBlock Grid.Column="3" Text="{DynamicResource Crit}" Classes="eyebrow" TextAlignment="Right"/>
@@ -265,8 +265,8 @@
             <Border Name="NotesContentPanel" Classes="inset" Padding="18" IsVisible="False">
               <Grid RowDefinitions="Auto,*,Auto">
                 <StackPanel Spacing="5" Margin="0,0,0,14">
-                  <TextBlock Text="FIGHT NOTES" Classes="section"/>
-                  <TextBlock Text="Personal notes stay in the local encounter archive." Classes="hint"/>
+                  <TextBlock Text="{DynamicResource UiCombatLogFightNotes}" Classes="section"/>
+                  <TextBlock Text="{DynamicResource UiCombatLogPersonalNotesStayLocalEncounterArchive}" Classes="hint"/>
                 </StackPanel>
                 <TextBox Grid.Row="1" Name="NotesBox" Watermark="{DynamicResource FightNotesWatermark}"
                          AcceptsReturn="True" TextWrapping="Wrap" MinHeight="120"
@@ -279,8 +279,8 @@
 
             <Border Name="EncounterEnemiesPanel" Classes="inset" Padding="18" IsVisible="False">
               <StackPanel Spacing="12">
-                <TextBlock Text="ENCOUNTER DETAILS" Classes="section"/>
-                <TextBlock Text="Enemies and pulls recorded during this fight" Classes="hint"/>
+                <TextBlock Text="{DynamicResource UiCombatLogEncounterDetails}" Classes="section"/>
+                <TextBlock Text="{DynamicResource UiCombatLogEnemiesPullsRecordedDuringThisFight}" Classes="hint"/>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="250">
                   <TextBlock Name="EncounterMobsText" Text="—" TextWrapping="Wrap" Foreground="#CBDEEC"/>
                 </ScrollViewer>

@@ -4,7 +4,54 @@ All notable user-facing changes are recorded here. Versions follow Semantic Vers
 
 ## Unreleased
 
-## [Unreleased] — v0.1.8 candidate
+##  [v0.1.9] - 2026-10-01
+
+**Nexforge Update**
+
+This update focuses on easier character management, a redesigned update experience, and improvements to character profiles.
+
+### Added
+
+- Added a Verified Characters section in Character Center, allowing you to view characters linked to your Nexforge Account.
+- Added the ability to sync your verified characters and select which character to view.
+- Added automatic update notifications when a new Companion version is available.
+- Added an improved Update Center showing release notes, download progress, and installation options.
+- Added optional background downloads for new updates. Installation remains under your control.
+
+### Improved
+
+- Improved character switching and profile loading to better keep character information separate.
+- Improved verification status handling when changing characters or switching Nexforge Accounts.
+- Improved the appearance of character profiles, including verification indicators and long text values.
+- Improved update management with download cancellation and clearer progress messages.
+- Update installation is designed to avoid interrupting active game monitoring sessions.
+- Improved the display of release notes inside the application.
+
+### Requirements
+
+- Windows 10 or Windows 11 (64-bit)
+- [Npcap](https://npcap.com/#download) for network packet capture
+- AION 2
+- Administrator mode and borderless fullscreen for the Map Helper
+
+### Installation
+
+1. Download the official Companion installer from the release assets.
+2. Run the installer and follow the instructions.
+3. Install Npcap if it is not already available.
+4. Launch AION 2 Companion.
+
+Existing users can use the in-app update feature when a newer version becomes available.
+
+No separate .NET installation is required when using the official self-contained installer.
+
+---
+
+Developed by **Nexforge Studios**.
+
+*An independent fan-made companion application. Not affiliated with or endorsed by NCSOFT.*
+
+##  [v0.1.8] - 2026-10-01
 
 ### Added
 - Introduced Character Center with character search, detailed profiles, local caching, and offline access to previously fetched character data.

@@ -5,37 +5,37 @@
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <StackPanel Spacing="18">
       <StackPanel Spacing="4">
-        <TextBlock Text="DPS mérő" Classes="h1"/>
-        <TextBlock Text="Harc közbeni sebzés, DPS és HPS. Amíg a mérés nincs rákötve, a számok minta adatok." Classes="body"/>
+        <TextBlock Text="{DynamicResource UiCombatAnalyticsDpsMeter}" Classes="h1"/>
+        <TextBlock Text="{DynamicResource UiCombatAnalyticsDamageDpsHpsDuringCombatNumbersAreExamplesUntilLiveDat}" Classes="body"/>
       </StackPanel>
 
       <!-- Összesítő sáv -->
       <Border Classes="panel" Padding="0">
         <Grid ColumnDefinitions="*,*,*,*">
           <StackPanel Margin="20,16" Spacing="6">
-            <TextBlock Text="Összes sebzés" Classes="eyebrow"/>
+            <TextBlock Text="{DynamicResource UiCombatAnalyticsTotalDamage}" Classes="eyebrow"/>
             <TextBlock Text="2.84M" Classes="metric" FontSize="26"/>
-            <TextBlock Text="minta" Classes="hint"/>
+            <TextBlock Text="{DynamicResource UiCombatAnalyticsSample}" Classes="hint"/>
           </StackPanel>
           <Border Grid.Column="1" BorderBrush="#242A34" BorderThickness="1,0,0,0">
             <StackPanel Margin="20,16" Spacing="6">
-              <TextBlock Text="DPS" Classes="eyebrow"/>
+              <TextBlock Text="{DynamicResource DpsMeter}" Classes="eyebrow"/>
               <TextBlock Text="18,420" Classes="metric accent" FontSize="26"/>
-              <TextBlock Text="minta" Classes="hint"/>
+              <TextBlock Text="{DynamicResource UiCombatAnalyticsSample}" Classes="hint"/>
             </StackPanel>
           </Border>
           <Border Grid.Column="2" BorderBrush="#242A34" BorderThickness="1,0,0,0">
             <StackPanel Margin="20,16" Spacing="6">
-              <TextBlock Text="Összes gyógyítás" Classes="eyebrow"/>
+              <TextBlock Text="{DynamicResource UiCombatAnalyticsTotalHealing}" Classes="eyebrow"/>
               <TextBlock Text="624K" Classes="metric" FontSize="26"/>
-              <TextBlock Text="minta" Classes="hint"/>
+              <TextBlock Text="{DynamicResource UiCombatAnalyticsSample}" Classes="hint"/>
             </StackPanel>
           </Border>
           <Border Grid.Column="3" BorderBrush="#242A34" BorderThickness="1,0,0,0">
             <StackPanel Margin="20,16" Spacing="6">
-              <TextBlock Text="HPS" Classes="eyebrow"/>
+              <TextBlock Text="{DynamicResource UiCombatAnalyticsHps}" Classes="eyebrow"/>
               <TextBlock Text="4,050" Classes="metric" FontSize="26"/>
-              <TextBlock Text="minta" Classes="hint"/>
+              <TextBlock Text="{DynamicResource UiCombatAnalyticsSample}" Classes="hint"/>
             </StackPanel>
           </Border>
         </Grid>
@@ -45,15 +45,15 @@
       <Border Classes="panel" Padding="18">
         <StackPanel Spacing="12">
           <Grid ColumnDefinitions="*,Auto">
-            <TextBlock Text="Sebzésrangsor" Classes="section"/>
-            <TextBlock Grid.Column="1" Text="Jelenlegi harc" Classes="eyebrow" VerticalAlignment="Center"/>
+            <TextBlock Text="{DynamicResource UiCombatAnalyticsDamageRanking}" Classes="section"/>
+            <TextBlock Grid.Column="1" Text="{DynamicResource UiCombatAnalyticsCurrentFight}" Classes="eyebrow" VerticalAlignment="Center"/>
           </Grid>
 
           <Grid ColumnDefinitions="40,200,*,84" Margin="0,4,0,0">
             <TextBlock Text="#" Classes="eyebrow"/>
-            <TextBlock Grid.Column="1" Text="Játékos" Classes="eyebrow"/>
-            <TextBlock Grid.Column="2" Text="Damage" Classes="eyebrow"/>
-            <TextBlock Grid.Column="3" Text="DPS" Classes="eyebrow" HorizontalAlignment="Right"/>
+            <TextBlock Grid.Column="1" Text="{DynamicResource UiCombatAnalyticsPlayer}" Classes="eyebrow"/>
+            <TextBlock Grid.Column="2" Text="{DynamicResource UiCombatAnalyticsDamage}" Classes="eyebrow"/>
+            <TextBlock Grid.Column="3" Text="{DynamicResource DpsMeter}" Classes="eyebrow" HorizontalAlignment="Right"/>
           </Grid>
 
           <ItemsControl ItemsSource="{Binding CombatRows}">
@@ -91,7 +91,7 @@
         </StackPanel>
       </Border>
 
-      <Button Content="DPS mérő lebegő ablak megnyitása"
+      <Button Content="{DynamicResource UiCombatAnalyticsOpenDpsMeterOverlay}"
               HorizontalAlignment="Left"
               Classes="ui primary"
               Click="OpenOverlayClick"/>

@@ -4,8 +4,8 @@
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <StackPanel Spacing="18">
       <StackPanel Spacing="4">
-        <TextBlock Text="Boss időzítő" Classes="h1"/>
-        <TextBlock Text="DBM-szerű időzítő: pull visszaszámlálás, következő mechanikák és figyelmeztetések." Classes="body"/>
+        <TextBlock Text="{DynamicResource UiBossTimerBossTimer}" Classes="h1"/>
+        <TextBlock Text="{DynamicResource UiBossTimerDbmStyleTimersPullCountdownUpcomingMechanicsWarnings}" Classes="body"/>
       </StackPanel>
 
       <Grid ColumnDefinitions="1.35*,*" ColumnSpacing="16">
@@ -15,11 +15,11 @@
           <StackPanel Spacing="14">
             <Grid ColumnDefinitions="*,Auto">
               <StackPanel Spacing="4">
-                <TextBlock Text="Encounter idővonal" Classes="eyebrow"/>
-                <TextBlock Text="Várakozás encounter adatra" Classes="section"/>
+                <TextBlock Text="{DynamicResource UiBossTimerEncounterTimeline}" Classes="eyebrow"/>
+                <TextBlock Text="{DynamicResource UiBossTimerWaitingEncounterData}" Classes="section"/>
               </StackPanel>
               <Border Grid.Column="1" Classes="pill" VerticalAlignment="Top">
-                <TextBlock Text="minta" Classes="hint" FontSize="11"/>
+                <TextBlock Text="{DynamicResource UiBossTimerSample}" Classes="hint" FontSize="11"/>
               </Border>
             </Grid>
 
@@ -29,7 +29,7 @@
                 <Ellipse Grid.Column="1" Width="8" Height="8" Fill="#9EB8C4"
                          HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,14,0,0"/>
                 <Border Grid.Column="2" Classes="inset" Padding="12,10">
-                  <TextBlock Text="Példa mechanika · előkészülés" FontSize="13"/>
+                  <TextBlock Text="{DynamicResource UiBossTimerExampleMechanicPrepare}" FontSize="13"/>
                 </Border>
               </Grid>
               <Grid ColumnDefinitions="64,20,*">
@@ -37,7 +37,7 @@
                 <Ellipse Grid.Column="1" Width="8" Height="8" Fill="#C4A574"
                          HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,14,0,0"/>
                 <Border Grid.Column="2" Classes="inset" Padding="12,10">
-                  <TextBlock Text="Erős támadás · lépj el" FontSize="13"/>
+                  <TextBlock Text="{DynamicResource UiBossTimerHeavyAttackMoveAway}" FontSize="13"/>
                 </Border>
               </Grid>
               <Grid ColumnDefinitions="64,20,*">
@@ -45,7 +45,7 @@
                 <Ellipse Grid.Column="1" Width="8" Height="8" Fill="#9A9EA8"
                          HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,14,0,0"/>
                 <Border Grid.Column="2" Classes="inset" Padding="12,10">
-                  <TextBlock Text="Területi mechanika · szóródj" FontSize="13"/>
+                  <TextBlock Text="{DynamicResource UiBossTimerAreaMechanicSpreadOut}" FontSize="13"/>
                 </Border>
               </Grid>
             </StackPanel>
@@ -57,19 +57,19 @@
         <!-- Pull timer + beállítások -->
         <Border Grid.Column="1" Classes="panel" Padding="18">
           <StackPanel Spacing="12">
-            <TextBlock Text="Pull visszaszámlálás" Classes="eyebrow"/>
+            <TextBlock Text="{DynamicResource UiBossTimerPullCountdown}" Classes="eyebrow"/>
             <TextBlock Text="00:05" Classes="metric accent" FontSize="44"/>
-            <TextBlock Text="Ready check szükséges" Classes="hint"/>
-            <Button Content="Boss időzítő lebegő ablak"
+            <TextBlock Text="{DynamicResource UiBossTimerReadyCheckRequired}" Classes="hint"/>
+            <Button Content="{DynamicResource UiBossTimerBossTimerOverlay}"
                     Classes="ui primary"
                     Click="OpenOverlayClick"
                     HorizontalAlignment="Left"
                     Margin="0,4,0,0"/>
             <Border Classes="rowline" Margin="0,8,0,0"/>
-            <TextBlock Text="Figyelmeztetések" Classes="section" FontSize="14"/>
-            <CheckBox Content="Vizuális figyelmeztetés" IsChecked="True"/>
-            <CheckBox Content="Hangjelzés" IsChecked="False"/>
-            <CheckBox Content="Visszaszámlálás a pull előtt" IsChecked="True"/>
+            <TextBlock Text="{DynamicResource UiBossTimerAlerts}" Classes="section" FontSize="14"/>
+            <CheckBox Content="{DynamicResource UiBossTimerVisualAlert}" IsChecked="True"/>
+            <CheckBox Content="{DynamicResource UiBossTimerSoundAlert}" IsChecked="False"/>
+            <CheckBox Content="{DynamicResource UiBossTimerCountdownBeforePull}" IsChecked="True"/>
           </StackPanel>
         </Border>
       </Grid>

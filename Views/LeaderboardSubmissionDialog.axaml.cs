@@ -66,14 +66,14 @@ public partial class LeaderboardSubmissionDialog : Window
         this.FindControl<TextBlock>("BossText")!.Text = entry.MobName;
         this.FindControl<TextBlock>("DateText")!.Text =
             entry.StartedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm", CultureInfo.CurrentCulture)
-            + " · saved encounter";
+            + LocalizationService.Get("UiSubmitSavedEncounter");
         this.FindControl<TextBlock>("DurationText")!.Text = FormatDuration(EffectiveDuration);
         this.FindControl<TextBlock>("ServerText")!.Text =
-            string.IsNullOrEmpty(_serverName) ? "Server unavailable" : _serverName;
+            string.IsNullOrEmpty(_serverName) ? LocalizationService.Get("UiSubmitServerUnavailable") : _serverName;
         this.FindControl<TextBlock>("ServerMetaText")!.Text =
             entry.ServerId != 0
-                ? $"Server ID {entry.ServerId}  ·  {(string.IsNullOrWhiteSpace(_region) ? "Region unknown" : _region.ToUpperInvariant())}"
-                : "No numeric server ID saved in this fight";
+                ? LocalizationService.Format("UiSubmitServerId01", entry.ServerId, string.IsNullOrWhiteSpace(_region) ? LocalizationService.Get("UiSubmitRegionUnknown") : _region.ToUpperInvariant())
+                : LocalizationService.Get("UiSubmitNoNumericServerIdSavedThisFight");
 
         var players = _snapshot.Players
             .Where(player => player.Damage > 0)
@@ -124,16 +124,16 @@ public partial class LeaderboardSubmissionDialog : Window
             player is null ? "—" : Meter.Num(player.Damage);
         this.FindControl<TextBlock>("DpsText")!.Text =
             player is null ? "—" : Meter.Num(player.Damage / Math.Max(0.001, EffectiveDuration)) + "/s";
-        this.FindControl<TextBlock>("ClassText")!.Text = SelectedClass?.Label ?? "Class unknown";
+        this.FindControl<TextBlock>("ClassText")!.Text = SelectedClass?.Label ?? LocalizationService.Get("UiSubmitClassUnknown");
 
         LeaderboardCombatEvidence? evidence = player is null ? null : BuildEvidence(player);
         this.FindControl<TextBlock>("EvidenceText")!.Text = evidence is null
-            ? "Summary only · manual review"
-            : $"{evidence.Hits.Count:N0} recorded damage hits";
+            ? LocalizationService.Get("UiSubmitSummaryOnlyManualReview")
+            : LocalizationService.Format("UiSubmit0RecordedDamageHits", evidence.Hits.Count.ToString("N0", CultureInfo.CurrentCulture));
         this.FindControl<TextBlock>("EvidenceHintText")!.Text = evidence is null
-            ? "The stored hits do not fully reconcile with this player’s damage. No synthetic evidence will be generated; the server can review the summary."
-            : "Compact hit timestamps and amounts will be sent. Verified auto-accept is possible only if the SERVER enables it and all checks pass.";
-        this.FindControl<TextBlock>("ReviewText")!.Text = "Server decides · pending / auto-check";
+            ? LocalizationService.Get("UiSubmitStoredHitsDoNotFullyReconcileThisPlayersDamageNoSynthe")
+            : LocalizationService.Get("UiSubmitCompactHitTimestampsAmountsWillBeSentVerifiedAutoAccep");
+        this.FindControl<TextBlock>("ReviewText")!.Text = LocalizationService.Get("UiSubmitServerDecidesPendingAutoCheck");
     }
 
     private void UpdateFormState()
@@ -148,11 +148,11 @@ public partial class LeaderboardSubmissionDialog : Window
         this.FindControl<Button>("SubmitButton")!.IsEnabled =
             connected && validFight && validPlayer && validClass && IsValidIdentity && consent;
 
-        string warning = !connected ? "Connect your Nexforge Account before submitting."
-            : !validFight ? "Only completed boss encounters (3 seconds to 2 hours) can be submitted."
-            : !validPlayer ? "Choose your own character from this encounter."
-            : !validClass ? "The selected player's class was not identified in this fight."
-            : !IsValidIdentity ? "A verified server ID, name and region are missing from this encounter. Refresh capture metadata; the server cannot be edited here."
+        string warning = !connected ? LocalizationService.Get("UiSubmitConnectNexforgeAccountBeforeSubmitting")
+            : !validFight ? LocalizationService.Get("UiSubmitOnlyCompletedBossEncounters3Seconds2HoursCanBeSubmitte")
+            : !validPlayer ? LocalizationService.Get("UiSubmitChooseOwnCharacterFromThisEncounter")
+            : !validClass ? LocalizationService.Get("UiSubmitSelectedPlayerSClassWasNotIdentifiedThisFight")
+            : !IsValidIdentity ? LocalizationService.Get("UiSubmitVerifiedServerIdNameRegionAreMissingFromThisEncounterR")
             : string.Empty;
         this.FindControl<TextBlock>("StatusText")!.Text = warning;
     }
@@ -172,7 +172,7 @@ public partial class LeaderboardSubmissionDialog : Window
         TextBlock status = this.FindControl<TextBlock>("StatusText")!;
         button.IsEnabled = false;
         playerBox.IsEnabled = false;
-        button.Content = "Submitting…";
+        button.Content = LocalizationService.Get("UiSubmitSubmitting");
         status.Text = string.Empty;
 
         try
@@ -210,13 +210,13 @@ public partial class LeaderboardSubmissionDialog : Window
             _submitted = true;
             string actualStatus = result.Entry.Status?.ToLowerInvariant() ?? "pending";
             status.Text = result.Duplicate
-                ? $"This result already exists. Server status: {actualStatus}."
+                ? LocalizationService.Format("UiSubmitThisResultAlreadyExistsServerStatus0", actualStatus)
                 : actualStatus switch
                 {
-                    "approved" => "Approved! The server accepted this result for the public leaderboard.",
-                    "pending" => "Submitted successfully. Pending moderator review.",
-                    "rejected" => "The server rejected this result; see your submissions for the review note.",
-                    _ => $"Submission recorded. Server status: {actualStatus}."
+                    "approved" => LocalizationService.Get("UiSubmitApprovedServerAcceptedThisResultPublicLeaderboard"),
+                    "pending" => LocalizationService.Get("UiSubmitSubmittedSuccessfullyPendingModeratorReview"),
+                    "rejected" => LocalizationService.Get("UiSubmitServerRejectedThisResultSeeSubmissionsReviewNote"),
+                    _ => LocalizationService.Format("UiSubmitSubmissionRecordedServerStatus0", actualStatus)
                 };
             this.FindControl<TextBlock>("ReviewText")!.Text = actualStatus.ToUpperInvariant();
             button.IsVisible = false;
@@ -224,11 +224,11 @@ public partial class LeaderboardSubmissionDialog : Window
         catch (LeaderboardApiException ex)
         {
             // Keep the service's real error code instead of losing everything behind "unavailable".
-            status.Text = $"Submission failed ({ex.StatusCode}, {ex.Code}): {ex.Message}";
+            status.Text = LocalizationService.Format("UiSubmitSubmissionFailed012", ex.StatusCode, ex.Code, ex.Message);
         }
         catch (Exception ex)
         {
-            status.Text = $"Could not submit result: {ex.Message}";
+            status.Text = LocalizationService.Format("UiSubmitCouldNotSubmitResult0", ex.Message);
         }
         finally
         {
@@ -237,7 +237,7 @@ public partial class LeaderboardSubmissionDialog : Window
             {
                 string errorMessage = status.Text ?? string.Empty;
                 playerBox.IsEnabled = true;
-                button.Content = "Submit result";
+                button.Content = LocalizationService.Get("UiSubmitSubmitResult");
                 UpdateFormState();
                 if (!string.IsNullOrWhiteSpace(errorMessage))
                     status.Text = errorMessage;

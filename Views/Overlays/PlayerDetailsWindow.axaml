@@ -48,7 +48,7 @@
       <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*" Margin="0,14,0,0">
         <Border Classes="inset" CornerRadius="10" Padding="12,9" Margin="0,0,6,0">
           <StackPanel Spacing="2">
-            <TextBlock Text="DPS" FontSize="9" FontWeight="SemiBold" Foreground="#71879B"/>
+            <TextBlock Text="{DynamicResource DpsMeter}" FontSize="9" FontWeight="SemiBold" Foreground="#71879B"/>
             <TextBlock Name="DetailDps" FontSize="18" FontWeight="SemiBold" Foreground="#45DFFF"/>
           </StackPanel>
         </Border>
@@ -76,8 +76,8 @@
       <Border Grid.Row="2" Classes="inset" CornerRadius="12" Padding="12,10" Margin="0,12">
         <Grid RowDefinitions="Auto,*">
           <Grid ColumnDefinitions="*,70,74,50,46,50" Margin="8,0,8,6">
-            <TextBlock Text="SKILL" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496"/>
-            <TextBlock Grid.Column="1" Text="DPS" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
+            <TextBlock Text="{DynamicResource UiPlayerDetailSkill}" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496"/>
+            <TextBlock Grid.Column="1" Text="{DynamicResource DpsMeter}" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
             <TextBlock Grid.Column="2" Text="{DynamicResource Total}" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
             <TextBlock Grid.Column="3" Text="{DynamicResource Share}" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>
             <TextBlock Grid.Column="4" Text="{DynamicResource Crit}" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496" TextAlignment="Right"/>

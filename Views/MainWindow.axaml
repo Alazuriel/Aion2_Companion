@@ -54,7 +54,7 @@
           </Border>
           <StackPanel Spacing="0" VerticalAlignment="Center">
             <TextBlock Text="NEXFORGE // AION 2" FontSize="13" FontWeight="SemiBold" LetterSpacing="0.7"/>
-            <TextBlock Text="TACTICAL COMPANION" Classes="kicker" FontSize="9" TextWrapping="NoWrap"/>
+            <TextBlock Text="{DynamicResource UiMainTacticalCompanion}" Classes="kicker" FontSize="9" TextWrapping="NoWrap"/>
           </StackPanel>
         </StackPanel>
 
@@ -198,7 +198,7 @@
           </Button>
           <Border Classes="glass" Padding="13" Margin="2,16,2,0" CornerRadius="13">
             <StackPanel Spacing="5">
-              <TextBlock Text="UNDER FORGE" Classes="kicker"/>
+              <TextBlock Text="{DynamicResource UnderForge}" Classes="kicker"/>
               <TextBlock Text="NEXFORGE LABS // DEV BUILD" Classes="hint" FontSize="10"/>
             </StackPanel>
           </Border>

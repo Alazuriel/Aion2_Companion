@@ -26,6 +26,7 @@ public partial class SettingsView : UserControl
     private readonly CheckBox _autoDpsOverlayToggle;
     private readonly CheckBox _autoCaptureToggle;
     private readonly CheckBox _autoUpdateToggle;
+    private readonly CheckBox _backgroundUpdateToggle;
     private readonly ComboBox _combatLogLimitCombo;
     private readonly ComboBox _closeActionCombo;
     private readonly ComboBox _languageCombo;
@@ -52,6 +53,7 @@ public partial class SettingsView : UserControl
         _autoDpsOverlayToggle = this.FindControl<CheckBox>("AutoDpsOverlayToggle")!;
         _autoCaptureToggle = this.FindControl<CheckBox>("AutoCaptureToggle")!;
         _autoUpdateToggle = this.FindControl<CheckBox>("AutoUpdateToggle")!;
+        _backgroundUpdateToggle = this.FindControl<CheckBox>("BackgroundUpdateToggle")!;
         _combatLogLimitCombo = this.FindControl<ComboBox>("CombatLogLimitCombo")!;
         _closeActionCombo = this.FindControl<ComboBox>("CloseActionCombo")!;
         _languageCombo = this.FindControl<ComboBox>("LanguageCombo")!;
@@ -90,6 +92,7 @@ public partial class SettingsView : UserControl
         _autoDpsOverlayToggle.IsChecked = CompanionSettings.AutoManageDpsOverlay;
         _autoCaptureToggle.IsChecked = CompanionSettings.AutoCaptureEnabled;
         _autoUpdateToggle.IsChecked = CompanionSettings.CheckUpdatesAutomatically;
+        _backgroundUpdateToggle.IsChecked = CompanionSettings.DownloadUpdatesInBackground;
         SelectCombatLogLimit(CompanionSettings.CombatLogLimit);
         SelectDpsEncounterMode(CompanionSettings.DpsEncounterMode);
         SelectCloseAction(CompanionSettings.CloseAction);
@@ -111,6 +114,7 @@ public partial class SettingsView : UserControl
         _autoDpsOverlayToggle.IsCheckedChanged += AutoDpsOverlayChanged;
         _autoCaptureToggle.IsCheckedChanged += AutoCaptureChanged;
         _autoUpdateToggle.IsCheckedChanged += AutoUpdateChanged;
+        _backgroundUpdateToggle.IsCheckedChanged += BackgroundUpdateChanged;
         _combatLogLimitCombo.SelectionChanged += CombatLogLimitChanged;
         _closeActionCombo.SelectionChanged += CloseActionChanged;
         _languageCombo.SelectionChanged += LanguageChanged;
@@ -288,6 +292,11 @@ public partial class SettingsView : UserControl
     private void AutoUpdateChanged(object? sender, RoutedEventArgs e)
     {
         CompanionSettings.CheckUpdatesAutomatically = _autoUpdateToggle.IsChecked == true;
+    }
+
+    private void BackgroundUpdateChanged(object? sender, RoutedEventArgs e)
+    {
+        CompanionSettings.DownloadUpdatesInBackground = _backgroundUpdateToggle.IsChecked == true;
     }
 
     private async void CheckUpdateClick(object? sender, RoutedEventArgs e)

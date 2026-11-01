@@ -36,7 +36,13 @@
           <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="22">
             <controls:ForgeIconView Width="94" Height="94" IconSource="{Binding ClassIconSource}" TooltipText="{Binding ClassTooltip}" AccentColor="#45DFFF" IsSelected="True"/>
             <StackPanel Grid.Column="1" Spacing="7">
-              <StackPanel Orientation="Horizontal" Spacing="9"><TextBlock Text="{Binding CharacterName}" Classes="h1" FontSize="29"/><Border Classes="goldPill"><TextBlock Text="{Binding VerificationText}" Classes="kicker" FontSize="8"/></Border></StackPanel>
+              <StackPanel Orientation="Horizontal" Spacing="9"><TextBlock Text="{Binding CharacterName}" Classes="h1" FontSize="29"/>
+<Border Width="24" Height="24" MinWidth="24" CornerRadius="12"
+        VerticalAlignment="Center" Padding="2" ClipToBounds="True"
+        Background="#132534" BorderBrush="#3B7B8E" BorderThickness="1"
+        IsVisible="{Binding IsVerified}" ToolTip.Tip="Nexforge Verified">
+  <Image Source="/Assets/nexforge-logo.png" Width="18" Height="18" Stretch="Uniform"/>
+</Border></StackPanel>
               <TextBlock Text="{Binding CharacterClass}" Foreground="#45DFFF" FontSize="17" FontWeight="SemiBold"/>
               <WrapPanel><Border Classes="pill" Margin="0,0,7,7"><StackPanel><TextBlock Text="{DynamicResource CharacterLevel}" Classes="kicker" FontSize="8"/><TextBlock Text="{Binding LevelText}" FontSize="18"/></StackPanel></Border><Border Classes="pill" Margin="0,0,7,7"><StackPanel><TextBlock Text="{DynamicResource CharacterItemLevel}" Classes="kicker" FontSize="8"/><TextBlock Text="{Binding GearScoreText}" FontSize="18"/></StackPanel></Border><Border Classes="pill" Margin="0,0,7,7"><StackPanel><TextBlock Text="{DynamicResource LeaderboardServer}" Classes="kicker" FontSize="8"/><TextBlock Text="{Binding ServerText}" FontSize="13"/></StackPanel></Border><Border Classes="pill" Margin="0,0,7,7"><StackPanel><TextBlock Text="{DynamicResource Region}" Classes="kicker" FontSize="8"/><TextBlock Text="{Binding RegionText}" FontSize="13"/></StackPanel></Border></WrapPanel>
             </StackPanel>
@@ -57,9 +63,9 @@
               <StackPanel Spacing="16" Margin="14,18,14,14">
                 <ItemsControl ItemsSource="{Binding StatCards}">
                   <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                  <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:CharacterStatCard"><Border Classes="inset" Width="230" Padding="16" Margin="0,0,12,12"><StackPanel Spacing="7"><TextBlock Text="{Binding Name}" Classes="kicker" FontSize="9"/><TextBlock Text="{Binding Value}" Classes="metric" FontSize="20" Foreground="{Binding AccentColor}"/></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate>
+                  <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:CharacterStatCard"><Border Classes="inset" Width="230" Padding="16" Margin="0,0,12,12"><StackPanel Spacing="7"><TextBlock Text="{Binding Name}" Classes="kicker" FontSize="9"/><controls:MarqueeText Text="{Binding Value}" TextSize="20" TextColor="{Binding AccentColor}" IsStrong="True"/></StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <Border Classes="inset" Padding="18"><StackPanel Spacing="7"><TextBlock Text="{DynamicResource Unverified}" Classes="kicker"/><TextBlock Text="{DynamicResource UnverifiedHint}" Classes="body"/></StackPanel></Border>
+                <Border Classes="inset" Padding="18"><StackPanel Spacing="7"><TextBlock Text="{Binding VerificationText}" Classes="kicker"/><TextBlock Text="{Binding VerificationHintText}" Classes="body" TextWrapping="Wrap"/></StackPanel></Border>
               </StackPanel>
             </TabItem>
 
@@ -67,7 +73,7 @@
               <StackPanel Spacing="16" Margin="14,18,14,14">
                 <ItemsControl ItemsSource="{Binding EquipmentSlots}">
                   <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                  <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:CharacterVisualItem"><Border Classes="inset" Width="126" Height="140" Padding="10" Margin="0,0,10,10"><Grid RowDefinitions="Auto,*,Auto"><controls:ForgeIconView Width="72" Height="72" HorizontalAlignment="Center" IconSource="{Binding IconSource}" TooltipText="{Binding Tooltip}" AccentColor="{Binding AccentColor}"/><Border HorizontalAlignment="Right" VerticalAlignment="Top" Classes="goldPill" Padding="5,2" IsVisible="{Binding HasCornerText}"><TextBlock Text="{Binding CornerText}" Classes="mono" FontSize="9"/></Border><TextBlock Grid.Row="2" Text="{Binding Name}" TextAlignment="Center" TextTrimming="CharacterEllipsis" FontSize="11" Foreground="#AFC4D5"/></Grid></Border></DataTemplate></ItemsControl.ItemTemplate>
+                  <ItemsControl.ItemTemplate><DataTemplate x:DataType="vm:CharacterVisualItem"><Border Classes="inset" Width="126" Height="140" Padding="10" Margin="0,0,10,10"><Grid RowDefinitions="Auto,*,Auto"><controls:ForgeIconView Width="72" Height="72" HorizontalAlignment="Center" IconSource="{Binding IconSource}" TooltipText="{Binding Tooltip}" AccentColor="{Binding AccentColor}"/><Border HorizontalAlignment="Right" VerticalAlignment="Top" Classes="goldPill" Padding="5,2" IsVisible="{Binding HasCornerText}"><TextBlock Text="{Binding CornerText}" Classes="mono" FontSize="9"/></Border><controls:MarqueeText Grid.Row="2" Text="{Binding Name}" CenterText="True" TextSize="11" TextColor="#AFC4D5"/></Grid></Border></DataTemplate></ItemsControl.ItemTemplate>
                 </ItemsControl>
                 <TextBlock Text="ARCANA" Classes="section" FontSize="17" Foreground="#D8B96A" Margin="0,12,0,0"/>
                 <ItemsControl ItemsSource="{Binding ArcanaItems}" IsVisible="{Binding HasArcanaData}">
@@ -77,7 +83,7 @@
                       <Grid RowDefinitions="*,Auto">
                         <controls:ForgeIconView Width="100" Height="108" HorizontalAlignment="Center"
                                                 IconSource="{Binding IconSource}" TooltipText="{Binding Tooltip}" AccentColor="{Binding AccentColor}"/>
-                        <TextBlock Grid.Row="1" Text="{Binding Name}" TextAlignment="Center" TextTrimming="CharacterEllipsis" FontSize="10"/>
+                        <controls:MarqueeText Grid.Row="1" Text="{Binding Name}" CenterText="True" TextSize="10"/>
                       </Grid>
                     </Border>
                   </DataTemplate></ItemsControl.ItemTemplate>
@@ -106,7 +112,7 @@
                         <controls:ForgeIconView Width="70" Height="70" HorizontalAlignment="Center"
                             IconSource="{Binding IconSource}" TooltipText="{Binding Tooltip}"
                             AccentColor="{Binding AccentColor}"/>
-                        <TextBlock Text="{Binding Name}" TextAlignment="Center" TextTrimming="CharacterEllipsis" FontSize="10"/>
+                        <controls:MarqueeText Text="{Binding Name}" CenterText="True" TextSize="10"/>
                         <TextBlock Text="{Binding CornerText}" TextAlignment="Center" Foreground="#D8B96A"
                                    FontSize="10" IsVisible="{Binding HasCornerText}"/>
                       </StackPanel>

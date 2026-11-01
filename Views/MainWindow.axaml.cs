@@ -31,6 +31,10 @@ public partial class MainWindow : Window
     private bool _closeDialogOpen;
     private bool _petFarmLoaded;
     private bool _automaticUpdateRunning;
+    private UpdateInfo? _syntraUpdateAvailable;
+    private string? _syntraLastOfferedVersion;
+    private string? _syntraLastBackgroundVersion;
+    private readonly CancellationTokenSource _syntraUpdateCancellation = new();
     private bool _startupCompleted;
     private bool _testLoginConnecting;
     private bool _testLoginCanCancel;
@@ -149,22 +153,20 @@ public partial class MainWindow : Window
         }
     }
 
-    private async Task<bool> CompleteStartupAsync()
+    private Task<bool> CompleteStartupAsync()
     {
         if (_startupCompleted)
-            return true;
+            return Task.FromResult(true);
 
         _startupCompleted = true;
         ApplyMapHelperState();
         EventTimerService.Shared.NotificationRaised += EventTimerNotificationRaised;
         EventTimerService.Shared.Start();
-        bool updateStarted = await CheckForUpdatesAsync();
-        if (updateStarted)
-            return false;
-
+        // Never block app startup on GitHub or an update download.
+        _ = CheckForUpdatesAsync(forceAtStartup: true);
         _automaticUpdateTimer.Start();
         StartOnboarding(manual: false);
-        return true;
+        return Task.FromResult(true);
     }
 
     public void StartTestLogin()
@@ -256,33 +258,103 @@ public partial class MainWindow : Window
         _testLoginCanCancel = false;
     }
 
-    private async Task<bool> CheckForUpdatesAsync()
+    // SYNTRA-UPDATER-PHASE1-CHECK: notification only, no automatic installation.
+    private async Task<bool> CheckForUpdatesAsync(bool forceAtStartup = false)
     {
-        if (_automaticUpdateRunning || !UpdateService.ShouldCheckAutomatically())
+        if (_automaticUpdateRunning || !CompanionSettings.CheckUpdatesAutomatically ||
+            (!forceAtStartup && !UpdateService.ShouldCheckAutomatically()))
             return false;
 
         _automaticUpdateRunning = true;
         try
         {
-            UpdateCheckResult result = await UpdateService.CheckAsync();
-            if (result.State != UpdateCheckState.UpdateAvailable || result.Update is null)
+            UpdateCheckResult result = await UpdateService.CheckAsync(_syntraUpdateCancellation.Token);
+            if (_syntraUpdateCancellation.IsCancellationRequested ||
+                result.State != UpdateCheckState.UpdateAvailable || result.Update is null)
                 return false;
 
-            DebugConsole.Log("update", $"Downloading verified update {result.Update.Version} in the background.");
-            string installer = await UpdateService.DownloadAsync(result.Update);
-            UpdateService.LaunchSilentInstaller(installer);
-            DebugConsole.Log("update", "Background updater started; restarting the Companion.");
-            ExitApplication();
-            return true;
+            UpdateInfo update = result.Update;
+            _syntraUpdateAvailable = update;
+            if (!string.Equals(_syntraLastOfferedVersion, update.Version, StringComparison.OrdinalIgnoreCase))
+            {
+                _syntraLastOfferedVersion = update.Version;
+                this.FindControl<TextBlock>("SyntraUpdateNoticeText")!.Text =
+                    string.Format(LocalizationService.Get("UpdateFound"), update.Version);
+                this.FindControl<Border>("SyntraUpdateNotice")!.IsVisible = true;
+            }
+
+            if (CompanionSettings.DownloadUpdatesInBackground &&
+                !string.Equals(_syntraLastBackgroundVersion, update.Version, StringComparison.OrdinalIgnoreCase))
+            {
+                _syntraLastBackgroundVersion = update.Version;
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        // Only download and verify. Never launch an installer here.
+                        await UpdateService.DownloadAsync(update,
+                            cancellationToken: _syntraUpdateCancellation.Token);
+                        DebugConsole.Log("update", $"Verified update v{update.Version} is ready to install.");
+                    }
+                    catch (OperationCanceledException) when (_syntraUpdateCancellation.IsCancellationRequested) { }
+                    catch (Exception ex)
+                    {
+                        DebugConsole.Log("update", $"Optional background download failed: {ex.Message}");
+                    }
+                });
+            }
         }
+        catch (OperationCanceledException) when (_syntraUpdateCancellation.IsCancellationRequested) { }
         catch (Exception ex)
         {
-            DebugConsole.Log("update", $"Automatic update failed: {ex.Message}");
-            return false;
+            DebugConsole.Log("update", $"Automatic update check failed: {ex.Message}");
         }
         finally
         {
             _automaticUpdateRunning = false;
+        }
+        return false;
+    }
+
+    private void SyntraUpdateLaterClick(object? sender, RoutedEventArgs e) =>
+        this.FindControl<Border>("SyntraUpdateNotice")!.IsVisible = false;
+
+    private void SyntraUpdateChangelogClick(object? sender, RoutedEventArgs e)
+    {
+        UpdateInfo? update = _syntraUpdateAvailable;
+        if (update is null)
+            return;
+        if (!Uri.TryCreate(update.ReleaseUrl, UriKind.Absolute, out Uri? url) ||
+            url.Scheme != Uri.UriSchemeHttps ||
+            !url.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase) ||
+            !url.AbsolutePath.StartsWith("/Alazuriel/Aion2_Companion/releases/", StringComparison.OrdinalIgnoreCase))
+            return;
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url.AbsoluteUri)
+            {
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex)
+        {
+            DebugConsole.Log("update", $"Unable to open release notes: {ex.Message}");
+        }
+    }
+
+    private async void SyntraUpdateOpenClick(object? sender, RoutedEventArgs e)
+    {
+        UpdateInfo? update = _syntraUpdateAvailable;
+        if (update is null)
+            return;
+        this.FindControl<Border>("SyntraUpdateNotice")!.IsVisible = false;
+        try
+        {
+            await new UpdateWindow(update).ShowDialog(this);
+        }
+        catch (Exception ex)
+        {
+            DebugConsole.Log("update", $"Unable to show update window: {ex.Message}");
         }
     }
 
@@ -470,6 +542,7 @@ public partial class MainWindow : Window
         _trayIcon?.Dispose();
         _trayIcon = null;
         _automaticUpdateTimer.Stop();
+        _syntraUpdateCancellation.Cancel();
         _onboardingPulseTimer.Stop();
         DisarmTestLoginCancel();
         EventTimerService.Shared.NotificationRaised -= EventTimerNotificationRaised;

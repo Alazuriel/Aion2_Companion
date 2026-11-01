@@ -171,6 +171,7 @@
               </Grid>
             </Border>
             <Border Classes="settings-row"><StackPanel Spacing="4"><CheckBox x:Name="AutoUpdateToggle" Content="{DynamicResource AutoUpdateToggle}"/><TextBlock Text="{DynamicResource AutoUpdateHint}" Classes="hint" Margin="25,0,0,0"/></StackPanel></Border>
+            <Border Classes="settings-row"><StackPanel Spacing="4"><CheckBox x:Name="BackgroundUpdateToggle" Content="{DynamicResource BackgroundUpdateToggle}"/><TextBlock Text="{DynamicResource BackgroundUpdateHint}" Classes="hint" Margin="25,0,0,0"/></StackPanel></Border>
             <Border Classes="settings-row"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="3"><TextBlock Text="{DynamicResource CurrentVersion}" Classes="settings-label"/><TextBlock x:Name="UpdateCheckStatusText" Classes="hint" TextWrapping="Wrap"/></StackPanel><Button x:Name="CheckUpdateButton" Grid.Column="1" Classes="ui" Content="{DynamicResource CheckForUpdates}" Click="CheckUpdateClick" VerticalAlignment="Center"/></Grid></Border>
           </StackPanel>
         </Grid>

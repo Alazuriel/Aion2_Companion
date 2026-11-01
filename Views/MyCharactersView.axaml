@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:AION_2_Companion.ViewModels"
+             xmlns:characters="using:AION_2_Companion.Core.Characters"
              xmlns:controls="using:AION_2_Companion.Views.Controls"
              x:Class="AION_2_Companion.Views.MyCharactersView"
              x:DataType="vm:MyCharactersViewModel" Background="Transparent">
@@ -18,6 +19,39 @@
         </StackPanel>
       </Grid>
 
+      <Border Classes="hero" Padding="20">
+        <StackPanel Spacing="12">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <StackPanel Spacing="3">
+              <TextBlock Text="VERIFIED CHARACTERS" Classes="kicker" Foreground="#45DFFF"/>
+              <TextBlock Text="Characters linked to your Nexforge account" Classes="body"/>
+              <TextBlock Text="Verification confirms character control, not official NCSOFT account ownership."
+                         Classes="hint" TextWrapping="Wrap"/>
+            </StackPanel>
+            <Button Grid.Column="1" Classes="ui" Content="Sync" Command="{Binding SyncVerifiedCharactersCommand}"
+                    IsEnabled="{Binding CanSyncVerifiedCharacters}" VerticalAlignment="Center" MinWidth="96"/>
+          </Grid>
+          <TextBlock Text="{Binding VerifiedStatusText}" Classes="hint" TextWrapping="Wrap"/>
+          <ItemsControl ItemsSource="{Binding VerifiedCharacters}" IsVisible="{Binding HasVerifiedCharacters}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="characters:VerifiedCharacterSummary">
+                <Border Classes="card" Padding="12" Margin="0,0,0,7">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16"/>
+                      <TextBlock Text="{Binding DisplayLocation}" Classes="mono" FontSize="11"/>
+                      <TextBlock Text="{Binding VerificationLabel}" Classes="hint" Foreground="#45DFFF"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="ui" Content="Select" Tag="{Binding}"
+                            Click="SelectVerifiedCharacterClick" VerticalAlignment="Center"/>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
       <Border Classes="hero" Padding="28" IsVisible="{Binding HasNoCharacter}">
         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="22">
           <controls:ForgeIconView Width="78" Height="78" TooltipText="{DynamicResource NoCharacterText}"/>
@@ -32,7 +66,7 @@
 
       <Border Classes="hero" Padding="24" IsVisible="{Binding HasCharacter}">
         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="22">
-          <controls:ForgeIconView Width="88" Height="88" IconSource="{Binding ClassIconSource}" TooltipText="{Binding CharacterTooltip}" AccentColor="#45DFFF"/>
+          <controls:ForgeIconView Width="88" Height="88" IconSource="{Binding ProfileImageUrl}" TooltipText="{Binding CharacterTooltip}" AccentColor="#45DFFF"/>
           <StackPanel Grid.Column="1" Spacing="7">
             <StackPanel Orientation="Horizontal" Spacing="9">
               <TextBlock Text="{Binding Name}" Classes="h1" FontSize="26"/>

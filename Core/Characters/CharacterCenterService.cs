@@ -73,11 +73,15 @@ public sealed class CharacterCenterService : IDisposable
     public async Task<CharacterLoadResult> LoadProfileAsync(CharacterIdentity identity, string detailLevel, bool forceRefresh, CancellationToken ct)
     {
         CharacterCacheValue<CharacterResolveResponse>? cached = await _cache.GetProfileAsync(identity, detailLevel, ct).ConfigureAwait(false);
+        // A disk cache is a hint, never proof that a profile belongs to this server/character.
+        if (cached is not null && !MatchesIdentity(identity, cached.Value)) cached = null;
         if (!forceRefresh && cached is { IsFresh: true })
             return new(cached.Value, true, false, cached.FetchedAtUtc);
         try
         {
             CharacterResolveResponse response = await _api.ResolveAsync(identity, detailLevel, forceRefresh, ct).ConfigureAwait(false);
+            if (!MatchesIdentity(identity, response))
+                throw new CharacterApiException("The character API returned a different character or server.");
             await _cache.SetProfileAsync(identity, detailLevel, response, ct).ConfigureAwait(false);
             return new(response, false, false, DateTimeOffset.UtcNow);
         }
@@ -98,7 +102,16 @@ public sealed class CharacterCenterService : IDisposable
     public async Task<CharacterLoadResult?> GetCachedProfileAsync(CharacterIdentity identity, string detailLevel, CancellationToken ct = default)
     {
         CharacterCacheValue<CharacterResolveResponse>? cached = await _cache.GetProfileAsync(identity, detailLevel, ct).ConfigureAwait(false);
-        return cached is null ? null : new(cached.Value, true, false, cached.FetchedAtUtc);
+        return cached is null || !MatchesIdentity(identity, cached.Value)
+            ? null : new(cached.Value, true, false, cached.FetchedAtUtc);
+    }
+
+    private static bool MatchesIdentity(CharacterIdentity identity, CharacterResolveResponse response)
+    {
+        CharacterApiHeader? actual = response.Data?.Character;
+        return response.Ok && actual is not null && actual.ServerId == identity.ServerId &&
+               string.Equals(CharacterApiClient.NormalizeRegion(actual.Region), CharacterApiClient.NormalizeRegion(identity.Region), StringComparison.Ordinal) &&
+               string.Equals(actual.Name?.Trim(), identity.Name.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
     public void SelectSelf(CharacterIdentity identity)

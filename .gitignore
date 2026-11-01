@@ -87,7 +87,13 @@ appsettings.Local.json
 *.log
 *.tmp
 *.temp
+*.bak
 *.bak-*
+*.backup
+*.backup-*
+*.orig
+*.rej
+*[Ss][Yy][Nn][Tt][Rr][Aa]*
 *.dmp
 
 # Keep NFL documentation public, hide other NFL sources

@@ -23,12 +23,12 @@
         <StackPanel Spacing="12">
           <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
             <StackPanel Spacing="3">
-              <TextBlock Text="VERIFIED CHARACTERS" Classes="kicker" Foreground="#45DFFF"/>
-              <TextBlock Text="Characters linked to your Nexforge account" Classes="body"/>
-              <TextBlock Text="Verification confirms character control, not official NCSOFT account ownership."
+              <TextBlock Text="{DynamicResource UiMyCharactersVerifiedCharacters}" Classes="kicker" Foreground="#45DFFF"/>
+              <TextBlock Text="{DynamicResource UiMyCharactersCharactersLinkedNexforgeAccount}" Classes="body"/>
+              <TextBlock Text="{DynamicResource UiMyCharactersVerificationConfirmsCharacterControlNotOfficialNcsoftA}"
                          Classes="hint" TextWrapping="Wrap"/>
             </StackPanel>
-            <Button Grid.Column="1" Classes="ui" Content="Sync" Command="{Binding SyncVerifiedCharactersCommand}"
+            <Button Grid.Column="1" Classes="ui" Content="{DynamicResource UiMyCharactersSync}" Command="{Binding SyncVerifiedCharactersCommand}"
                     IsEnabled="{Binding CanSyncVerifiedCharacters}" VerticalAlignment="Center" MinWidth="96"/>
           </Grid>
           <TextBlock Text="{Binding VerifiedStatusText}" Classes="hint" TextWrapping="Wrap"/>
@@ -42,7 +42,7 @@
                       <TextBlock Text="{Binding DisplayLocation}" Classes="mono" FontSize="11"/>
                       <TextBlock Text="{Binding VerificationLabel}" Classes="hint" Foreground="#45DFFF"/>
                     </StackPanel>
-                    <Button Grid.Column="1" Classes="ui" Content="Select" Tag="{Binding}"
+                    <Button Grid.Column="1" Classes="ui" Content="{DynamicResource UiMyCharactersSelect}" Tag="{Binding}"
                             Click="SelectVerifiedCharacterClick" VerticalAlignment="Center"/>
                   </Grid>
                 </Border>

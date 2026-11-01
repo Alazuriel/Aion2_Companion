@@ -59,7 +59,7 @@
                 <!-- FEJLÉC -->
                 <StackPanel Spacing="5">
                     <TextBlock
-                        Text="PET INTELLIGENCE"
+                        Text="{DynamicResource UiMapOverlayPetIntelligence}"
                         FontSize="19"
                         FontWeight="Bold"
                         Foreground="#F4F7FF"/>
@@ -86,7 +86,7 @@
                                      Fill="#FFB454"
                                      VerticalAlignment="Center"/>
                             <TextBlock x:Name="PetSyncCode"
-                                       Text="UNKNOWN"
+                                       Text="{DynamicResource PetUnknown}"
                                        FontSize="10"
                                        FontWeight="Bold"
                                        Foreground="#FFB454"/>

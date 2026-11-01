@@ -330,7 +330,7 @@ public partial class PetFarmSearchWindow : Window
         PetFarmCatalogEntry pet,
         PetCollectionSyncState collectionStatus) =>
         pet.Level is int level
-            ? $"Lv. {level}"
+            ? LocalizationService.Format("UiPetSearchLevelShort", level)
             : collectionStatus == PetCollectionSyncState.Ready
                 ? LocalizationService.Get("NotOwned")
                 : LocalizationService.Get("UnknownOwnership");

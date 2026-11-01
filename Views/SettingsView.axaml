@@ -42,7 +42,7 @@
       <Border Classes="settings-card">
         <Grid ColumnDefinitions="164,*" ColumnSpacing="20">
           <StackPanel Spacing="8">
-            <TextBlock Text="01 // GENERAL" Classes="settings-index"/>
+            <TextBlock Text="{DynamicResource UiSettings01General}" Classes="settings-index"/>
             <TextBlock Text="{DynamicResource GeneralCategory}" Classes="settings-category"/>
             <TextBlock Text="{DynamicResource GeneralCategoryHint}" Classes="hint"/>
           </StackPanel>
@@ -94,7 +94,7 @@
       <Border Classes="settings-card">
         <Grid ColumnDefinitions="164,*" ColumnSpacing="20">
           <StackPanel Spacing="8">
-            <TextBlock Text="02 // MONITORING" Classes="settings-index"/>
+            <TextBlock Text="{DynamicResource UiSettings02Monitoring}" Classes="settings-index"/>
             <TextBlock Text="{DynamicResource CaptureCategory}" Classes="settings-category"/>
             <TextBlock Text="{DynamicResource CaptureCategoryHint}" Classes="hint"/>
           </StackPanel>
@@ -120,7 +120,7 @@
 
       <Border Classes="settings-card">
         <Grid ColumnDefinitions="164,*" ColumnSpacing="20">
-          <StackPanel Spacing="8"><TextBlock Text="03 // COMBAT" Classes="settings-index"/><TextBlock Text="{DynamicResource CombatCategory}" Classes="settings-category"/><TextBlock Text="{DynamicResource CombatCategoryHint}" Classes="hint"/></StackPanel>
+          <StackPanel Spacing="8"><TextBlock Text="{DynamicResource UiSettings03Combat}" Classes="settings-index"/><TextBlock Text="{DynamicResource CombatCategory}" Classes="settings-category"/><TextBlock Text="{DynamicResource CombatCategoryHint}" Classes="hint"/></StackPanel>
           <StackPanel Grid.Column="1" Spacing="9">
             <Border Classes="settings-row"><StackPanel Spacing="4"><CheckBox x:Name="AutoDpsOverlayToggle" Content="{DynamicResource AutoDps}"/><TextBlock Text="{DynamicResource AutoDpsHint}" Classes="hint" Margin="25,0,0,0"/></StackPanel></Border>
             <Border Classes="settings-row">
@@ -141,7 +141,7 @@
 
       <Border Classes="settings-card">
         <Grid ColumnDefinitions="164,*" ColumnSpacing="20">
-          <StackPanel Spacing="8"><TextBlock Text="04 // OVERLAY" Classes="settings-index"/><TextBlock Text="{DynamicResource OverlayCategory}" Classes="settings-category"/><TextBlock Text="{DynamicResource OverlayCategoryHint}" Classes="hint"/></StackPanel>
+          <StackPanel Spacing="8"><TextBlock Text="{DynamicResource UiSettings04Overlay}" Classes="settings-index"/><TextBlock Text="{DynamicResource OverlayCategory}" Classes="settings-category"/><TextBlock Text="{DynamicResource OverlayCategoryHint}" Classes="hint"/></StackPanel>
           <StackPanel Grid.Column="1" Spacing="9">
             <Border Classes="settings-row"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="3"><TextBlock Text="{DynamicResource DpsMeter}" Classes="settings-label"/><TextBlock Text="{DynamicResource DpsOverlayHint}" Classes="hint"/></StackPanel><Button Grid.Column="1" Classes="ui" Content="{DynamicResource Open}" Click="OpenDpsClick" VerticalAlignment="Center"/></Grid></Border>
             <Border Classes="settings-row"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="3"><TextBlock Text="{DynamicResource BossAssistant}" Classes="settings-label"/><TextBlock Text="{DynamicResource BossOverlayHint}" Classes="hint"/></StackPanel><Border Grid.Column="1" Classes="settings-status gold" VerticalAlignment="Center"><TextBlock Text="{DynamicResource StillUnderForge}" Classes="kicker" FontSize="9" Foreground="#D8B96A"/></Border></Grid></Border>
@@ -151,7 +151,7 @@
 
       <Border Classes="settings-card">
         <Grid ColumnDefinitions="164,*" ColumnSpacing="20">
-          <StackPanel Spacing="8"><TextBlock Text="05 // TIMERS" Classes="settings-index"/><TextBlock Text="{DynamicResource TimersCategory}" Classes="settings-category"/><TextBlock Text="{DynamicResource TimersCategoryHint}" Classes="hint"/></StackPanel>
+          <StackPanel Spacing="8"><TextBlock Text="{DynamicResource UiSettings05Timers}" Classes="settings-index"/><TextBlock Text="{DynamicResource TimersCategory}" Classes="settings-category"/><TextBlock Text="{DynamicResource TimersCategoryHint}" Classes="hint"/></StackPanel>
           <StackPanel Grid.Column="1" Spacing="9">
             <Border Classes="settings-row"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="3"><TextBlock Text="{DynamicResource EventTimerRegionLabel}" Classes="settings-label"/><TextBlock Text="{DynamicResource EventTimerRegionHint}" Classes="hint"/></StackPanel><ComboBox x:Name="EventTimerRegionCombo" Grid.Column="1" Classes="settings-select"/></Grid></Border>
             <Border Classes="settings-row"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="5"><TextBlock Text="{DynamicResource EventTimerOverlayTitle}" Classes="settings-label"/><TextBlock Text="{DynamicResource EventTimerOverlaySettingsHint}" Classes="hint"/><CheckBox x:Name="EventTimerClickThroughToggle" Content="{DynamicResource EventTimerClickThrough}"/></StackPanel><Button Grid.Column="1" Classes="ui" Content="{DynamicResource Open}" Click="OpenEventTimerOverlayClick" VerticalAlignment="Center"/></Grid></Border>
@@ -161,7 +161,7 @@
 
       <Border Classes="settings-card">
         <Grid ColumnDefinitions="164,*" ColumnSpacing="20">
-          <StackPanel Spacing="8"><TextBlock Text="06 // DATA &amp; UPDATES" Classes="settings-index"/><TextBlock Text="{DynamicResource ForgeDataCategory}" Classes="settings-category"/><TextBlock Text="{DynamicResource ForgeDataCategoryHint}" Classes="hint"/></StackPanel>
+          <StackPanel Spacing="8"><TextBlock Text="{DynamicResource UiSettings06DataUpdates}" Classes="settings-index"/><TextBlock Text="{DynamicResource ForgeDataCategory}" Classes="settings-category"/><TextBlock Text="{DynamicResource ForgeDataCategoryHint}" Classes="hint"/></StackPanel>
           <StackPanel Grid.Column="1" Spacing="9">
             <Border Classes="settings-row">
               <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
@@ -179,9 +179,9 @@
 
       <Border Classes="settings-card">
         <Grid ColumnDefinitions="164,*" ColumnSpacing="20">
-          <StackPanel Spacing="8"><TextBlock Text="07 // PETS" Classes="settings-index"/><TextBlock Text="{DynamicResource PetCategory}" Classes="settings-category"/><TextBlock Text="{DynamicResource PetCategoryHint}" Classes="hint"/></StackPanel>
+          <StackPanel Spacing="8"><TextBlock Text="{DynamicResource UiSettings07Pets}" Classes="settings-index"/><TextBlock Text="{DynamicResource PetCategory}" Classes="settings-category"/><TextBlock Text="{DynamicResource PetCategoryHint}" Classes="hint"/></StackPanel>
           <StackPanel Grid.Column="1" Spacing="9">
-            <Border Classes="settings-row"><Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="3"><TextBlock Text="{DynamicResource PetCollectionStatus}" Classes="settings-label"/><TextBlock Text="{DynamicResource PetStatusRuntimeHint}" Classes="hint"/></StackPanel><Border Grid.Column="1" Classes="settings-status" VerticalAlignment="Center"><StackPanel Orientation="Horizontal" Spacing="8"><Ellipse x:Name="PetCollectionStatusDot" Width="7" Height="7" Fill="#FFB454" VerticalAlignment="Center"/><TextBlock x:Name="PetCollectionStatusText" Text="UNKNOWN" FontSize="10" FontWeight="SemiBold" Foreground="#FFB454"/></StackPanel></Border></Grid></Border>
+            <Border Classes="settings-row"><Grid ColumnDefinitions="*,Auto"><StackPanel Spacing="3"><TextBlock Text="{DynamicResource PetCollectionStatus}" Classes="settings-label"/><TextBlock Text="{DynamicResource PetStatusRuntimeHint}" Classes="hint"/></StackPanel><Border Grid.Column="1" Classes="settings-status" VerticalAlignment="Center"><StackPanel Orientation="Horizontal" Spacing="8"><Ellipse x:Name="PetCollectionStatusDot" Width="7" Height="7" Fill="#FFB454" VerticalAlignment="Center"/><TextBlock x:Name="PetCollectionStatusText" Text="{DynamicResource PetUnknown}" FontSize="10" FontWeight="SemiBold" Foreground="#FFB454"/></StackPanel></Border></Grid></Border>
             <Border Classes="settings-row"><Grid ColumnDefinitions="92,*" ColumnSpacing="12"><StackPanel Spacing="2"><TextBlock Text="{DynamicResource PetUnknown}" Classes="kicker" FontSize="9" Foreground="#FFB454"/><TextBlock Text="{DynamicResource PetUnknownTitle}" FontSize="11" FontWeight="SemiBold"/></StackPanel><TextBlock Grid.Column="1" Text="{DynamicResource PetUnknownText}" Classes="hint" VerticalAlignment="Center"/></Grid></Border>
             <Border Classes="settings-row"><Grid ColumnDefinitions="92,*" ColumnSpacing="12"><StackPanel Spacing="2"><TextBlock Text="{DynamicResource PetPartial}" Classes="kicker" FontSize="9"/><TextBlock Text="{DynamicResource PetPartialTitle}" FontSize="11" FontWeight="SemiBold"/></StackPanel><TextBlock Grid.Column="1" Text="{DynamicResource PetPartialText}" Classes="hint" VerticalAlignment="Center"/></Grid></Border>
             <Border Classes="settings-row"><Grid ColumnDefinitions="92,*" ColumnSpacing="12"><StackPanel Spacing="2"><TextBlock Text="{DynamicResource PetReady}" Classes="kicker" FontSize="9" Foreground="#58E0B2"/><TextBlock Text="{DynamicResource PetReadyTitle}" FontSize="11" FontWeight="SemiBold"/></StackPanel><TextBlock Grid.Column="1" Text="{DynamicResource PetReadyText}" Classes="hint" VerticalAlignment="Center"/></Grid></Border>
@@ -191,20 +191,20 @@
 
       <Border Classes="settings-card">
         <Grid ColumnDefinitions="164,*" ColumnSpacing="20">
-          <StackPanel Spacing="8"><TextBlock Text="08 // SUPPORT LOGS" Classes="settings-index"/><TextBlock Text="{DynamicResource DiagnosticsCategory}" Classes="settings-category"/><TextBlock Text="{DynamicResource DiagnosticsCategoryHint}" Classes="hint"/></StackPanel>
+          <StackPanel Spacing="8"><TextBlock Text="{DynamicResource UiSettings08SupportLogs}" Classes="settings-index"/><TextBlock Text="{DynamicResource DiagnosticsCategory}" Classes="settings-category"/><TextBlock Text="{DynamicResource DiagnosticsCategoryHint}" Classes="hint"/></StackPanel>
           <Border Grid.Column="1" Classes="settings-row"><StackPanel Spacing="5"><CheckBox x:Name="FileLoggingToggle" Content="{DynamicResource LoggingToggle}"/><TextBlock x:Name="FileLoggingHint" Classes="hint" TextWrapping="Wrap" Margin="25,0,0,0"/></StackPanel></Border>
         </Grid>
       </Border>
 
       <Border x:Name="DeveloperSettingsPanel" Classes="settings-card" BorderBrush="#7045DFFF">
         <Grid ColumnDefinitions="164,*" ColumnSpacing="20">
-          <StackPanel Spacing="8"><TextBlock Text="09 // DEBUG" Classes="settings-index"/><TextBlock Text="{DynamicResource DeveloperTools}" Classes="settings-category"/></StackPanel>
+          <StackPanel Spacing="8"><TextBlock Text="{DynamicResource UiSettings09Debug}" Classes="settings-index"/><TextBlock Text="{DynamicResource DeveloperTools}" Classes="settings-category"/></StackPanel>
           <Border Grid.Column="1" Classes="settings-row"><StackPanel Spacing="4"><TextBlock Text="{DynamicResource DeveloperToolsHint}" Classes="body"/><TextBlock Text="{DynamicResource DeveloperModeActive}" Classes="kicker" FontSize="9"/></StackPanel></Border>
         </Grid>
       </Border>
 
       <Border Classes="settings-card" Padding="18,13">
-        <Grid ColumnDefinitions="*,Auto"><StackPanel Orientation="Horizontal" Spacing="8"><Ellipse Width="6" Height="6" Fill="#45DFFF" VerticalAlignment="Center"/><TextBlock Text="NEXFORGE // COMPANION CONFIGURATION" Classes="kicker" FontSize="9"/></StackPanel><TextBlock Grid.Column="1" Text="UNDER FORGE" Classes="mono" FontSize="9" Foreground="#8F7845"/></Grid>
+        <Grid ColumnDefinitions="*,Auto"><StackPanel Orientation="Horizontal" Spacing="8"><Ellipse Width="6" Height="6" Fill="#45DFFF" VerticalAlignment="Center"/><TextBlock Text="NEXFORGE // COMPANION CONFIGURATION" Classes="kicker" FontSize="9"/></StackPanel><TextBlock Grid.Column="1" Text="{DynamicResource UnderForge}" Classes="mono" FontSize="9" Foreground="#8F7845"/></Grid>
       </Border>
     </StackPanel>
   </ScrollViewer>

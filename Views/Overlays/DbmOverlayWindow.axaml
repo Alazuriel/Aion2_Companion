@@ -38,7 +38,7 @@
               </StackPanel>
             </Border>
             <Ellipse Width="6" Height="6" Fill="#FF9B52" VerticalAlignment="Center"/>
-            <TextBlock Text="BOSS // LIVE" Classes="kicker" FontSize="10" VerticalAlignment="Center"/>
+            <TextBlock Text="{DynamicResource UiBossOverlayBossLive}" Classes="kicker" FontSize="10" VerticalAlignment="Center"/>
           </StackPanel>
         </Border>
         <Button Grid.Column="1"
@@ -55,8 +55,8 @@
         <Border Classes="inset" Padding="12,10">
           <Grid ColumnDefinitions="*,Auto">
             <StackPanel Spacing="2" VerticalAlignment="Center">
-              <TextBlock Text="Következő" Classes="eyebrow"/>
-              <TextBlock Text="Készülj a mozgásra" FontSize="13" FontWeight="Medium"/>
+              <TextBlock Text="{DynamicResource UiBossOverlayNext}" Classes="eyebrow"/>
+              <TextBlock Text="{DynamicResource UiBossOverlayPrepareMove}" FontSize="13" FontWeight="Medium"/>
             </StackPanel>
             <TextBlock Grid.Column="1"
                        Text="00:05"
@@ -70,9 +70,9 @@
         <!-- Következő lépések -->
         <Grid ColumnDefinitions="48,*" RowDefinitions="Auto,Auto" RowSpacing="6">
           <TextBlock Text="00:12" Classes="mono warn" FontSize="12"/>
-          <TextBlock Grid.Column="1" Text="Erős támadás · lépj el" FontSize="12"/>
+          <TextBlock Grid.Column="1" Text="{DynamicResource UiBossOverlayHeavyAttackMoveAway}" FontSize="12"/>
           <TextBlock Grid.Row="1" Text="00:20" Classes="mono" Foreground="#9A9EA8" FontSize="12"/>
-          <TextBlock Grid.Row="1" Grid.Column="1" Text="Területi mechanika · szóródj" FontSize="12"/>
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{DynamicResource UiBossOverlayAreaMechanicSpreadOut}" FontSize="12"/>
         </Grid>
       </StackPanel>
     </Grid>

@@ -267,14 +267,14 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
     // Summon runtime ID -> tulajdonos runtime ID
     private readonly Dictionary<uint, uint> _summonOwners = new();
     private readonly HashSet<uint> _MobsInCombat = new();
-    public string PartyName { get; private set; } = "Még nem észlelhető";
+    public string PartyName { get; private set; } = LocalizationService.Get("UiCaptureNotDetectedYet");
     
     public string LatestEvent { get; private set; } =
         "Várakozás az első dekódolt frame-re...";
 
     public string LatestOpcode { get; private set; } = "--";
 
-    public string LatestConfidence { get; private set; } = "Nincs adat";
+    public string LatestConfidence { get; private set; } = LocalizationService.Get("UiCaptureNoData");
 
     public ObservableCollection<string> RecentFindings { get; } = new();
     //public ObservableCollection<string> PartyMembers { get; } = new();
@@ -1769,12 +1769,12 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
 
         string direction = (sourceIsGameServer, destinationIsGameServer) switch
         {
-            (true, false) => "Szerver → kliens",
-            (false, true) => "Kliens → szerver",
-            _ => "Irány nem megerősített"
+            (true, false) => LocalizationService.Get("UiCaptureServerClient"),
+            (false, true) => LocalizationService.Get("UiCaptureClientServer"),
+            _ => LocalizationService.Get("UiCaptureDirectionUnconfirmed")
         };
 
-        return $"{name} — {direction} — {frame.PayloadLength + 2} bájt";
+        return LocalizationService.Format("UiCaptureBytes", name, direction, frame.PayloadLength + 2);
     }
     
     private void SetLatestEvent(
@@ -2770,11 +2770,11 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
             UnknownOpcodes++;
 
         string confidence = string.IsNullOrWhiteSpace(opcodeInfo?.Confidence)
-            ? (known ? "Ismert" : "Ismeretlen")
+            ? (known ? LocalizationService.Get("UiCaptureKnown") : LocalizationService.Get("UiCaptureUnknown"))
             : opcodeInfo.Confidence;
 
         string description = string.IsNullOrWhiteSpace(opcodeInfo?.Description)
-            ? (known ? name : "Még nem regisztrált opcode.")
+            ? (known ? name : LocalizationService.Get("UiCaptureOpcodeNotRegisteredYet"))
             : opcodeInfo.Description;
 
         string summary = DescribeFrame(frame, name);

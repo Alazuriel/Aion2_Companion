@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using AION_2_Companion.Core;
 using AION_2_Companion.Core.Accounts;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
@@ -19,14 +20,14 @@ public sealed record DeviationBoard(
     int Columns, IReadOnlyList<DeviationCell> Cells, int? OpenNodes)
 {
     public double BoardWidth => Columns * 62.0 + 1;
-    public string UnlockText => $"LV {UnlockLevel}";
+    public string UnlockText => LocalizationService.Format("UiDevBoardsUnlockLevel", UnlockLevel);
     public string ProgressText => OpenNodes is int count
-        ? $"{Math.Clamp(count, 0, MaxNodes)} / {MaxNodes} node ({Math.Clamp(count * 100.0 / MaxNodes, 0, 100):0.#}%)"
-        : $"— / {MaxNodes} node";
-    public string FullCostText => $"{FullCost} pont a teljes táblához";
+        ? LocalizationService.Format("UiDevBoardsProgressKnown", Math.Clamp(count, 0, MaxNodes), MaxNodes, Math.Clamp(count * 100.0 / MaxNodes, 0, 100))
+        : LocalizationService.Format("UiDevBoardsProgressUnknown", MaxNodes);
+    public string FullCostText => LocalizationService.Format("UiDevBoardsFullCost", FullCost);
     public string LayoutStatusText => IsPreview
-        ? "Ariel: csak szemléltető elrendezés. Pontos node-koordináták még nincsenek importálva."
-        : "Valós táblaelrendezés. Az egyes feloldott cellák állapotát az API még nem szolgáltatja.";
+        ? LocalizationService.Get("UiDevBoardsArielIllustrativeLayoutOnlyExactNodeCoordinatesHaveNot")
+        : LocalizationService.Get("UiDevBoardsRealBoardLayoutApiDoesNotProvideStatusIndividualUnlock");
 }
 
 public sealed class CharactersViewModel : INotifyPropertyChanged, IDisposable
@@ -55,6 +56,7 @@ public sealed class CharactersViewModel : INotifyPropertyChanged, IDisposable
     public CharactersViewModel()
     {
         CharacterProfileService.Shared.Changed += OnProfileChanged;
+        LocalizationService.LanguageChanged += OnLanguageChanged;
         RebuildBoards();
     }
 
@@ -90,9 +92,9 @@ public sealed class CharactersViewModel : INotifyPropertyChanged, IDisposable
                     bool active = grade != '.';
                     string category = grade switch
                     {
-                        'u' => "Unique / 4 pont", 'e' => "Legend / 3 pont",
-                        'r' => "Rare / 2 pont", 'c' => "Common / 1 pont",
-                        's' => "Kezdő node", _ => string.Empty
+                        'u' => LocalizationService.Get("UiDevBoardsUnique4Points"), 'e' => LocalizationService.Get("UiDevBoardsLegend3Points"),
+                        'r' => LocalizationService.Get("UiDevBoardsRare2Points"), 'c' => LocalizationService.Get("UiDevBoardsCommon1Point"),
+                        's' => LocalizationService.Get("UiDevBoardsStartNode"), _ => string.Empty
                     };
                     cells.Add(new DeviationCell(
                         active ? LoadArt(grade) : null,
@@ -137,11 +139,17 @@ public sealed class CharactersViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
+    private void OnLanguageChanged(object? sender, EventArgs e) => Dispatcher.UIThread.Post(RebuildBoards);
+
     private void OnProfileChanged(object? sender, EventArgs e)
         => Dispatcher.UIThread.Post(RebuildBoards);
 
     private void Notify([CallerMemberName] string? property = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
 
-    public void Dispose() => CharacterProfileService.Shared.Changed -= OnProfileChanged;
+    public void Dispose()
+    {
+        CharacterProfileService.Shared.Changed -= OnProfileChanged;
+        LocalizationService.LanguageChanged -= OnLanguageChanged;
+    }
 }

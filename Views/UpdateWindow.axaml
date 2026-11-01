@@ -22,7 +22,7 @@
       </StackPanel>
       <Border Grid.Column="1" CornerRadius="999" BorderThickness="1"
               BorderBrush="#2F6A72" Background="#153E3C" Padding="11,5">
-        <TextBlock Text="NEW RELEASE" FontSize="10" FontWeight="SemiBold"
+        <TextBlock Text="{DynamicResource UiUpdaterNewRelease}" FontSize="10" FontWeight="SemiBold"
                    Foreground="#7AEBD5" LetterSpacing="1.2"/>
       </Border>
     </Grid>

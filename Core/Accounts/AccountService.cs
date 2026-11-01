@@ -1,3 +1,4 @@
+using AION_2_Companion.Core;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -184,19 +185,19 @@ public sealed class AccountService
                         ScheduleRefreshForCurrentSession();
                         return;
                     default:
-                        DeviceError = "Unexpected pairing response.";
+                        DeviceError = LocalizationService.Get("UiAccountUnexpectedPairingResponse");
                         break;
                 }
                 break;
             }
-            DeviceError ??= "The pairing code expired. Please try again.";
+            DeviceError ??= LocalizationService.Get("UiAccountPairingCodeExpiredPleaseTryAgain");
             SetSnapshot(AccountConnectionState.Error, null, "AccountLoginFailed", true, false);
         }
         catch (OperationCanceledException)
         {
             bool userCancelled = cancel?.IsCancellationRequested == true &&
                 !cancellationToken.IsCancellationRequested && !_lifetimeCts.IsCancellationRequested;
-            DeviceError = userCancelled ? null : "Pairing timed out or was interrupted.";
+            DeviceError = userCancelled ? null : LocalizationService.Get("UiAccountPairingTimedOutOrWasInterrupted");
             SetSnapshot(userCancelled ? AccountConnectionState.Disconnected : AccountConnectionState.Error,
                 null, userCancelled ? "AccountLoginCancelled" : "AccountTimedOut", true, false);
         }

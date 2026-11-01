@@ -180,7 +180,7 @@ public sealed class CharacterDetailsViewModel : INotifyPropertyChanged, IDisposa
                 string tooltip = BuildSkillTooltip(name, skill, definition);
                 // A missing or zero API level is unknown, not a real level 0 or a reason
                 // to show "max level" as if the skill had been learned.
-                string? levelBadge = skill.Level > 0 ? $"Lv. {skill.Level}" : null;
+                string? levelBadge = skill.Level > 0 ? LocalizationService.Format("UiCharacterDetailsLevelShort", skill.Level) : null;
                 return new CharacterVisualItem(name, skill.Category ?? skill.Grade,
                     localIcon, "#45DFFF", tooltip, levelBadge);
             }).ToArray();
@@ -271,13 +271,13 @@ public sealed class CharacterDetailsViewModel : INotifyPropertyChanged, IDisposa
         if (skill.Level > 0)
         {
             lines.Add(definition?.MaxLevel is > 0
-                ? $"Lv. {skill.Level} / {definition.MaxLevel}"
-                : $"Lv. {skill.Level}");
+                ? LocalizationService.Format("UiCharacterDetailsLevelWithMax", skill.Level, definition.MaxLevel)
+                : LocalizationService.Format("UiCharacterDetailsLevelShort", skill.Level));
         }
         else
         {
-            lines.Add("Szint: nincs megbízható API-adat");
-            if (definition?.MaxLevel is > 0) lines.Add($"Max. szint: {definition.MaxLevel}");
+            lines.Add(LocalizationService.Get("UiCharacterDetailsUnknownSkillLevel"));
+            if (definition?.MaxLevel is > 0) lines.Add(LocalizationService.Format("UiCharacterDetailsMaxSkillLevel", definition.MaxLevel));
         }
 
         if (!string.IsNullOrWhiteSpace(definition?.Description))
@@ -289,12 +289,12 @@ public sealed class CharacterDetailsViewModel : INotifyPropertyChanged, IDisposa
         if (definition?.Specialties is { Count: > 0 } specialties)
         {
             lines.Add(string.Empty);
-            lines.Add("SPECIALIZATIONS");
+            lines.Add(LocalizationService.Get("UiCharacterDetailsSpecializations"));
             foreach (SkillSpecialty specialty in specialties)
             {
-                string requirement = specialty.Level is > 0 ? $"Lv. {specialty.Level}: " : "";
+                string requirement = specialty.Level is > 0 ? LocalizationService.Format("UiCharacterDetailsLevelShort", specialty.Level) + ": " : "";
                 string description = string.IsNullOrWhiteSpace(specialty.Description)
-                    ? "Részletes leírás nincs az NFG-ben"
+                    ? LocalizationService.Get("UiCharacterDetailsNoDetailedDescriptionNfg")
                     : specialty.Description;
                 lines.Add(WrapTooltipText($"• {requirement}{description}", 62));
             }

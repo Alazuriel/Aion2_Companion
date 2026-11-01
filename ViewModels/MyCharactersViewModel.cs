@@ -144,7 +144,7 @@ public sealed partial class MyCharactersViewModel : INotifyPropertyChanged, IDis
         NotifyAll();
         _ = LoadAsync(false);
     });
-    private void LanguageChanged(object? sender, EventArgs e) => Dispatcher.UIThread.Post(NotifyAll);
+    private void LanguageChanged(object? sender, EventArgs e) => Dispatcher.UIThread.Post(() => { NotifyAll(); RefreshVerifiedStatusLocalization(); });
     private void ProfileChanged(object? sender, EventArgs e) => Dispatcher.UIThread.Post(NotifyAll);
     private void VerificationChanged(object? sender, EventArgs e) => Dispatcher.UIThread.Post(() => { NotifyAll(); VerifiedVerificationChanged(); });
     private void NotifyCooldown() { OnPropertyChanged(nameof(RefreshRemaining)); OnPropertyChanged(nameof(RefreshText)); OnPropertyChanged(nameof(CanRefresh)); RefreshCommand.NotifyCanExecuteChanged(); }

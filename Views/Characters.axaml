@@ -16,9 +16,9 @@
   </UserControl.Styles>
   <StackPanel Spacing="15" Margin="0,3,0,8">
     <StackPanel Spacing="4">
-      <TextBlock Text="DAEVANION · DEVIATION BOARDS" FontSize="10" Foreground="#45DFFF" FontWeight="Bold"/>
-      <TextBlock Text="Fejlődési táblák" FontSize="22" FontWeight="SemiBold" Foreground="#E8F4FF"/>
-      <TextBlock Text="Válassz táblát. A cellák színei a ritkaságot mutatják; a feloldott útvonalhoz részletes API-adatok szükségesek."
+      <TextBlock Text="{DynamicResource UiDevBoardsDaevanionDeviationBoards}" FontSize="10" Foreground="#45DFFF" FontWeight="Bold"/>
+      <TextBlock Text="{DynamicResource UiDevBoardsProgressionBoards}" FontSize="22" FontWeight="SemiBold" Foreground="#E8F4FF"/>
+      <TextBlock Text="{DynamicResource UiDevBoardsSelectBoardCellColorsRepresentRarityDetailedApiDataNee}"
                  FontSize="11" Foreground="#90A9BB" TextWrapping="Wrap"/>
     </StackPanel>
     <ListBox x:Name="DeviationBoardTabs" ItemsSource="{Binding Boards}"
@@ -50,7 +50,7 @@
           </StackPanel>
           <StackPanel Grid.Column="1" Spacing="3" HorizontalAlignment="Right">
             <TextBlock Text="{Binding SelectedBoard.ProgressText}" Foreground="#45DFFF" FontWeight="SemiBold" FontSize="13" HorizontalAlignment="Right"/>
-            <TextBlock Text="NYITOTT CSOMÓPONTOK" Foreground="#7792A5" FontSize="9" HorizontalAlignment="Right"/>
+            <TextBlock Text="{DynamicResource UiDevBoardsUnlockedNodes}" Foreground="#7792A5" FontSize="9" HorizontalAlignment="Right"/>
           </StackPanel>
         </Grid>
         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
@@ -78,7 +78,7 @@
         </Border>
       </StackPanel>
     </Border>
-    <TextBlock Text="Common = 1 pont  ·  Rare = 2 pont  ·  Legend = 3 pont  ·  Unique = 4 pont  ·  közép = kezdő node"
+    <TextBlock Text="{DynamicResource UiDevBoardsCommon1PointRare2PointsLegend3PointsUnique4PointsCente}"
                Foreground="#93AABE" FontSize="10" TextWrapping="Wrap"/>
   </StackPanel>
 </UserControl>

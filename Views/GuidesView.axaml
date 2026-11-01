@@ -4,8 +4,8 @@
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <StackPanel Spacing="18">
       <StackPanel Spacing="4">
-        <TextBlock Text="Class guide" Classes="h1"/>
-        <TextBlock Text="Osztályonkénti szerep, build és party összetétel." Classes="body"/>
+        <TextBlock Text="{DynamicResource UiGuideClassGuide}" Classes="h1"/>
+        <TextBlock Text="{DynamicResource UiGuideClassRolesBuildsPartyComposition}" Classes="body"/>
       </StackPanel>
 
       <Border Classes="panel" Padding="0">
@@ -16,10 +16,10 @@
               <TextBlock Text="Assassin" Classes="accent" FontWeight="Medium"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Spacing="3" Margin="8,0">
-              <TextBlock Text="Burst / egy célpont" FontWeight="Medium" FontSize="14"/>
-              <TextBlock Text="Uptime, tiszta burst ablak, célpont elérése." Classes="body" FontSize="12"/>
+              <TextBlock Text="{DynamicResource UiGuideBurstSingleTarget}" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="{DynamicResource UiGuideUptimeCleanBurstWindowsTargetAccess}" Classes="body" FontSize="12"/>
             </StackPanel>
-            <Button Grid.Column="2" Classes="ui" Content="Jegyzet" VerticalAlignment="Center"/>
+            <Button Grid.Column="2" Classes="ui" Content="{DynamicResource UiGuideNotes}" VerticalAlignment="Center"/>
           </Grid>
           <Border Classes="rowline"/>
           <Grid ColumnDefinitions="200,*,Auto" Margin="18,16">
@@ -28,10 +28,10 @@
               <TextBlock Text="Aether Sorcerer" Classes="accent" FontWeight="Medium"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Spacing="3" Margin="8,0">
-              <TextBlock Text="Mágia / távolsági" FontWeight="Medium" FontSize="14"/>
-              <TextBlock Text="Rotáció és build helye. Később a közösségi buildek kerülnek ide." Classes="body" FontSize="12"/>
+              <TextBlock Text="{DynamicResource UiGuideMagicRanged}" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="{DynamicResource UiGuideSpaceRotationsBuildsCommunityBuildsWillBeAddedLater}" Classes="body" FontSize="12"/>
             </StackPanel>
-            <Button Grid.Column="2" Classes="ui" Content="Jegyzet" VerticalAlignment="Center"/>
+            <Button Grid.Column="2" Classes="ui" Content="{DynamicResource UiGuideNotes}" VerticalAlignment="Center"/>
           </Grid>
           <Border Classes="rowline"/>
           <Grid ColumnDefinitions="200,*,Auto" Margin="18,16">
@@ -40,10 +40,10 @@
               <TextBlock Text="Templar" Classes="accent" FontWeight="Medium"/>
             </StackPanel>
             <StackPanel Grid.Column="1" Spacing="3" Margin="8,0">
-              <TextBlock Text="Első vonal / védelem" FontWeight="Medium" FontSize="14"/>
-              <TextBlock Text="Szerep, gear prioritás és encounter jegyzet." Classes="body" FontSize="12"/>
+              <TextBlock Text="{DynamicResource UiGuideFrontlineDefense}" FontWeight="Medium" FontSize="14"/>
+              <TextBlock Text="{DynamicResource UiGuideRoleGearPrioritiesEncounterNotes}" Classes="body" FontSize="12"/>
             </StackPanel>
-            <Button Grid.Column="2" Classes="ui" Content="Jegyzet" VerticalAlignment="Center"/>
+            <Button Grid.Column="2" Classes="ui" Content="{DynamicResource UiGuideNotes}" VerticalAlignment="Center"/>
           </Grid>
         </StackPanel>
       </Border>
@@ -51,8 +51,8 @@
       <Border Classes="panel" Padding="18">
         <StackPanel Spacing="12">
           <Grid ColumnDefinitions="*,Auto">
-            <TextBlock Text="Party összetétel" Classes="section"/>
-            <TextBlock Grid.Column="1" Text="minta" Classes="eyebrow" VerticalAlignment="Center"/>
+            <TextBlock Text="{DynamicResource UiGuidePartyComposition}" Classes="section"/>
+            <TextBlock Grid.Column="1" Text="{DynamicResource UiGuideSample}" Classes="eyebrow" VerticalAlignment="Center"/>
           </Grid>
           <WrapPanel Orientation="Horizontal">
             <Border Classes="pill" Margin="0,0,8,8"><TextBlock Text="Assassin" Classes="accent" FontSize="13"/></Border>

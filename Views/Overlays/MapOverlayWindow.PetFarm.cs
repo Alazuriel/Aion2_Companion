@@ -208,7 +208,7 @@ public partial class MapOverlayWindow
         var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
         _petFarmTooltipName = new TextBlock
         {
-            Text = "Pet", FontWeight = FontWeight.SemiBold,
+            Text = LocalizationService.Get("UiMapOverlayPetName"), FontWeight = FontWeight.SemiBold,
             FontSize = 17, Foreground = new SolidColorBrush(Color.Parse("#F4F7FF"))
         };
         header.Children.Add(_petFarmTooltipName);

@@ -23,6 +23,12 @@ public partial class MyCharactersView : UserControl
     private void OpenCharacterClick(object? sender, RoutedEventArgs e) =>
         OpenCharacterRequested?.Invoke(this, EventArgs.Empty);
 
+    private void SelectVerifiedCharacterClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: VerifiedCharacterSummary character })
+            _viewModel.SelectVerifiedCharacter(character);
+    }
+
     private void OpenSearchClick(object? sender, RoutedEventArgs e) =>
         OpenSearchRequested?.Invoke(this, EventArgs.Empty);
 

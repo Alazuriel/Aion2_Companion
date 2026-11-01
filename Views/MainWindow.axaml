@@ -209,6 +209,31 @@
     <!-- Tartalom -->
     <Grid Grid.Row="1" Grid.Column="1" Margin="28,24,28,24">
       <ContentControl x:Name="PageHost"/>
+      <!-- Non-modal update notification; the running game/capture are never interrupted. -->
+      <Border x:Name="LegacyUpdateNotice" IsVisible="False" ZIndex="50"
+              HorizontalAlignment="Right" VerticalAlignment="Bottom"
+              Width="390" MaxWidth="390" Margin="0,0,12,12" Padding="16"
+              CornerRadius="14" Background="#F00B1727" BorderBrush="#6055CBE8"
+              BorderThickness="1" BoxShadow="0 8 28 0 #77000000">
+        <StackPanel Spacing="10">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{DynamicResource UpdateAvailableTitle}" Classes="kicker"
+                       Foreground="#45DFFF" FontSize="10" VerticalAlignment="Center"/>
+            <Button Grid.Column="1" Classes="ui quiet" Content="×" Padding="8,2"
+                    Click="LegacyUpdateLaterClick"/>
+          </Grid>
+          <TextBlock x:Name="LegacyUpdateNoticeText" FontSize="13"
+                     Foreground="#EAF7FF" TextWrapping="Wrap"/>
+          <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+            <Button Grid.Column="0" Classes="ui" Content="{DynamicResource UpdateLater}"
+                    Click="LegacyUpdateLaterClick"/>
+            <Button Grid.Column="2" Classes="ui" Content="{DynamicResource ChangelogTitle}"
+                    Click="LegacyUpdateChangelogClick"/>
+            <Button Grid.Column="3" Classes="ui primary" Content="{DynamicResource UpdateInstall}"
+                    Click="LegacyUpdateOpenClick"/>
+          </Grid>
+        </StackPanel>
+      </Border>
     </Grid>
 
     <Grid x:Name="OnboardingLayer" Grid.RowSpan="2" Grid.ColumnSpan="2"

@@ -46,6 +46,7 @@ public static class UpdateService
     private static readonly TimeSpan AutomaticCheckInterval = TimeSpan.FromHours(8);
 
     private static readonly HttpClient Http = CreateClient();
+    private static readonly SemaphoreSlim DownloadGate = new(1, 1);
 
     public static bool ShouldCheckAutomatically()
     {
@@ -79,9 +80,14 @@ public static class UpdateService
             if (release is null || release.Draft || release.Prerelease)
                 return new UpdateCheckResult(UpdateCheckState.ChannelUnavailable);
 
+            string releaseVersion = NormalizeVersion(release.TagName);
+            if (!TryParseVersion(releaseVersion, out Version? availableVersion))
+                return new UpdateCheckResult(UpdateCheckState.ChannelUnavailable);
+
+            // Only install the asset for THIS release version, never another installer.
+            string expectedInstallerName = InstallerPrefix + releaseVersion + ".exe";
             GitHubAsset? installer = release.Assets?.FirstOrDefault(asset =>
-                asset.Name.StartsWith(InstallerPrefix, StringComparison.OrdinalIgnoreCase) &&
-                asset.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase));
+                string.Equals(asset.Name, expectedInstallerName, StringComparison.OrdinalIgnoreCase));
 
             if (installer is null ||
                 installer.Size <= 0 ||
@@ -91,10 +97,6 @@ public static class UpdateService
             {
                 return new UpdateCheckResult(UpdateCheckState.ChannelUnavailable);
             }
-
-            string releaseVersion = NormalizeVersion(release.TagName);
-            if (!TryParseVersion(releaseVersion, out Version? availableVersion))
-                return new UpdateCheckResult(UpdateCheckState.ChannelUnavailable);
 
             Version currentVersion = typeof(UpdateService).Assembly.GetName().Version ?? new Version(0, 0, 0);
             if (availableVersion <= currentVersion)
@@ -132,6 +134,9 @@ public static class UpdateService
         IProgress<double>? progress = null,
         CancellationToken cancellationToken = default)
     {
+        await DownloadGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
         string updateDirectory = Path.Combine(CompanionSettings.SettingsDirectory, "Updates");
         Directory.CreateDirectory(updateDirectory);
         string destinationPath = Path.Combine(updateDirectory, Path.GetFileName(update.FileName));
@@ -208,6 +213,12 @@ public static class UpdateService
         CleanupOldInstallers(updateDirectory, destinationPath);
         progress?.Report(1);
         return destinationPath;
+    
+        }
+        finally
+        {
+            DownloadGate.Release();
+        }
     }
 
     public static void LaunchSilentInstaller(string installerPath)

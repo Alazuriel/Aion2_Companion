@@ -84,6 +84,7 @@ public sealed class CharacterDetailsViewModel : INotifyPropertyChanged, IDisposa
     public string RegionText => string.IsNullOrWhiteSpace(_profile?.Region) ? "—" : _profile!.Region;
     public string VerificationText => IsVerified ? LocalizationService.Get("VerificationVerifiedBadge")
         : LocalizationService.Get("Unverified");
+    public string VerificationHintText => IsVerified ? LocalizationService.Get("VerificationTrustNote") : LocalizationService.Get("UnverifiedHint");
     public string UpdatedText => (_profile?.UpdatedAtUtc ?? _detected?.DetectedAtUtc)?.ToLocalTime().ToString("g") ?? "—";
     public string ClassTooltip => $"{CharacterName}\n{CharacterClass}\n{ServerText}";
     public string CombatPowerText => _profile?.CombatPower is int cp ? cp.ToString("N0") : "—";
@@ -228,6 +229,8 @@ public sealed class CharacterDetailsViewModel : INotifyPropertyChanged, IDisposa
         {
             var identity = new CharacterIdentity(current.Region, current.ServerId, current.Name);
             CharacterLoadResult result = await CharacterCenterService.Shared.LoadProfileAsync(identity, "full", true, CancellationToken.None);
+            // A slow refresh must not overwrite a newly selected character.
+            if (CharacterCenterService.Shared.CurrentSelf?.CacheKey != identity.CacheKey) return;
             CharacterProfileService.Shared.Replace(CharacterProfileMapper.Map(result));
             RefreshStatus = result.Offline ? LocalizationService.Get("CharacterCachedOffline") : string.Empty;
         }
@@ -376,7 +379,7 @@ public sealed class CharacterDetailsViewModel : INotifyPropertyChanged, IDisposa
         {
             nameof(HasCharacter), nameof(HasNoCharacter), nameof(CharacterName), nameof(CharacterClass),
             nameof(ClassIconSource), nameof(LevelText), nameof(GearScoreText), nameof(ServerText),
-            nameof(RegionText), nameof(VerificationText), nameof(UpdatedText), nameof(ClassTooltip),
+            nameof(RegionText), nameof(VerificationText), nameof(VerificationHintText), nameof(UpdatedText), nameof(ClassTooltip),
             nameof(CurrentIdentity), nameof(CanVerify), nameof(IsVerified), nameof(VerifyButtonText), nameof(ProfileImageUrl),
             nameof(CombatPowerText), nameof(DataStateText), nameof(RefreshText), nameof(CanRefresh),
             nameof(EquipmentSlots), nameof(SkillItems), nameof(SkillCatalogStatus),

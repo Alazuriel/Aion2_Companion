@@ -256,6 +256,27 @@ public static class CompanionSettings
         }
     }
 
+    public static bool DownloadUpdatesInBackground
+    {
+        get
+        {
+            lock (Sync)
+                return Load().DownloadUpdatesInBackground;
+        }
+        set
+        {
+            lock (Sync)
+            {
+                SettingsData data = Load();
+                if (data.DownloadUpdatesInBackground == value)
+                    return;
+
+                data.DownloadUpdatesInBackground = value;
+                Save(data);
+            }
+        }
+    }
+
     public static DateTimeOffset? LastUpdateCheckUtc
     {
         get
@@ -527,6 +548,7 @@ public static class CompanionSettings
         public DpsEncounterMode DpsEncounterMode { get; set; } = DpsEncounterMode.All;
         public string LanguageCode { get; set; } = "en";
         public bool CheckUpdatesAutomatically { get; set; } = true;
+        public bool DownloadUpdatesInBackground { get; set; } = false;
         public DateTimeOffset? LastUpdateCheckUtc { get; set; }
         public string? LastSeenOnboardingVersion { get; set; }
         public int CombatLogLimit { get; set; } = 500;

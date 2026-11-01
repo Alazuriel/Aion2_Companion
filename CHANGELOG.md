@@ -4,6 +4,38 @@ All notable user-facing changes are recorded here. Versions follow Semantic Vers
 
 ## Unreleased
 
+##  [0.1.91]
+
+**Nexforge Update — Language Improvements**
+
+This update focuses on language support and localization improvements.
+
+### Improved
+
+- Updated the English, Hungarian, German, and Polish language packs.
+- Refreshed the bundled translations available in AION 2 Companion.
+
+### Requirements
+
+- Windows 10 or Windows 11 (64-bit)
+- [Npcap](https://npcap.com/#download) for network packet capture
+- AION 2
+- Administrator mode and borderless fullscreen for the Map Helper
+
+### Installation
+
+1. Download `Nexforge-AION2-Companion-Setup-0.1.91.exe` below.
+2. Run the installer and follow the instructions.
+3. Restart AION 2 Companion after updating.
+
+No separate .NET installation is required.
+
+---
+
+Developed by **Nexforge Studios**.
+
+*An independent fan-made companion application. Not affiliated with or endorsed by NCSOFT.*
+
 ##  [v0.1.9] - 2026-10-01
 
 **Nexforge Update**

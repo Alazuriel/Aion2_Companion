@@ -121,6 +121,7 @@ public partial class EventTimerOverlayWindow : Window
     private void HeaderDrag(object? sender, PointerPressedEventArgs e)
     {
         if (!CompanionSettings.EventTimerOverlayClickThrough &&
+            !OverlayStudioStore.IsLocked(OverlayStudioStore.Timers) &&
             e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
         {
             BeginMoveDrag(e);

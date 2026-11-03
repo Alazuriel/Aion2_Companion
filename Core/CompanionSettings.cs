@@ -147,6 +147,22 @@ public static class CompanionSettings
         }
     }
 
+    // Opt-in: only show the Phaseward HUD when a recognized encounter is active.
+    public static bool AutoPhasewardOverlay
+    {
+        get { lock (Sync) return Load().AutoPhasewardOverlay; }
+        set
+        {
+            lock (Sync)
+            {
+                SettingsData data = Load();
+                if (data.AutoPhasewardOverlay == value) return;
+                data.AutoPhasewardOverlay = value;
+                Save(data);
+            }
+        }
+    }
+
     public static bool AutoCaptureEnabled
     {
         get
@@ -543,6 +559,7 @@ public static class CompanionSettings
         public bool MapHelperEnabled { get; set; }
         public bool FileLoggingEnabled { get; set; }
         public bool AutoManageDpsOverlay { get; set; } = true;
+        public bool AutoPhasewardOverlay { get; set; } = false;
         public bool AutoCaptureEnabled { get; set; } = true;
         public bool ShowBossDeathPrediction { get; set; } = true;
         public DpsEncounterMode DpsEncounterMode { get; set; } = DpsEncounterMode.All;

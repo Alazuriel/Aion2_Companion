@@ -235,21 +235,6 @@ public partial class UpdateWindow : Window
         if (_installing)
             return;
 
-        // SYNTRA-UPDATER-PHASE1-CAPTURE-GUARD: no installation while capture is active.
-        if (CaptureInProgress())
-        {
-            SetStatus(LocalizationService.Get("UpdatePauseCapture"), "#FFB454");
-            return;
-        }
-
-        // Do not close the running Companion while it is monitoring a game.
-        if (Owner is MainWindow mainWindow &&
-            mainWindow.DataContext is MainWindowViewModel model && model.IsCapturing)
-        {
-            SetStatus(LocalizationService.Get("UpdatePauseCapture"), "#FFB454");
-            return;
-        }
-
         _installing = true;
         _downloadCancellation = new CancellationTokenSource();
         _installButton.IsEnabled = false;
@@ -266,18 +251,29 @@ public partial class UpdateWindow : Window
                 _update, progress, _downloadCancellation.Token);
             _downloadCancellation.Token.ThrowIfCancellationRequested();
             _laterButton.IsEnabled = false;
-            SetStatus(LocalizationService.Get("UpdateLaunching"), "#58E0B2");
-            // SYNTRA-UPDATER-PHASE1-FINAL-GUARD: capture may have started during download.
-            if (CaptureInProgress())
+
+            // SYNTRA-SAFE-UPDATE-HANDOFF: download and hash verification are complete.
+            // The user already explicitly requested installation. Only now stop monitoring,
+            // and never interrupt a live or grace-period combat encounter.
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktopLifetime &&
+                desktopLifetime.MainWindow?.DataContext is MainWindowViewModel model)
             {
-                SetStatus(LocalizationService.Get("UpdatePauseCapture"), "#FFB454");
-                _installing = false;
-                _installButton.IsEnabled = true;
-                _laterButton.IsEnabled = true;
-                _laterButton.Content = LocalizationService.Get("UpdateLater");
-                _progress.IsVisible = false;
-                return;
+                if (model.HasActiveEncounterForUpdate)
+                {
+                    SetStatus(LocalizationService.Get("UiUpdaterWaitForCombat"), "#FFB454");
+                    ResetDownloadControls();
+                    return;
+                }
+
+                if (!model.TryStopMonitoringForUpdate())
+                {
+                    SetStatus(LocalizationService.Get("CaptureStopFailed"), "#F87171");
+                    ResetDownloadControls();
+                    return;
+                }
             }
+
+            SetStatus(LocalizationService.Get("UpdateLaunching"), "#58E0B2");
             UpdateService.LaunchSilentInstaller(installer);
 
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
@@ -311,10 +307,6 @@ public partial class UpdateWindow : Window
         _laterButton.Content = LocalizationService.Get("UpdateLater");
         _progress.IsVisible = false;
     }
-
-    private static bool CaptureInProgress() =>
-        Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
-        desktop.MainWindow?.DataContext is MainWindowViewModel model && model.IsCapturing;
 
     private void SetStatus(string text, string color)
     {

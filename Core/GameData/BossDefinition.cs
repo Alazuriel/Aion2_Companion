@@ -22,6 +22,11 @@ public sealed class BossDefinition
     [JsonPropertyName("instance")]
     public string Instance { get; init; } = string.Empty;
 
+    // Optional server-approved canonical identifier, distinct from location labels
+    // such as "Eltnen". Does not change how older NFG packs deserialize.
+    [JsonPropertyName("instance_id")]
+    public string InstanceId { get; init; } = string.Empty;
+
     [JsonPropertyName("difficulty")]
     public string Difficulty { get; init; } = string.Empty;
 

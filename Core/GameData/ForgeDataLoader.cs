@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using AION_2_Companion.Core.GameData;
 using AION_2_Companion.Core.Wire;
+using AION_2_Companion.Core.Phaseward;
 
 namespace AION_2_Companion.Core.GameData;
 
@@ -23,6 +24,8 @@ public class ForgeDataLoader
     public OpCodesDatabase? _opcodesDatabase;
     public EventTimersDatabase? _eventTimersDatabase;
     public ServersDatabase? _serversDatabase;
+    public PhasewardPack? _phasewardPack;
+    public string PhasewardLoadStatus { get; private set; } = "Phaseward pack not loaded";
     
     private static T? TryLoad<T>(string path, Func<string, T> load, Func<T, string> info)
         where T : class
@@ -122,6 +125,23 @@ public class ForgeDataLoader
             Path.Combine(dataDir, "AION2_Servers.nfg"),
             ServersDatabase.Load,
             db => $"Szerverek: {db.Servers.Count}");
+
+        // Same ForgeData directory and TryLoad logging as the other NXFG packs.
+        // PhasewardPack.Load uses ForgeDataReader.LoadPayloadJson, which authenticates
+        // NXFG v1 (SHA-256) and v2 (AES-GCM) through the existing decoder.
+        string[] phasewardNames = { "AION2_Phaseward.nfg", "AION2_DBM.nfg" };
+        string? phasewardPath = phasewardNames
+            .Select(name => Path.Combine(dataDir, name)).FirstOrDefault(File.Exists);
+        _phasewardPack = phasewardPath is null ? null : TryLoad<PhasewardPack>(
+            phasewardPath, PhasewardPack.Load,
+            pack => $"Phaseward bosses: {pack.Encounters.Count} | ambiguous NPC IDs: {pack.AmbiguousBossNpcIds.Count}");
+        PhasewardLoadStatus = phasewardPath is null
+            ? "AION2_Phaseward.nfg not installed"
+            : _phasewardPack is null
+                ? $"Phaseward NFG failed to load ({Path.GetFileName(phasewardPath)}); see ForgeData error log"
+                : $"Phaseward loaded: {_phasewardPack.Encounters.Count} bosses; " +
+                  $"{_phasewardPack.AmbiguousBossNpcIds.Count} ambiguous NPC IDs excluded ({Path.GetFileName(phasewardPath)})";
+        PhasewardCatalog.Initialize(_phasewardPack);
 
         OpcodeCatalog.Initialize(_opcodesDatabase);
         BossCatalog.Initialize(_bossesDatabase);

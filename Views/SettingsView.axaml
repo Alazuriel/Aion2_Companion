@@ -9,6 +9,24 @@
 
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <StackPanel Spacing="16" MaxWidth="980" HorizontalAlignment="Stretch" Margin="0,0,8,28">
+      <!-- SYNTRA #21 · native Nexforge styling; no automated submission -->
+      <Border CornerRadius="20" BorderBrush="#3F617E" BorderThickness="1" Padding="20">
+        <Border.Background>
+          <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+            <GradientStop Color="#EA0B1827" Offset="0"/>
+            <GradientStop Color="#DF131E33" Offset="1"/>
+          </LinearGradientBrush>
+        </Border.Background>
+        <StackPanel Spacing="10">
+          <TextBlock Text="NEXFORGE / DIAGNOSTICS" FontSize="11" FontWeight="Bold" Foreground="#58D9F4"/>
+          <TextBlock x:Name="DiagnosticsHeadingText" FontSize="20" FontWeight="SemiBold" Foreground="#F2F7FF"/>
+          <TextBlock x:Name="DiagnosticsSubtitleText" FontSize="12" TextWrapping="Wrap" Foreground="#9BB0C5"/>
+          <WrapPanel Orientation="Horizontal">
+            <Button x:Name="DiagnosticsManualButton" Classes="ui" Margin="0,3,9,3" Click="DiagnosticManualClick"/>
+            <Button x:Name="DiagnosticsReviewButton" Classes="ui" Margin="0,3,9,3" Click="DiagnosticReviewClick"/>
+          </WrapPanel>
+        </StackPanel>
+      </Border>
 
       <Border CornerRadius="20" BorderBrush="#466782" BorderThickness="1" Padding="22"
               BoxShadow="0 18 44 0 #60000000">
@@ -144,7 +162,16 @@
           <StackPanel Spacing="8"><TextBlock Text="{DynamicResource UiSettings04Overlay}" Classes="settings-index"/><TextBlock Text="{DynamicResource OverlayCategory}" Classes="settings-category"/><TextBlock Text="{DynamicResource OverlayCategoryHint}" Classes="hint"/></StackPanel>
           <StackPanel Grid.Column="1" Spacing="9">
             <Border Classes="settings-row"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="3"><TextBlock Text="{DynamicResource DpsMeter}" Classes="settings-label"/><TextBlock Text="{DynamicResource DpsOverlayHint}" Classes="hint"/></StackPanel><Button Grid.Column="1" Classes="ui" Content="{DynamicResource Open}" Click="OpenDpsClick" VerticalAlignment="Center"/></Grid></Border>
-            <Border Classes="settings-row"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="3"><TextBlock Text="{DynamicResource BossAssistant}" Classes="settings-label"/><TextBlock Text="{DynamicResource BossOverlayHint}" Classes="hint"/></StackPanel><Border Grid.Column="1" Classes="settings-status gold" VerticalAlignment="Center"><TextBlock Text="{DynamicResource StillUnderForge}" Classes="kicker" FontSize="9" Foreground="#D8B96A"/></Border></Grid></Border>
+            <Border Classes="settings-row">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <StackPanel Spacing="4">
+                  <CheckBox x:Name="AutoPhasewardToggle" Content="{DynamicResource PwAutoHud}"/>
+                  <TextBlock Text="{DynamicResource PwReadyHint}" Classes="hint" Margin="25,0,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+                <Button Grid.Column="1" Classes="ui" Content="{DynamicResource Open}" Click="OpenPhasewardOverlayClick" VerticalAlignment="Center"/>
+              </Grid>
+            </Border>
+            <Border Classes="settings-row"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="3"><TextBlock Text="Overlay Studio" Classes="settings-label"/><TextBlock Text="Move and resize HUD overlays on the screen. Use DEMO mode to preview Phaseward mechanics before saving." Classes="hint" TextWrapping="Wrap"/></StackPanel><Button Grid.Column="1" Classes="ui" Content="Open Studio" Click="OpenOverlayStudioClick" VerticalAlignment="Center"/></Grid></Border>
           </StackPanel>
         </Grid>
       </Border>

@@ -2,6 +2,7 @@
 using System;
 using System.Threading;
 using AION_2_Companion.Core;
+using AION_2_Companion.Core.Diagnostics;
 
 namespace AION_2_Companion;
 
@@ -21,6 +22,17 @@ sealed class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        if (args.Length >= 1 && args[0] == "--diagnostics-watchdog")
+        {
+            DiagnosticRuntime.RunWatchdog(args);
+            return;
+        }
+        if (args.Length >= 1 && args[0] == "--diagnostics-self-test")
+        {
+            Environment.ExitCode = DiagnosticSelfTest.Run();
+            return;
+        }
+
         bool allowMultiple = Array.Exists(args, arg =>
             arg.Equals("--allow-multiple", StringComparison.OrdinalIgnoreCase));
         if (!allowMultiple)
@@ -56,15 +68,24 @@ sealed class Program
         ReadmeScreenshotsRequested = Array.Exists(args, arg =>
             arg.Equals("--readme-screenshots", StringComparison.OrdinalIgnoreCase));
 
+        DiagnosticRuntime.Start();
         DebugConsole.Initialize(args);
 
+        bool diagnosticCleanExit = false;
         try
         {
             BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args);
+            diagnosticCleanExit = true;
+        }
+        catch (Exception ex)
+        {
+            DiagnosticRuntime.RecordManagedCrash(ex, "main");
+            throw;
         }
         finally
         {
+            DiagnosticRuntime.Stop(diagnosticCleanExit);
             if (_singleInstanceMutex is not null)
             {
                 _singleInstanceMutex.ReleaseMutex();

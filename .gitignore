@@ -28,8 +28,20 @@ DOCS/
 # Raw opcode research data stays private. The encrypted runtime catalog may be
 # published with the other Data packs.
 /Core/Wire/OpcodeRegistry.cs
+/Core/Wire/Opcode.cs
+/Core/Wire/OpcodeCatalog.cs
+/Core/Wire/OpcodeId.cs
+/Core/Wire/OpcodeProbe.cs
+/Core/GameData/OpCodesDatabase.cs
+/Core/GameData/OpCodesDefinition.cs
 /Data/*Opcode*.json
 /Data/*Opcode*.csv
+
+# Private desktop API transports. Runtime sources stay local and are supplied
+# only to official Nexforge builds.
+**/*ApiClient.cs
+/Core/Accounts/NexforgeAccountAuthProtocol.cs
+/Core/Diagnostics/DiagnosticApi*.cs
 
 # Local research and data tools are private, including compiled executables.
 /Tools/*

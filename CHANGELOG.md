@@ -4,6 +4,73 @@ All notable user-facing changes are recorded here. Versions follow Semantic Vers
 
 ## Unreleased
 
+## [0.2.0]
+
+**Nexforge Update — Beyond the Damage**
+
+A new chapter for AION 2 Companion.
+
+This update brings new tools for boss encounters, more freedom to customize your overlays, and improvements across the application.
+
+### Added
+
+- **Nexforge Phaseward** — A new boss encounter assistant featuring mechanic information, encounter tracking, and timing estimates for supported bosses.
+- **Overlay Studio** — Customize the position, size, visibility, and opacity of your in-game HUD elements.
+- **HUD Presets** — Choose between Minimal, Combat, and Compact layouts, or create your own.
+- **Diagnostics Center** — Review reports after unexpected crashes or freezes and decide whether to share them with Nexforge Support.
+- **Group Fight Preview** — View your party's recorded damage, DPS, healing, and HPS in the redesigned Leaderboard submission interface.
+
+### Improved
+
+- Improved the DPS Meter and Phaseward HUD layouts.
+- Updated the Combat Timeline's event display and interaction handling.
+- Redesigned the Leaderboard submission interface.
+- Updated English, Hungarian, German, and Polish interface text.
+- Improved the presentation of update information.
+
+### Security & Privacy
+
+- You control whether diagnostic reports are shared or deleted.
+- Diagnostic reports are designed to avoid collecting personal gameplay details.
+
+### A Note About Phaseward 💜
+
+We want to be transparent with you.
+
+**Phaseward is still a work in progress.**
+
+Some boss encounters and mechanics are working as expected, while others may have inaccurate timers, missing warnings, or mechanics that aren't detected correctly.
+
+We've spent a significant amount of time improving Leaderboards and working on other important parts of Companion. Unfortunately, that meant Phaseward didn't receive as much attention and testing as we originally wanted.
+
+**We're sorry about that.**
+
+We know how important reliable boss mechanics are, especially when every second matters during a fight.
+
+But we're not giving up on Phaseward. Far from it.
+
+**And this is where we'd love your help!**
+
+If you notice something wrong, please share it through Companion's Feedback system. Tell us which boss you were fighting, what Phaseward displayed, and what actually happened.
+
+Every report helps us understand what needs fixing and brings Phaseward one step closer to becoming the boss assistant we want it to be.
+
+We can't promise that every mechanic will work perfectly right away, but we're committed to improving it together with the community.
+
+**Thank you for your patience, your feedback, and for being part of Nexforge.** 💜
+
+### Known Issues
+
+- Phaseward may miss mechanics or display inaccurate timing estimates for certain boss encounters.
+- Full Group Leaderboard submissions are not yet generally available.
+- Some Combat Timeline interactions may still experience visual alignment or performance issues.
+
+---
+
+Developed by **Nexforge Studios**.
+
+*An independent fan-made companion application. Not affiliated with or endorsed by NCSOFT.*
+
 ##  [0.1.91]
 
 **Nexforge Update — Language Improvements**

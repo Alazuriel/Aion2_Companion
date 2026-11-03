@@ -8,6 +8,7 @@ using Avalonia.Markup.Xaml;
 using AION_2_Companion.ViewModels;
 using AION_2_Companion.Views;
 using AION_2_Companion.Core;
+using AION_2_Companion.Core.Diagnostics;
 using AION_2_Companion.Core.Accounts;
 using AION_2_Companion.Core.Characters;
 using AION_2_Companion.Core.Characters.Verification;
@@ -63,6 +64,9 @@ public partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime diagDesktop &&
+            diagDesktop.MainWindow is not null)
+            DiagnosticRuntime.StartUi(diagDesktop.MainWindow);
     }
 
     private void DisableAvaloniaDataAnnotationValidation()

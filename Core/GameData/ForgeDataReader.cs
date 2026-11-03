@@ -40,6 +40,19 @@ public sealed class ForgeDataDocument
 
     [JsonPropertyName("servers")]
     public ServerDefinition[] Servers { get; init; } = [];
+
+    // Phaseward is stored in a standard NXFG v1/v2 package, not a new file format.
+    [JsonPropertyName("phaseward")]
+    public JsonElement Phaseward { get; init; }
+
+    [JsonPropertyName("dbm")]
+    public JsonElement Dbm { get; init; }
+
+    [JsonPropertyName("instances")]
+    public JsonElement Instances { get; init; }
+
+    [JsonPropertyName("encounters")]
+    public JsonElement Encounters { get; init; }
 }
 
 public static class ForgeDataReader
@@ -68,6 +81,43 @@ public static class ForgeDataReader
         PropertyNameCaseInsensitive = true,
         NumberHandling = JsonNumberHandling.AllowReadingFromString
     };
+
+
+    // Phaseward dataset reader: use the existing authenticated NXFG decoding routines,
+    // but preserve the complete JSON instead of projecting into ForgeDataDocument.
+    // This DOES NOT bypass v1 SHA-256 or v2 AES-256-GCM authentication.
+    public static JsonElement LoadPayloadJson(string path)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        byte[] file = File.ReadAllBytes(path);
+        if (file.Length < 8)
+            throw new InvalidDataException("Az NFG fájl túl rövid.");
+        if (!file.AsSpan(0, Magic.Length).SequenceEqual(Magic))
+            throw new InvalidDataException("Nem érvényes NXFG fájl.");
+        ushort version = BinaryPrimitives.ReadUInt16LittleEndian(file.AsSpan(4, 2));
+        byte[] raw = version switch
+        {
+            LegacyFormatVersion => DecodeLegacy(file),
+            CurrentFormatVersion => DecodeEncrypted(file),
+            _ => throw new InvalidDataException($"Nem támogatott NFG verzió: {version}.")
+        };
+        try
+        {
+            using JsonDocument json = JsonDocument.Parse(raw);
+            if (json.RootElement.ValueKind != JsonValueKind.Object &&
+                json.RootElement.ValueKind != JsonValueKind.Array)
+                throw new InvalidDataException("A Phaseward NFG JSON gyökéreleme hibás.");
+            return json.RootElement.Clone();
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidDataException("A Phaseward NFG JSON payload formátuma hibás.", ex);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(raw);
+        }
+    }
 
     public static ForgeDataDocument Load(string path)
     {
@@ -264,7 +314,11 @@ public static class ForgeDataReader
         bool hasOpcodes = document.Opcodes is { Length: > 0 };
         bool hasEventTimers = document.EventTimers is { Length: > 0 };
         bool hasServers = document.Servers is { Length: > 0 };
-        if (!hasClasses && !hasSkills && !hasMobs && !hasBosses && !hasSpawns && !hasOpcodes && !hasEventTimers && !hasServers)
+        bool hasPhaseward = document.Phaseward.ValueKind == JsonValueKind.Object;
+        bool hasDbm = document.Dbm.ValueKind == JsonValueKind.Object;
+        bool hasInstances = document.Instances.ValueKind == JsonValueKind.Array;
+        bool hasEncounters = document.Encounters.ValueKind == JsonValueKind.Array;
+        if (!hasClasses && !hasSkills && !hasMobs && !hasBosses && !hasSpawns && !hasOpcodes && !hasEventTimers && !hasServers && !hasPhaseward && !hasDbm && !hasInstances && !hasEncounters)
             throw new InvalidDataException("Az NFG nem tartalmaz támogatott Nexforge adatot.");
         return document;
     }

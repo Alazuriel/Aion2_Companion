@@ -1,0 +1,68 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AION_2_Companion.Views.Overlays.OverlayStudioWindow"
+        Width="470" Height="675" MinWidth="425" MinHeight="560" Topmost="True"
+        Title="Nexforge · Overlay Studio" Background="#0B1422"
+        Foreground="#EAF7FF" CanResize="True"
+        FontFamily="Inter, Segoe UI Variable Text, Segoe UI">
+  <Window.Styles>
+    <StyleInclude Source="avares://AION 2 Companion/Styles/Theme.axaml"/>
+  </Window.Styles>
+  <Border Padding="22">
+    <Grid RowDefinitions="Auto,*,Auto" ColumnDefinitions="0,*" ColumnSpacing="0">
+      <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Spacing="5" Margin="0,0,0,18">
+        <TextBlock Text="NEXFORGE / OVERLAY STUDIO" FontSize="11" FontWeight="SemiBold" Foreground="#45DFFF"/>
+        <TextBlock Text="HUD Layout Editor" FontSize="27" FontWeight="Bold"/>
+        <TextBlock Text="Drag the floating HUD outlines directly on your screen; resize using ↘. Changes apply only after Save."
+                   FontSize="12" Foreground="#8FA9BF" TextWrapping="Wrap"/>
+      </StackPanel>
+      <Border Grid.Row="1" Grid.Column="0" IsVisible="False" CornerRadius="14" Background="#111F31" BorderBrush="#315069" BorderThickness="1" Padding="12">
+        <Grid RowDefinitions="Auto,*" RowSpacing="10">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="SCREEN PREVIEW" FontSize="11" Foreground="#8FA9BF" FontWeight="SemiBold"/>
+            <TextBlock Grid.Column="1" Name="ScreenLabel" FontSize="11" Foreground="#71879B"/>
+          </Grid>
+          <Viewbox Grid.Row="1" Stretch="Uniform">
+            <Border BorderBrush="#3A607C" BorderThickness="1" CornerRadius="9" Background="#08121E" ClipToBounds="True">
+              <Canvas Name="PreviewCanvas" Width="640" Height="360" Background="#101B29"/>
+            </Border>
+          </Viewbox>
+        </Grid>
+      </Border>
+      <ScrollViewer Grid.Row="1" Grid.Column="1" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="11">
+          <TextBlock Text="Selected widget" FontWeight="SemiBold" FontSize="15"/>
+          <ComboBox Name="WidgetSelect" SelectionChanged="WidgetChanged">
+            <ComboBoxItem Content="DPS Meter" Tag="dps-meter-compact-v2"/>
+            <ComboBoxItem Content="Phaseward HUD" Tag="dbm-assistant"/>
+            <ComboBoxItem Content="Event Timers" Tag="event-timers-overlay"/>
+          </ComboBox>
+          <CheckBox Name="WidgetVisible" Content="Visible in game" IsChecked="True" Click="SettingChanged"/>
+          <CheckBox Name="WidgetLocked" Content="Lock position" Click="SettingChanged"/>
+          <TextBlock Text="Opacity" FontSize="12" Foreground="#93AFC3"/>
+          <Slider Name="WidgetOpacity" Minimum="0.35" Maximum="1" Value="1" TickFrequency="0.05" ValueChanged="OpacityChanged"/>
+          <TextBlock Name="OpacityLabel" Text="100%" FontSize="12"/>
+          <TextBlock Name="PositionLabel" FontSize="11" Foreground="#71879B" TextWrapping="Wrap"/>
+          <Border Height="1" Background="#284156" Margin="0,3"/>
+          <TextBlock Text="Layout presets" FontWeight="SemiBold"/>
+          <StackPanel Orientation="Horizontal" Spacing="5">
+            <Button Classes="ui" Content="Minimal" Click="MinimalClick"/>
+            <Button Classes="ui" Content="Combat" Click="CombatClick"/>
+            <Button Classes="ui" Content="Compact" Click="CompactClick"/>
+          </StackPanel>
+          <TextBox Name="PresetName" Watermark="Named preset (max 32 chars)" MaxLength="32"/>
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Button Classes="ui" Content="Save preset" Click="SavePresetClick"/>
+            <Button Classes="ui" Content="Load preset" Click="LoadPresetClick"/>
+          </StackPanel>
+          <Button Classes="ui" Content="Reset layout to defaults" Click="ResetClick"/>
+          <TextBlock Name="StudioStatus" FontSize="11" Foreground="#58E0B2" TextWrapping="Wrap"/>
+        </StackPanel>
+      </ScrollViewer>
+      <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,16,0,0">
+        <Button Classes="ui" Content="Discard" Click="CancelClick"/>
+        <Button Classes="ui primary" Content="Save layout" Click="SaveClick"/>
+      </StackPanel>
+    </Grid>
+  </Border>
+</Window>

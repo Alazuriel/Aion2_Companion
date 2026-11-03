@@ -125,6 +125,7 @@ public partial class MainWindow : Window
         }
 
         EnsureTrayIcon();
+        OverlayWindowManager.StartAutomaticPhaseward();
 
         if (Program.TestLoginRequested)
             return;
@@ -558,7 +559,7 @@ public partial class MainWindow : Window
         if (host is null)
             return;
 
-        bool isMorePage = page is "Boss" or "Guides" or "CharacterSearch" or
+        bool isMorePage = page is "Guides" or "CharacterSearch" or
             "Leaderboards" or "Changelog" or "Support";
         SetMoreMenuExpanded(isMorePage);
 
@@ -571,7 +572,6 @@ public partial class MainWindow : Window
             "CharacterSearch" => CreateCharacterSearchView(),
             "Leaderboards" => new LeaderboardsView(),
             "EventTimers" => new EventTimersView(),
-            "Boss" => new UnderForgeView(),
             "Guides" => new UnderForgeView(),
             "Settings" => new SettingsView(),
             "Changelog" => new ChangelogView(),

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using AION_2_Companion.Core;
+using AION_2_Companion.Core.Diagnostics;
 using AION_2_Companion.Core.Map.Pets;
 using AION_2_Companion.Core.EventTimers;
 using AION_2_Companion.Core.GameData;
@@ -45,6 +46,15 @@ public partial class SettingsView : UserControl
     public SettingsView()
     {
         AvaloniaXamlLoader.Load(this);
+        this.FindControl<TextBlock>("DiagnosticsHeadingText")!.Text = DiagnosticConsentWindow.Translate(
+            "Diagnostics Center", "Diagnosztikai központ", "Diagnosezentrum", "Centrum diagnostyki");
+        this.FindControl<TextBlock>("DiagnosticsSubtitleText")!.Text = DiagnosticConsentWindow.Translate(
+            "Privacy-safe crash reports. Encrypted locally; only sent if you choose to send.",
+            "Adatvédelmi szempontból biztonságos hibajelentések. Helyben titkosítva, csak kérésedre küldjük el.",
+            "Datenschutzfreundliche Absturzberichte. Lokal verschlüsselt; Versand nur mit Zustimmung.",
+            "Raporty awarii z ochroną prywatności. Szyfrowane lokalnie, wysyłane tylko za zgodą.");
+        this.FindControl<Button>("DiagnosticsManualButton")!.Content = DiagnosticConsentWindow.Translate("Create diagnostic report", "Hibajelentés készítése", "Diagnosebericht erstellen", "Utwórz raport diagnostyczny");
+        this.FindControl<Button>("DiagnosticsReviewButton")!.Content = DiagnosticConsentWindow.Translate("Review saved reports", "Mentett jelentések", "Gespeicherte Berichte", "Zapisane raporty");
 
         _mapHelperToggle = this.FindControl<CheckBox>("MapHelperToggle")!;
         _mapAdminWarning = this.FindControl<Border>("MapAdminWarning")!;
@@ -90,6 +100,7 @@ public partial class SettingsView : UserControl
 
         _fileLoggingToggle.IsChecked = DebugConsole.FileLoggingEnabled;
         _autoDpsOverlayToggle.IsChecked = CompanionSettings.AutoManageDpsOverlay;
+        this.FindControl<CheckBox>("AutoPhasewardToggle")!.IsChecked = CompanionSettings.AutoPhasewardOverlay;
         _autoCaptureToggle.IsChecked = CompanionSettings.AutoCaptureEnabled;
         _autoUpdateToggle.IsChecked = CompanionSettings.CheckUpdatesAutomatically;
         _backgroundUpdateToggle.IsChecked = CompanionSettings.DownloadUpdatesInBackground;
@@ -112,6 +123,8 @@ public partial class SettingsView : UserControl
         _mapHelperToggle.IsCheckedChanged += MapHelperChanged;
         _fileLoggingToggle.IsCheckedChanged += FileLoggingChanged;
         _autoDpsOverlayToggle.IsCheckedChanged += AutoDpsOverlayChanged;
+        this.FindControl<CheckBox>("AutoPhasewardToggle")!.IsCheckedChanged += (_, _) =>
+            CompanionSettings.AutoPhasewardOverlay = this.FindControl<CheckBox>("AutoPhasewardToggle")!.IsChecked == true;
         _autoCaptureToggle.IsCheckedChanged += AutoCaptureChanged;
         _autoUpdateToggle.IsCheckedChanged += AutoUpdateChanged;
         _backgroundUpdateToggle.IsCheckedChanged += BackgroundUpdateChanged;
@@ -137,8 +150,20 @@ public partial class SettingsView : UserControl
         };
     }
 
+    private void DiagnosticManualClick(object? sender, RoutedEventArgs e)
+    {
+        if (TopLevel.GetTopLevel(this) is Window owner) DiagnosticConsentWindow.CreateManual(owner);
+    }
+    private void DiagnosticReviewClick(object? sender, RoutedEventArgs e)
+    {
+        if (TopLevel.GetTopLevel(this) is Window owner) DiagnosticConsentWindow.ShowPending(owner);
+    }
+
     private void OpenDpsClick(object? sender, RoutedEventArgs e) =>
         Overlays.OverlayWindowManager.ToggleDps();
+
+    private void OpenPhasewardOverlayClick(object? sender, RoutedEventArgs e) =>
+        Overlays.OverlayWindowManager.ToggleDbm();
 
     private void OpenEventTimerOverlayClick(object? sender, RoutedEventArgs e) =>
         Overlays.OverlayWindowManager.ToggleEventTimers();
@@ -209,6 +234,9 @@ public partial class SettingsView : UserControl
         if (TopLevel.GetTopLevel(this) is MainWindow mainWindow)
             mainWindow.StartOnboarding(manual: true);
     }
+
+    private void OpenOverlayStudioClick(object? sender, RoutedEventArgs e) =>
+        AION_2_Companion.Views.Overlays.OverlayWindowManager.OpenStudio();
 
     private void OpenNexforgeClick(object? sender, RoutedEventArgs e)
     {

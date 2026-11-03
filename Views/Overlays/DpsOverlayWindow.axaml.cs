@@ -147,12 +147,21 @@ public partial class DpsOverlayWindow : Window
                     ? $"— / {Meter.Num(s.MobMaxHp)}"
                     : LocalizationService.Get("BossHpWaiting");
 
-            this.FindControl<TextBlock>("EnrageText")!.Text = s.EnrageRemainingSeconds switch
+            // Unknown/missing timer is not an Enrage state. Avoid displaying "--".
+            // Only show the label for a real, finite countdown or a confirmed enraged boss.
+            TextBlock enrageText = this.FindControl<TextBlock>("EnrageText")!;
+            if (s.EnrageRemainingSeconds is double enrageRemaining && double.IsFinite(enrageRemaining))
             {
-                <= 0 => LocalizationService.Get("Enraged"),
-                double remaining => LocalizationService.Format("EnrageIn", FormatTime(remaining)),
-                _ => LocalizationService.Get("EnrageUnknown"),
-            };
+                enrageText.IsVisible = true;
+                enrageText.Text = enrageRemaining <= 0
+                    ? LocalizationService.Get("Enraged")
+                    : LocalizationService.Format("EnrageIn", FormatTime(enrageRemaining));
+            }
+            else
+            {
+                enrageText.IsVisible = false;
+                enrageText.Text = string.Empty;
+            }
 
             bool predictionEnabled = CompanionSettings.ShowBossDeathPrediction;
             this.FindControl<Button>("DeathPredictionToggle")!.Classes.Set(
@@ -367,7 +376,8 @@ public partial class DpsOverlayWindow : Window
 
     private void HeaderDrag(object? sender, PointerPressedEventArgs e)
     {
-        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+        if (!OverlayStudioStore.IsLocked(OverlayStudioStore.Dps) &&
+            e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
             BeginMoveDrag(e);
     }
 }

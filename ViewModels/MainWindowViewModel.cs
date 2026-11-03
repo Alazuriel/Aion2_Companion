@@ -24,6 +24,8 @@ using Avalonia.Threading;
 using AION_2_Companion.Core.Map.Pets;
 using AION_2_Companion.Core.Accounts;
 using AION_2_Companion.Core.Combat;
+using AION_2_Companion.Core.Diagnostics;
+using AION_2_Companion.Core.Phaseward;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
@@ -341,6 +343,15 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
                 return;
             }
 
+            if (hpBoss?.MaxHp is > 0)
+            {
+                PhasewardHub.Current?.ObserveBossHealth(
+                    hp.Target,
+                    sample.RawValue,
+                    hpBoss.MaxHp,
+                    frame.Time);
+            }
+
             if (sample.RawValue == 0)
                 ConfirmCombatTargetDeath(hp.Target, "HP=0");
             return;
@@ -397,6 +408,18 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         var target = ResolveTarget(runtimeId);
         if (target.TemplateId == 0)
             return;
+
+        // Only a known in-combat NPC may activate Phaseward.
+        if ((_fightActive && _fightTargets.Contains(runtimeId)) || _MobsInCombat.Contains(runtimeId))
+        {
+            string canonicalBossName = target.Boss?.LocalizedName("en", target.Name) ?? string.Empty;
+            PhasewardHub.Current?.ObserveBoss(
+                target.TemplateId,
+                runtimeId,
+                DateTimeOffset.UtcNow,
+                target.Name,
+                canonicalBossName);
+        }
 
         if (target.Boss is not null)
         {
@@ -468,6 +491,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
 
         _deadFightTargets.Add(entityId);
         _MobsInCombat.Remove(entityId);
+        PhasewardHub.Current?.EndBoss(entityId);
 
         DebugConsole.Log("dpstime",
             $"[COMBAT TARGET DEAD] Target={entityId} | Via={signal} | " +
@@ -736,6 +760,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         // A snapshot elkészítése UTÁN törlünk, hogy a boss nevét ne veszítsük el.
         _MobsInCombat.Clear();
         _deadFightTargets.Clear();
+        PhasewardHub.Current?.Reset();
         ScheduleAutomaticDpsOverlayHide();
     }
 
@@ -807,7 +832,11 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         foreach (var hit in hits)
         {
             if (_combatEventDeduplicator.ShouldAccept(hit, capturedAt))
+            {
+                // The parser already decoded an actor+skill hit. No guessing from bytes.
+                PhasewardHub.Current?.ObserveBossDamage(hit.Actor, hit.Skill, capturedAt);
                 ApplyDamageHit(hit);
+            }
         }
     }
     
@@ -1925,7 +1954,21 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
     {
         _forgeDataLoader = new ForgeDataLoader();
         _forgeDataLoader.DataLoader();
-        
+
+        // Phaseward is loaded ONCE by ForgeDataLoader like all other NXFG datasets.
+        // The VM only creates the UI/gameplay observer; it does not decode files.
+        if (_forgeDataLoader._phasewardPack is PhasewardPack pack)
+        {
+            PhasewardHub.SetEngine(new PhasewardEngine(pack), _forgeDataLoader.PhasewardLoadStatus);
+            DiagnosticRuntime.Breadcrumb("phaseward_load");
+        }
+        else
+        {
+            PhasewardHub.SetEngine(null, _forgeDataLoader.PhasewardLoadStatus);
+            if (_forgeDataLoader.PhasewardLoadStatus.Contains("failed", StringComparison.OrdinalIgnoreCase))
+                DiagnosticRuntime.Breadcrumb("phaseward_error");
+        }
+
         DebugConsole.Log("debug", "ForgeDataLoader betöltés befejeződött.");
         
         _ElyosPets = _forgeDataLoader._elyosPetsDatabase;
@@ -2001,6 +2044,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
 
             IsCapturing = true;
             StatusText = LocalizationService.Get("CaptureRunning");
+            DiagnosticRuntime.Breadcrumb("capture_start");
             StatusColor = "#34D399";
         }
         catch (Exception ex)
@@ -2008,6 +2052,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
             _tcpStreamDecoder = null;
             IsCapturing = false;
             StatusText = LocalizationService.Get("CaptureStartFailed");
+            DiagnosticRuntime.Breadcrumb("capture_error");
             StatusColor = "#F87171";
             DebugConsole.Log("capture", $"Capture start failed: {ex.Message}");
         }
@@ -2015,6 +2060,23 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
 
     public void StartCaptureAfterLogin() => StartCapture();
     
+    // LEGACY-SAFE-UPDATE-HANDOFF: preserve live and grace-period encounters.
+    // The Update Center invokes this only after an explicit install click and
+    // after verifying the downloaded installer. It never stops a running fight.
+    public bool HasActiveEncounterForUpdate =>
+        _fightActive || _fightEndPending || _pausedFights.Count > 0;
+
+    public bool TryStopMonitoringForUpdate()
+    {
+        if (HasActiveEncounterForUpdate)
+            return false;
+
+        if (IsCapturing)
+            StopCapture();
+
+        return !IsCapturing && !HasActiveEncounterForUpdate;
+    }
+
     [RelayCommand]
     private void StopCapture()
     {
@@ -2033,7 +2095,9 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         }
 
         IsCapturing = false;
+        PhasewardHub.Current?.Reset();
         StatusText = LocalizationService.Get("CaptureStopped");
+        DiagnosticRuntime.Breadcrumb("capture_stop");
         StatusColor = "#F87171";
     }
 
@@ -2058,12 +2122,18 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
     private readonly Queue<WireFrame> _pendingFrames = new();
     private long _pendingFrameBytes;
     private bool _frameDrainScheduled;
+    private long _pendingDecodedFrameCount;
     private long _droppedDecodedFrames;
     private long _lastReportedDroppedFrames;
 
-    private const int MaxPendingFrames = 4_096;
-    private const long MaxPendingFrameBytes = 32L * 1024 * 1024;
+    private const int MaxPendingFrames = 16_384;
+    private const long MaxPendingFrameBytes = 64L * 1024 * 1024;
     private const int MaxFramesPerUiPass = 256;
+    private const double MaxFrameDrainMilliseconds = 8;
+    private const double MaxOverloadedFrameDrainMilliseconds = 16;
+    private long _lastDeveloperSampleQueued;
+    private long _lastCaptureMonitorUpdate;
+    private long _pendingUnknownOpcodeCount;
 
     private void RecordDamage(
         uint ownerId,
@@ -2630,6 +2700,16 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
     private void OnFrameDecoded(WireFrame frame)
     {
         StoreDecodedFrame(frame);
+        Interlocked.Increment(ref _pendingDecodedFrameCount);
+
+        // A runtime only azokat a frame-eket dolgozza fel az UI szálon,
+        // amelyekből tényleges Companion-adat készül. A teljes nyers minta
+        // ettől még megmarad a korlátozott diagnosztikai pufferben.
+        if (!RequiresRuntimeProcessing(frame.Opcode))
+        {
+            if (!Program.DeveloperMode || !TryQueueDeveloperSample())
+                return;
+        }
 
         bool scheduleDrain = false;
 
@@ -2657,7 +2737,47 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
         // Egyetlen dispatcher-lánc dolgozza fel a frame-eket, nem frame-enként
         // rakunk új closure-t az UI sorába.
         if (scheduleDrain)
-            Dispatcher.UIThread.Post(DrainDecodedFrames);
+            Dispatcher.UIThread.Post(DrainDecodedFrames, DispatcherPriority.Normal);
+    }
+
+    private static bool RequiresRuntimeProcessing(Opcode opcode) =>
+        opcode == OpcodeId.PetList ||
+        opcode == OpcodeId.PetAdded ||
+        opcode == OpcodeId.PetLevel ||
+        opcode == OpcodeId.PetProgress ||
+        opcode == OpcodeId.LeaveCombat ||
+        opcode == OpcodeId.DisengageCombat ||
+        opcode == OpcodeId.HP ||
+        opcode == OpcodeId.Self ||
+        opcode == OpcodeId.Spawn ||
+        opcode == OpcodeId.Characters ||
+        opcode == OpcodeId.TheFuck ||
+        opcode == OpcodeId.TheFuck2 ||
+        opcode == OpcodeId.Death ||
+        opcode == OpcodeId.Party ||
+        opcode == OpcodeId.PartyMemberUpdate ||
+        opcode == OpcodeId.PartyKick ||
+        opcode == OpcodeId.PartyLeave ||
+        opcode == OpcodeId.Player ||
+        opcode == OpcodeId.PlayerLegacy ||
+        opcode == OpcodeId.Owner ||
+        opcode == OpcodeId.EnterCombat ||
+        opcode == OpcodeId.Cast ||
+        opcode == OpcodeId.Hit ||
+        opcode == OpcodeId.DoT;
+
+    private bool TryQueueDeveloperSample()
+    {
+        long now = Stopwatch.GetTimestamp();
+        long previous = Interlocked.Read(ref _lastDeveloperSampleQueued);
+        long minimumInterval = Stopwatch.Frequency / 10;
+        if (previous != 0 && now - previous < minimumInterval)
+            return false;
+
+        return Interlocked.CompareExchange(
+            ref _lastDeveloperSampleQueued,
+            now,
+            previous) == previous;
     }
 
     private void StoreDecodedFrame(WireFrame frame)
@@ -2680,6 +2800,15 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
     private void DrainDecodedFrames()
     {
         int processed = 0;
+        long passStarted = Stopwatch.GetTimestamp();
+        bool queueDrained = false;
+        double timeBudget;
+        lock (_pendingFrameLock)
+        {
+            timeBudget = _pendingFrames.Count >= MaxPendingFrames / 2
+                ? MaxOverloadedFrameDrainMilliseconds
+                : MaxFrameDrainMilliseconds;
+        }
 
         while (processed < MaxFramesPerUiPass)
         {
@@ -2690,7 +2819,8 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
                 if (_pendingFrames.Count == 0)
                 {
                     _frameDrainScheduled = false;
-                    return;
+                    queueDrained = true;
+                    break;
                 }
 
                 frame = _pendingFrames.Dequeue();
@@ -2708,18 +2838,30 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
             }
 
             processed++;
+
+            double elapsedMilliseconds =
+                (Stopwatch.GetTimestamp() - passStarted) * 1000.0 / Stopwatch.Frequency;
+            if (elapsedMilliseconds >= timeBudget)
+                break;
         }
-        
-        Dispatcher.UIThread.Post(DrainDecodedFrames);
+
+        if (processed > 0)
+        {
+            long unknown = Interlocked.Exchange(ref _pendingUnknownOpcodeCount, 0);
+            if (unknown > 0)
+                UnknownOpcodes += unknown;
+        }
+
+        if (queueDrained)
+            return;
+
+        // Combat bursts can contain thousands of frames. Yield after a short,
+        // bounded pass so rendering, input and overlay timers remain responsive.
+        Dispatcher.UIThread.Post(DrainDecodedFrames, DispatcherPriority.Normal);
     }
 
     private void ProcessDecodedFrameOnUi(WireFrame frame)
     {
-        ReceivedFrames++;
-        ParsedOpcodes++;
-
-        string name = OpcodeCatalog.GetName(frame.Opcode);
-        bool known = OpcodeCatalog.TryGetInfo(frame.Opcode, out var opcodeInfo);
         Opcode opcode = frame.Opcode;
 
 
@@ -2763,11 +2905,37 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
         if (opcode == OpcodeId.EnterCombat)
             CombatStartCheck(frame);
 
-        RetryPendingSummons(frame);
+        if (opcode == OpcodeId.Cast &&
+            PhasewardCastParser.TryParse(frame.Payload, out PhasewardCast cast))
+        {
+            PhasewardHub.Current?.ObserveBossCast(
+                cast.ActorRuntimeId,
+                cast.SkillId,
+                frame.Time);
+        }
+
+        if (opcode == OpcodeId.Spawn || opcode == OpcodeId.Characters ||
+            opcode == OpcodeId.TheFuck || opcode == OpcodeId.TheFuck2 ||
+            opcode == OpcodeId.Player || opcode == OpcodeId.PlayerLegacy ||
+            opcode == OpcodeId.Owner)
+        {
+            RetryPendingSummons(frame);
+        }
         ProcessDamage(frame);
 
+        if (!Program.DeveloperMode)
+            return;
+
+        string name = OpcodeCatalog.GetName(frame.Opcode);
+        bool known = OpcodeCatalog.TryGetInfo(frame.Opcode, out var opcodeInfo);
         if (!known)
-            UnknownOpcodes++;
+            Interlocked.Increment(ref _pendingUnknownOpcodeCount);
+
+        long now = Stopwatch.GetTimestamp();
+        if (_lastCaptureMonitorUpdate != 0 &&
+            (now - _lastCaptureMonitorUpdate) / (double)Stopwatch.Frequency < 0.1)
+            return;
+        _lastCaptureMonitorUpdate = now;
 
         string confidence = string.IsNullOrWhiteSpace(opcodeInfo?.Confidence)
             ? (known ? LocalizationService.Get("UiCaptureKnown") : LocalizationService.Get("UiCaptureUnknown"))
@@ -2839,6 +3007,13 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
         long received = Interlocked.Exchange(ref _pendingReceivedPackets, 0);
         if (received > 0)
             ReceivedPackets += received;
+
+        long decoded = Interlocked.Exchange(ref _pendingDecodedFrameCount, 0);
+        if (decoded > 0)
+        {
+            ReceivedFrames += decoded;
+            ParsedOpcodes += decoded;
+        }
 
         long dropped = Interlocked.Read(ref _droppedDecodedFrames);
         if (dropped != _lastReportedDroppedFrames)

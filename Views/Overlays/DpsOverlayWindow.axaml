@@ -69,16 +69,17 @@
 
       <Border Grid.Row="2" Name="BossStatusPanel" Classes="inset" CornerRadius="9"
               Padding="9,6" Margin="0,7,0,0" IsVisible="False">
-        <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto">
           <TextBlock Text="{DynamicResource BossHp}" Classes="eyebrow" FontSize="8"/>
-          <TextBlock Grid.Column="1" Name="EnrageText" Classes="mono" FontSize="9" Foreground="#FF9B52"/>
-          <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="*,Auto" Margin="0,4,0,0">
-            <ProgressBar Name="BossHpBar" Height="7" Minimum="0" Maximum="100"
-                         Background="#263A50" Foreground="#45DFFF" VerticalAlignment="Center"/>
-            <TextBlock Grid.Column="1" Name="BossHpText" Classes="mono" FontSize="10"
-                       Margin="8,0,0,0" VerticalAlignment="Center"/>
-          </Grid>
-          <Grid Grid.Row="2" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto" Margin="0,6,0,0">
+          <TextBlock Grid.Column="1" Name="EnrageText" Classes="mono" FontSize="9" Foreground="#FF9B52" IsVisible="False"/>
+          <!-- HP amount and percent get their own full-width line instead of squeezing the HP bar. -->
+          <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Name="BossHpText" Classes="mono" FontSize="10"
+                     Margin="0,4,0,0" HorizontalAlignment="Stretch" TextAlignment="Right"
+                     VerticalAlignment="Center" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+          <ProgressBar Grid.Row="2" Grid.ColumnSpan="2" Name="BossHpBar" Height="7"
+                       Minimum="0" Maximum="100" Margin="0,5,0,0"
+                       Background="#263A50" Foreground="#45DFFF"/>
+          <Grid Grid.Row="3" Grid.ColumnSpan="2" ColumnDefinitions="Auto,*,Auto" Margin="0,6,0,0">
             <TextBlock Text="{DynamicResource DeathPrediction}" Classes="eyebrow" FontSize="8"
                        VerticalAlignment="Center"/>
             <TextBlock Grid.Column="1" Name="DeathPredictionText" Classes="mono" FontSize="10"

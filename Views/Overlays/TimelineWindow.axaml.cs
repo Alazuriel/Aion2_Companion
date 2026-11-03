@@ -9,6 +9,8 @@ using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
+using System.Collections.Generic;
 using AION_2_Companion.Core;
 
 namespace AION_2_Companion.Views.Overlays;
@@ -40,7 +42,14 @@ public partial class TimelineWindow : Window
     private double _cellSeconds = 1;
     private double _zoom = 1.0;
     private double? _cursorTime;
+    private Line? _cursorMarker;
     private bool _syncingScroll;
+    // UI-only cached series; invalidated on fight/metric change, not on mouse movement.
+    private readonly Dictionary<(int Player, MeterMode Mode), double[]> _seriesCache = new();
+    private readonly Dictionary<string, List<SkillEvent>> _skillCache = new(StringComparer.Ordinal);
+    private double _lastTooltipTime = double.NaN;
+    private int _lastTooltipActiveMask = -1;
+
 
     public TimelineWindow() : this(new PlayerStat(), new MeterSnapshot()) { }
 
@@ -108,6 +117,16 @@ public partial class TimelineWindow : Window
             _active[Math.Min(_selected, _active.Length - 1)] = true;
 
         _mode = MeterMode.Dps;
+        _seriesCache.Clear();
+        _skillCache.Clear();
+        foreach (SkillEvent ev in _player.Events)
+        {
+            if (!_skillCache.TryGetValue(ev.Skill, out List<SkillEvent>? group))
+                _skillCache[ev.Skill] = group = new List<SkillEvent>();
+            group.Add(ev);
+        }
+        _lastTooltipTime = double.NaN;
+        _lastTooltipActiveMask = -1;
         _zoom = 1.0;
         _cursorTime = null;
 
@@ -142,6 +161,8 @@ public partial class TimelineWindow : Window
         else if (Duration <= 45) _cellSeconds = 1.0;
         else if (Duration <= 120) _cellSeconds = 2.0;
         else _cellSeconds = 5.0;
+        // At most 240 visual buckets per skill; raw combat events stay untouched.
+        _cellSeconds = Math.Max(_cellSeconds, Math.Ceiling(Duration / 240.0 * 4) / 4.0);
     }
 
     private double TimeToX(double t) => ChartLeft + t * _pxPerSecond;
@@ -151,21 +172,69 @@ public partial class TimelineWindow : Window
 
     private void OnWheel(object? sender, PointerWheelEventArgs e)
     {
+        if (e.Delta.Y == 0) return;
         double factor = e.Delta.Y > 0 ? 1.2 : 1.0 / 1.2;
         double newZoom = Math.Clamp(_zoom * factor, 0.35, 10.0);
-        if (Math.Abs(newZoom - _zoom) < 0.001)
-            return;
+        if (Math.Abs(newZoom - _zoom) < 0.001) return;
 
+        var viewport = this.FindControl<ScrollViewer>("ChartScroll")!;
+        var canvas = this.FindControl<Canvas>("ChartCanvas")!;
+        // Anchor zoom to the cursor's logical fight time, even over the lane viewport.
+        // The chart owns a leading 170dp Y-axis region; lanes have fixed 170dp labels.
+        double viewportX;
+        double anchorTime;
+        var lanesViewport = this.FindControl<ScrollViewer>("LaneScroll");
+        if (ReferenceEquals(sender, lanesViewport) && lanesViewport is not null)
+        {
+            double laneX = Math.Clamp(e.GetPosition(lanesViewport).X, 0, lanesViewport.Viewport.Width);
+            anchorTime = Math.Clamp((lanesViewport.Offset.X + laneX) / _pxPerSecond, 0, Duration);
+            viewportX = laneX + ChartLeft;
+        }
+        else
+        {
+            viewportX = e.GetPosition(viewport).X;
+            double canvasX = e.GetPosition(canvas).X;
+            if (!double.IsFinite(canvasX)) canvasX = viewport.Offset.X + viewportX;
+            anchorTime = Math.Clamp((canvasX - ChartLeft) / _pxPerSecond, 0, Duration);
+        }
+        double oldScale = _pxPerSecond;
         _zoom = newZoom;
         ComputeScale();
+        if (Math.Abs(oldScale - _pxPerSecond) < 0.001) { e.Handled = true; return; }
         BuildLanes();
         UpdateModeUi();
         DrawChart();
-
-        this.FindControl<TextBlock>("LanesTitle")!.Text = LocalizationService.Format(
-            "SkillsTimeline", _player.Name, _zoom, _pxPerSecond);
-
+        // Let Avalonia measure the new extent before restoring the viewport.
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!IsVisible || !ReferenceEquals(this.FindControl<Canvas>("ChartCanvas"), canvas)) return;
+            var chartScroll = this.FindControl<ScrollViewer>("ChartScroll")!;
+            double max = Math.Max(0, chartScroll.Extent.Width - chartScroll.Viewport.Width);
+            double next = Math.Clamp(TimeToX(anchorTime) - viewportX, 0, max);
+            chartScroll.Offset = chartScroll.Offset.WithX(next);
+            var lanes = this.FindControl<ScrollViewer>("LaneScroll");
+            if (lanes is not null)
+                lanes.Offset = lanes.Offset.WithX(Math.Clamp(next, 0, Math.Max(0, lanes.Extent.Width - lanes.Viewport.Width)));
+        }, DispatcherPriority.Loaded);
         e.Handled = true;
+    }
+
+    private double TickStep()
+    {
+        double requested = Math.Max(0.25, 78.0 / _pxPerSecond);
+        // Avoid generating thousands of labels for long fights.
+        requested = Math.Max(requested, Duration / 400.0);
+        foreach (double step in new[] { .25, .5, 1.0, 2.0, 5.0, 10.0, 15.0, 30.0, 60.0, 120.0, 300.0, 600.0, 1200.0, 3600.0 })
+            if (step >= requested) return step;
+        return Math.Ceiling(requested / 3600) * 3600;
+    }
+
+    private double[] Series(int playerIndex)
+    {
+        var key = (playerIndex, _mode);
+        if (!_seriesCache.TryGetValue(key, out var values))
+            _seriesCache[key] = values = Meter.Series(_snapshot.Players[playerIndex], _mode, _snapshot.Duration);
+        return values;
     }
 
     // ---------- Vezérlők ----------
@@ -176,6 +245,7 @@ public partial class TimelineWindow : Window
         {
             _mode = mode;
             UpdateModeUi();
+            _lastTooltipTime = double.NaN;
             DrawChart();
         }
     }
@@ -253,6 +323,7 @@ public partial class TimelineWindow : Window
 
         _active[i] = !_active[i];
         UpdateChips();
+        _lastTooltipTime = double.NaN;
         DrawChart();
     }
 
@@ -281,12 +352,20 @@ public partial class TimelineWindow : Window
         }
 
         double t = (pos.X - ChartLeft) / _pxPerSecond;
+        // Tooltips change only when their underlying one-second sample changes.
+        int sampleTime = Math.Clamp((int)Math.Round(t), 0, (int)Math.Ceiling(Duration));
+        int mask = 0;
+        for (int i = 0; i < Math.Min(30, _active.Length); i++)
+            if (_active[i]) mask |= 1 << i;
+        if (Math.Abs(sampleTime - _lastTooltipTime) < .5 && mask == _lastTooltipActiveMask) return;
+        _lastTooltipTime = sampleTime;
+        _lastTooltipActiveMask = mask;
         var lines = new System.Text.StringBuilder();
         lines.AppendLine(LocalizationService.Format("TimeValue", FormatTime(t)));
 
         foreach (int i in Enumerable.Range(0, _snapshot.Players.Count).Where(idx => _active[idx]))
         {
-            var series = Meter.Series(_snapshot.Players[i], _mode, _snapshot.Duration);
+            var series = Series(i);
             int idx = Math.Clamp((int)Math.Round(t), 0, Math.Max(0, series.Length - 1));
             double val = series.Length > 0 ? series[idx] : 0;
             lines.AppendLine($"{_snapshot.Players[i].Name}: {Meter.Format(val, _mode)}");
@@ -306,12 +385,14 @@ public partial class TimelineWindow : Window
 
         double t = (pos.X - ChartLeft) / _pxPerSecond;
         ShowEventsAt(t);
+        e.Handled = true;
     }
 
     private void ShowEventsAt(double timeSeconds)
     {
-        _cursorTime = timeSeconds;
-        DrawChart();
+        _cursorTime = Math.Clamp(timeSeconds, 0, Duration);
+        // Clicks must not rebuild the entire Canvas or change chart geometry.
+        MoveCursorMarker();
 
         double window = Math.Max(0.3, _cellSeconds);
         var hits = _player.Events
@@ -336,19 +417,25 @@ public partial class TimelineWindow : Window
 
         timeTb.Text = LocalizationService.Format(
             "TimelineEventHeader", FormatTime(timeSeconds), window / 2, hits.Count);
-        listTb.Text = string.Join("\n", hits.Select(ev =>
+        // Cap rendered text while keeping the exact total count in the header.
+        const int maxVisibleEvents = 120;
+        var visible = hits.Take(maxVisibleEvents).Select(ev =>
         {
             string crit = ev.Crit ? "  CRIT" : "";
             string heal = ev.IsHeal ? "  (heal)" : "";
             return $"{FormatTime(ev.Time)}  ·  {ev.Skill}  ·  {Meter.Num(ev.Amount)}{crit}{heal}";
-        }));
+        });
+        listTb.Text = string.Join("\n", visible);
+        if (hits.Count > maxVisibleEvents)
+            listTb.Text += $"\n… +{hits.Count - maxVisibleEvents} more events";
     }
 
     private void HideEventDetail()
     {
-        var panel = this.FindControl<Border>("EventDetailPanel");
-        if (panel is not null)
-            panel.IsVisible = false;
+        // Keep the detail pane's allocated space even before the first click.
+        // Collapsing/reopening this row moved the chart and skill lanes.
+        this.FindControl<TextBlock>("EventDetailTime")!.Text = LocalizationService.Get("TimelineHint");
+        this.FindControl<TextBlock>("EventDetailList")!.Text = string.Empty;
     }
 
     // ---------- Grafikon ----------
@@ -359,6 +446,7 @@ public partial class TimelineWindow : Window
         if (c is null) return;
 
         c.Children.Clear();
+        _cursorMarker = null;
         c.Width = ChartContentWidth;
         c.Height = ChartHeight;
 
@@ -379,7 +467,7 @@ public partial class TimelineWindow : Window
 
         var seriesMap = activeIdx.ToDictionary(
             i => i,
-            i => Meter.Series(_snapshot.Players[i], _mode, _snapshot.Duration));
+            i => Series(i));
 
         double dataMax = seriesMap.Values
             .Where(v => v.Length > 0)
@@ -415,10 +503,7 @@ public partial class TimelineWindow : Window
         }
 
         // X tengely
-        double step = Duration <= 5 ? 0.5
-            : Duration <= 15 ? 1
-            : Duration <= 60 ? 5
-            : 30;
+        double step = TickStep();
 
         for (double s = 0; s <= Duration + 0.001; s += step)
         {
@@ -458,31 +543,42 @@ public partial class TimelineWindow : Window
                 Opacity = isSel ? 1.0 : 0.75,
             };
 
-            for (int k = 0; k < data.Length; k++)
+            // Display-only min/max envelope. Never modifies Meter.Series or combat history.
+            int limit = Math.Min(data.Length, (int)Math.Ceiling(Duration) + 1);
+            int stride = Math.Max(1, (int)Math.Ceiling(limit / 1400.0));
+            for (int first = 0; first < limit; first += stride)
             {
-                double t = k;
-                if (t > Duration) break;
-                double x = TimeToX(t);
-                double y = ChartTop + plotH - data[k] / yMax * plotH;
-                line.Points.Add(new Point(x, y));
+                int last = Math.Min(limit, first + stride);
+                int minAt = first, maxAt = first;
+                for (int k = first + 1; k < last; k++)
+                {
+                    if (data[k] < data[minAt]) minAt = k;
+                    if (data[k] > data[maxAt]) maxAt = k;
+                }
+                void Add(int k)
+                {
+                    line.Points.Add(new Point(TimeToX(k),
+                        ChartTop + plotH - data[k] / yMax * plotH));
+                }
+                if (minAt < maxAt) { Add(minAt); if (maxAt != minAt) Add(maxAt); }
+                else { Add(maxAt); if (minAt != maxAt) Add(minAt); }
+                if (last - 1 != minAt && last - 1 != maxAt) Add(last - 1);
             }
 
             c.Children.Add(line);
         }
 
-        // Kurzor
-        if (_cursorTime is double ct)
+        // Create once on every full chart redraw; subsequent clicks only move it.
+        _cursorMarker = new Line
         {
-            double cx = TimeToX(Math.Clamp(ct, 0, Duration));
-            c.Children.Add(new Line
-            {
-                StartPoint = new Point(cx, ChartTop),
-                EndPoint = new Point(cx, ChartTop + plotH),
-                Stroke = Brush.Parse("#45DFFF"),
-                StrokeThickness = 1.5,
-                Opacity = 0.8,
-            });
-        }
+            Stroke = Brush.Parse("#45DFFF"),
+            StrokeThickness = 1.5,
+            Opacity = 0.8,
+            IsVisible = _cursorTime is not null,
+            IsHitTestVisible = false,
+        };
+        c.Children.Add(_cursorMarker);
+        MoveCursorMarker();
 
         // Csúcs
         if (!seriesMap.TryGetValue(_selected, out var selData) || selData.Length < 2)
@@ -516,10 +612,23 @@ public partial class TimelineWindow : Window
             FontSize = 11,
             FontWeight = FontWeight.SemiBold,
             Foreground = Brush.Parse("#EAF7FF"),
+            MaxWidth = 180,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            IsHitTestVisible = false,
         };
         Canvas.SetLeft(peakLabel, px + 8);
         Canvas.SetTop(peakLabel, Math.Max(0, py - 22));
         c.Children.Add(peakLabel);
+    }
+
+    private void MoveCursorMarker()
+    {
+        if (_cursorMarker is null) return;
+        _cursorMarker.IsVisible = _cursorTime is not null;
+        if (_cursorTime is not double time) return;
+        double x = TimeToX(Math.Clamp(time, 0, Duration));
+        _cursorMarker.StartPoint = new Point(x, ChartTop);
+        _cursorMarker.EndPoint = new Point(x, ChartHeight - ChartBottom);
     }
 
     // ---------- Skill sávok ----------
@@ -541,9 +650,8 @@ public partial class TimelineWindow : Window
         labels.Children.Add(new Border { Height = RulerHeight, Width = LabelWidth });
         ticks.Children.Add(BuildRuler(trackWidth));
 
-        var lanes = _player.Events
-            .GroupBy(e => e.Skill)
-            .OrderBy(g => g.Min(e => e.Time))
+        var lanes = _skillCache
+            .OrderBy(g => g.Value.Count == 0 ? double.PositiveInfinity : g.Value[0].Time)
             .ToList();
 
         if (lanes.Count == 0)
@@ -560,14 +668,14 @@ public partial class TimelineWindow : Window
 
         foreach (var lane in lanes)
         {
-            bool isHeal = lane.First().IsHeal;
+            bool isHeal = lane.Value[0].IsHeal;
             IBrush brush = isHeal ? Visuals.Heal : Visuals.ForText(lane.Key);
-            string? icon = lane
+            string? icon = lane.Value
                 .Select(e => e.SkillIcon)
                 .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
 
             labels.Children.Add(BuildLabel(lane.Key, brush, icon));
-            ticks.Children.Add(BuildLaneTrack(lane, cellCount, cellWidth, brush));
+            ticks.Children.Add(BuildLaneTrack(lane.Value, cellCount, cellWidth, brush));
         }
     }
 
@@ -624,7 +732,7 @@ public partial class TimelineWindow : Window
     }
 
     private Control BuildLaneTrack(
-        IGrouping<string, SkillEvent> lane,
+        IReadOnlyList<SkillEvent> lane,
         int cellCount,
         double cellWidth,
         IBrush brush)
@@ -702,10 +810,7 @@ public partial class TimelineWindow : Window
         var ruler = new Canvas { Width = trackWidth, Height = RulerHeight };
         var tickBrush = Brush.Parse("#35536B");
 
-        double step = Duration <= 5 ? 0.5
-            : Duration <= 15 ? 1
-            : Duration <= 60 ? 5
-            : 30;
+        double step = TickStep();
 
         for (double s = 0; s <= Duration + 0.001; s += step)
         {

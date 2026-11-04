@@ -41,7 +41,7 @@ This is an **independent community project**, with public downloads available an
 
 > **Development notice:** Companion is under active development, and some features remain limited or experimental. **Phaseward is currently not reliable as a boss-mechanics assistant.** See [Current limitations](#current-limitations) before relying on a feature in-game.
 
-## Built for the next pull
+## Everything you need for your next run
 
 | Feature | What you can do |
 | :-- | :-- |
@@ -50,14 +50,14 @@ This is an **independent community project**, with public downloads available an
 | **Combat Details** | See how individual skills contributed to a recorded fight and compare player-level results. |
 | **Overlay Studio** | Customize supported HUD elements, including their positioning, visibility, size, and opacity; manage layout presets. |
 | **Character Center** | Explore available character information and account-linked character features. Online details depend on connected services. |
-| **Leaderboards & Group Fight Preview** | Explore available ranking features and review recorded party performance before submission. Full group submissions are **not yet generally available**. |
+| **Leaderboards & Group Submissions** | Browse rankings, review complete party performance and submit eligible group fight results with recorded damage, DPS, healing and HPS. |
 | **Map Helper & Pet Farm** | Use map and collection-oriented tools designed for exploring AION 2. |
 | **Diagnostics & Support** | Review available diagnostic information and decide what to export or share when seeking help. |
 | **Phaseward — in development** | A boss-mechanics project included in public builds but **not currently dependable for encounter warnings**. |
 
-## Take a look inside
+## See Companion in action
 
-These are **application UI previews containing illustrative sample data**. The shown player names, character stats, boss records, servers, and rankings are examples—not verified live results or performance claims. Actual availability and appearance may vary by build and data source.
+**Screenshots use demonstration data.** Names, character statistics, encounter records and rankings in these UI previews are examples, not verified live results. The interface may vary with application updates.
 
 ### Live DPS Meter — see the fight as it happens
 
@@ -91,12 +91,12 @@ Access a dedicated space for character information. Displayed details depend on 
   <img src="README_ASSETS/readme-character-center.png" alt="Character Center UI preview with illustrative character data" width="850" />
 </p>
 
-### Group Fight Preview — it's not just about one player
+### Group Fight Submissions — every player counts
 
-Review recorded party damage, DPS, healing, and HPS within the submission interface. **This is a preview feature, not a claim that public group leaderboard submissions are available.**
+A good run takes a whole party. Review the recorded damage, DPS, healing, and HPS of each participant, then submit eligible group fight results using the Leaderboards submission flow. The preview below shows the group summary before submission.
 
 <p align="center">
-  <img src="README_ASSETS/readme-group-fight-preview.png" alt="Group Fight Preview UI with example party metrics; full group submissions are not generally available" width="850" />
+  <img src="README_ASSETS/readme-group-fight-preview.png" alt="Group Fight submission interface showing illustrative team damage, DPS, healing and HPS" width="850" />
 </p>
 
 ## Download & get started
@@ -127,13 +127,13 @@ The official installer includes the application runtime; you **do not need to in
 We'd rather be clear about the unfinished parts than promise something the app cannot deliver yet.
 
 - **Phaseward:** The current release includes the interface, but the system **does not function reliably as a boss-mechanics assistant**. It can miss warnings or notify too late, including when a cast is already underway. **Do not rely on Phaseward for gameplay decisions.** Improvements and broader encounter testing are in progress.
-- **Group Leaderboards:** Group Fight Preview shows recorded party data, but **full public group submissions are not generally available**.
+- **Group results:** Group fight submission is implemented. Submission and ranking visibility still depend on valid fight records, account permissions, and the availability of the relevant online services.
 - **Combat Timeline:** Some UI interactions may still have visual alignment or performance issues.
 - **Online features:** Character lookups, verification, rankings, and other connected features may depend on Companion services and upstream data availability.
 
 For verified changes and newly resolved issues, refer to the [latest release notes](https://github.com/Alazuriel/Aion2_Companion/releases/latest).
 
-## Help shape the project
+## Join the community
 
 Companion is being built for the people who actually run the dungeons, try the builds, and learn the fights. Your feedback can help decide what gets improved next.
 

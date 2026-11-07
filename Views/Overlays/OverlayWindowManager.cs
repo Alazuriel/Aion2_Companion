@@ -1,7 +1,7 @@
 using Avalonia;
+using System;
 using Avalonia.Controls;
 using Avalonia.Threading;
-using System;
 using System.Collections.Generic;
 using AION_2_Companion.Core.Phaseward;
 using AION_2_Companion.Core;
@@ -15,7 +15,13 @@ namespace AION_2_Companion.Views.Overlays;
 /// </summary>
 public static class OverlayWindowManager
 {
+    // LEGACY-BOSS-DETACHED-V0.1
+    private static BossStatusOverlayWindow? _bossStatus;
+    private static MeterSnapshot? _activeBossSnapshot;
     private static DpsOverlayWindow? _dps;
+    // Archive view is intentionally frozen until the user switches back to live DPS.
+    private static MeterSnapshot? _savedFightDps;
+    private static MeterSnapshot? _latestLiveDps;
     private static DbmOverlayWindow? _dbm;
     private static PlayerDetailsWindow? _playerDetails;
     private static TimelineWindow? _timeline;
@@ -32,25 +38,42 @@ public static class OverlayWindowManager
     public static void ToggleDps(MeterSnapshot? snapshot = null)
     {
         if (!OverlayStudioStore.IsVisible(OverlayStudioStore.Dps)) return;
+        // The user deliberately switches from a frozen archived fight back to live.
+        bool wasArchived = _savedFightDps is not null;
+        _savedFightDps = null;
+        DpsOverlayWindow window = EnsureDps(snapshot ?? _latestLiveDps);
+        window.SetSavedFightView(false);
+        if (wasArchived) ShowWithoutActivation(window);
+        else Toggle(window);
+    }
+
+    public static void ShowSavedFightDps(MeterSnapshot snapshot)
+    {
+        if (!OverlayStudioStore.IsVisible(OverlayStudioStore.Dps)) return;
+        _savedFightDps = snapshot;
         DpsOverlayWindow window = EnsureDps(snapshot);
-        Toggle(window);
+        window.SetSavedFightView(true);
+        ShowAndActivate(window);
     }
 
     public static void ShowDps(MeterSnapshot snapshot)
     {
+        _latestLiveDps = snapshot;
         if (!OverlayStudioStore.IsVisible(OverlayStudioStore.Dps)) return;
-        DpsOverlayWindow window = EnsureDps(snapshot);
+        DpsOverlayWindow window = EnsureDps(_savedFightDps ?? snapshot);
+        if (_savedFightDps is not null) window.SetSavedFightView(true);
         ShowWithoutActivation(window);
     }
 
     public static void UpdateDps(MeterSnapshot snapshot)
     {
-        _dps?.UpdateSnapshot(snapshot);
+        _latestLiveDps = snapshot;
+        if (_savedFightDps is null) _dps?.UpdateSnapshot(snapshot);
     }
 
     public static void HideDps()
     {
-        if (_dps is { IsVisible: true })
+        if (_dps is { IsVisible: true } && _savedFightDps is null)
             _dps.Hide();
     }
 
@@ -67,6 +90,72 @@ public static class OverlayWindowManager
             _dbm = created;
         }
         return _dbm;
+    }
+
+    public static void UpdateBossStatus(MeterSnapshot? snapshot)
+    {
+        // The caller supplies null when the encounter is no longer active.
+        _activeBossSnapshot = snapshot is { IsBossEncounter: true } ? snapshot : null;
+        if (_studio is not null || !CompanionSettings.ShowBossStatusOverlay ||
+            !OverlayStudioStore.IsVisible(OverlayStudioStore.BossStatus) ||
+            _activeBossSnapshot is null)
+        {
+            HideBossStatus();
+            return;
+        }
+
+        if (_bossStatus is null)
+        {
+            var created = new BossStatusOverlayWindow(_activeBossSnapshot);
+            created.Opened += (_, _) => ApplySavedWidget(created, OverlayStudioStore.BossStatus);
+            // Place it beside (preferably above) DPS on first use; placement is then saved.
+            created.Opened += (_, _) =>
+            {
+                if (CompanionSettings.GetOverlayPlacement("boss-status-detached-v1") is not null ||
+                    _dps is not { IsVisible: true } ||
+                    created.Screens.ScreenFromPoint(_dps.Position) is not { } screen)
+                    return;
+                var area = screen.WorkingArea;
+                int width = (int)Math.Ceiling(created.Width * screen.Scaling);
+                int height = (int)Math.Ceiling(created.Height * screen.Scaling);
+                int dpsHeight = (int)Math.Ceiling(_dps.Bounds.Height * screen.Scaling);
+                int above = _dps.Position.Y - height - 10;
+                int below = _dps.Position.Y + dpsHeight + 10;
+                int proposedY = above >= area.Y ? above : below;
+                int x = Math.Clamp(_dps.Position.X, area.X,
+                    Math.Max(area.X, area.Right - width));
+                int y = Math.Clamp(proposedY, area.Y,
+                    Math.Max(area.Y, area.Bottom - height));
+                created.WindowStartupLocation = WindowStartupLocation.Manual;
+                created.Position = new PixelPoint(x, y);
+            };
+            created.Closed += (_, _) =>
+            {
+                if (ReferenceEquals(_bossStatus, created))
+                    _bossStatus = null;
+            };
+            _bossStatus = created;
+        }
+        else
+        {
+            _bossStatus.UpdateSnapshot(_activeBossSnapshot);
+        }
+        ShowWithoutActivation(_bossStatus);
+    }
+
+    public static void SetBossStatusEnabled(bool enabled)
+    {
+        CompanionSettings.ShowBossStatusOverlay = enabled;
+        if (!enabled)
+            HideBossStatus();
+        else if (_activeBossSnapshot is not null)
+            UpdateBossStatus(_activeBossSnapshot);
+    }
+
+    public static void HideBossStatus()
+    {
+        if (_bossStatus is { IsVisible: true })
+            _bossStatus.Hide();
     }
 
     public static void ToggleDbm()
@@ -185,6 +274,7 @@ public static class OverlayWindowManager
             // Preview windows are temporary. Hide real overlays without closing their engines.
             HiddenForStudio.Clear();
             HideForStudio(_dps, OverlayStudioStore.Dps);
+            HideForStudio(_bossStatus, OverlayStudioStore.BossStatus);
             HideForStudio(_dbm, OverlayStudioStore.Phaseward);
             HideForStudio(_eventTimers, OverlayStudioStore.Timers);
             var created = new OverlayStudioWindow();
@@ -193,6 +283,8 @@ public static class OverlayWindowManager
                 if (!ReferenceEquals(_studio, created)) return;
                 _studio = null;
                 RestoreFromStudio(_dps, OverlayStudioStore.Dps);
+                if (_activeBossSnapshot is not null)
+                    RestoreFromStudio(_bossStatus, OverlayStudioStore.BossStatus);
                 RestoreFromStudio(_dbm, OverlayStudioStore.Phaseward);
                 RestoreFromStudio(_eventTimers, OverlayStudioStore.Timers);
                 HiddenForStudio.Clear();
@@ -223,6 +315,7 @@ public static class OverlayWindowManager
     public static void ApplyStudioLayout(StudioLayout layout)
     {
         ApplyWindow(_dps, OverlayStudioStore.Dps, layout);
+        ApplyWindow(_bossStatus, OverlayStudioStore.BossStatus, layout);
         ApplyWindow(_dbm, OverlayStudioStore.Phaseward, layout);
         ApplyWindow(_eventTimers, OverlayStudioStore.Timers, layout);
     }

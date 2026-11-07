@@ -163,6 +163,129 @@ public static class CompanionSettings
         }
     }
 
+    // Local-only opt-in recorder for repeatable boss cast/HP patterns.
+    // Separate opt-in for future community observations. Default OFF; no live POST in DEV.
+    // Separate consent for internet upload; existing local queue consent does NOT grant it.
+    public static bool PhasewardCommunityUploadConsentConfirmed
+    {
+        get { lock (Sync) return Load().PhasewardCommunityUploadConsentConfirmed; }
+        set { lock (Sync) { var data = Load(); if (data.PhasewardCommunityUploadConsentConfirmed == value) return;
+            data.PhasewardCommunityUploadConsentConfirmed = value; Save(data); } }
+    }
+
+    public static string PhasewardCommunityUploadAccountHash
+    {
+        get { lock (Sync) return Load().PhasewardCommunityUploadAccountHash; }
+        set { lock (Sync) { var data = Load(); if (data.PhasewardCommunityUploadAccountHash == value) return;
+            data.PhasewardCommunityUploadAccountHash = value; Save(data); } }
+    }
+
+    public static bool PhasewardCommunityEnablePending
+    {
+        get { lock (Sync) return Load().PhasewardCommunityEnablePending; }
+        set { lock (Sync) { var data = Load(); if (data.PhasewardCommunityEnablePending == value) return;
+            data.PhasewardCommunityEnablePending = value; Save(data); } }
+    }
+
+    public static bool PhasewardCommunityEnableOnNextLogin
+    {
+        get { lock (Sync) return Load().PhasewardCommunityEnableOnNextLogin; }
+        set { lock (Sync) { var data = Load(); if (data.PhasewardCommunityEnableOnNextLogin == value) return;
+            data.PhasewardCommunityEnableOnNextLogin = value; Save(data); } }
+    }
+
+    public static bool PhasewardCommunityRevokePending
+    {
+        get { lock (Sync) return Load().PhasewardCommunityRevokePending; }
+        set { lock (Sync) { var data = Load(); if (data.PhasewardCommunityRevokePending == value) return;
+            data.PhasewardCommunityRevokePending = value; Save(data); } }
+    }
+
+    public static bool PhasewardCommunityQueueEnabled
+    {
+        get { lock (Sync) return Load().PhasewardCommunityQueueEnabled; }
+        set
+        {
+            lock (Sync)
+            {
+                SettingsData data = Load();
+                if (data.PhasewardCommunityQueueEnabled == value) return;
+                data.PhasewardCommunityQueueEnabled = value;
+                Save(data);
+            }
+        }
+    }
+
+    // Separate local-only consent: the trace may contain raw, potentially personal packet fields.
+    // This flag does NOT authorize sending it to any endpoint.
+    // Raw Research V2 is a SEPARATE consent from community-v1. Defaults OFF.
+    // Set ONLY after the separate, explicit raw-packet disclosure is accepted.
+    public static bool PhasewardTraceV2RawUploadAcknowledged
+    {
+        get { lock (Sync) return Load().PhasewardTraceV2RawUploadAcknowledged; }
+        set { lock (Sync) { var d=Load(); if (d.PhasewardTraceV2RawUploadAcknowledged==value) return;
+            d.PhasewardTraceV2RawUploadAcknowledged=value; Save(d); } }
+    }
+    public static bool PhasewardTraceV2UploadEnabled
+    {
+        get { lock (Sync) return Load().PhasewardTraceV2UploadEnabled; }
+        set { lock (Sync) { var d=Load(); if (d.PhasewardTraceV2UploadEnabled==value) return;
+            d.PhasewardTraceV2UploadEnabled=value; Save(d); } }
+    }
+    public static string PhasewardTraceV2AccountHash
+    {
+        get { lock (Sync) return Load().PhasewardTraceV2AccountHash; }
+        set { lock (Sync) { var d=Load(); if (d.PhasewardTraceV2AccountHash==value) return;
+            d.PhasewardTraceV2AccountHash=value; Save(d); } }
+    }
+    public static bool PhasewardTraceV2EnablePending
+    {
+        get { lock (Sync) return Load().PhasewardTraceV2EnablePending; }
+        set { lock (Sync) { var d=Load(); if (d.PhasewardTraceV2EnablePending==value) return;
+            d.PhasewardTraceV2EnablePending=value; Save(d); } }
+    }
+    public static bool PhasewardTraceV2RevokePending
+    {
+        get { lock (Sync) return Load().PhasewardTraceV2RevokePending; }
+        set { lock (Sync) { var d=Load(); if (d.PhasewardTraceV2RevokePending==value) return;
+            d.PhasewardTraceV2RevokePending=value; Save(d); } }
+    }
+    public static string PhasewardTraceV2WelcomeVersion
+    {
+        get { lock (Sync) return Load().PhasewardTraceV2WelcomeVersion; }
+        set { lock (Sync) { var d=Load(); if (d.PhasewardTraceV2WelcomeVersion==value) return;
+            d.PhasewardTraceV2WelcomeVersion=value; Save(d); } }
+    }
+    public static bool PhasewardTraceV2EnableOnNextLogin
+    {
+        get { lock (Sync) return Load().PhasewardTraceV2EnableOnNextLogin; }
+        set { lock (Sync) { var d=Load(); if (d.PhasewardTraceV2EnableOnNextLogin==value) return;
+            d.PhasewardTraceV2EnableOnNextLogin=value; Save(d); } }
+    }
+
+    public static bool PhasewardDetailedTraceEnabled
+    {
+        get { lock (Sync) return Load().PhasewardDetailedTraceEnabled; }
+        set { lock (Sync) { var data = Load();
+            if (data.PhasewardDetailedTraceEnabled == value) return;
+            data.PhasewardDetailedTraceEnabled = value; Save(data); } }
+    }
+
+    public static bool PhasewardLearningEnabled
+    {
+        get { lock (Sync) return Load().PhasewardLearningEnabled; }
+        set
+        {
+            lock (Sync)
+            {
+                SettingsData data = Load();
+                if (data.PhasewardLearningEnabled == value) return;
+                data.PhasewardLearningEnabled = value;
+                Save(data);
+            }
+        }
+    }
+
     public static bool AutoCaptureEnabled
     {
         get
@@ -179,6 +302,38 @@ public static class CompanionSettings
                     return;
 
                 data.AutoCaptureEnabled = value;
+                Save(data);
+            }
+        }
+    }
+
+    // LEGACY #19 v0.1: compact DPS row badge, boss encounters only.
+    public static bool ShowPlayerDeathCounts
+    {
+        get { lock (Sync) return Load().ShowPlayerDeathCounts; }
+        set
+        {
+            lock (Sync)
+            {
+                SettingsData data = Load();
+                if (data.ShowPlayerDeathCounts == value) return;
+                data.ShowPlayerDeathCounts = value;
+                Save(data);
+            }
+        }
+    }
+
+    // LEGACY-BOSS-DETACHED-V0.1: independently controlled boss status overlay.
+    public static bool ShowBossStatusOverlay
+    {
+        get { lock (Sync) return Load().ShowBossStatusOverlay; }
+        set
+        {
+            lock (Sync)
+            {
+                SettingsData data = Load();
+                if (data.ShowBossStatusOverlay == value) return;
+                data.ShowBossStatusOverlay = value;
                 Save(data);
             }
         }
@@ -288,6 +443,26 @@ public static class CompanionSettings
                     return;
 
                 data.DownloadUpdatesInBackground = value;
+                Save(data);
+            }
+        }
+    }
+
+    public static bool IntegrityMonitoringEnabled
+    {
+        get
+        {
+            lock (Sync)
+                return Load().IntegrityMonitoringEnabled;
+        }
+        set
+        {
+            lock (Sync)
+            {
+                SettingsData data = Load();
+                if (data.IntegrityMonitoringEnabled == value)
+                    return;
+                data.IntegrityMonitoringEnabled = value;
                 Save(data);
             }
         }
@@ -560,12 +735,30 @@ public static class CompanionSettings
         public bool FileLoggingEnabled { get; set; }
         public bool AutoManageDpsOverlay { get; set; } = true;
         public bool AutoPhasewardOverlay { get; set; } = false;
+        public bool PhasewardTraceV2RawUploadAcknowledged { get; set; } = false;
+        public bool PhasewardTraceV2UploadEnabled { get; set; } = false;
+        public string PhasewardTraceV2AccountHash { get; set; } = string.Empty;
+        public bool PhasewardTraceV2EnablePending { get; set; } = false;
+        public bool PhasewardTraceV2RevokePending { get; set; } = false;
+        public string PhasewardTraceV2WelcomeVersion { get; set; } = string.Empty;
+        public bool PhasewardTraceV2EnableOnNextLogin { get; set; } = false;
+        public bool PhasewardDetailedTraceEnabled { get; set; } = false;
+        public bool PhasewardLearningEnabled { get; set; } = false;
+        public bool PhasewardCommunityQueueEnabled { get; set; } = false;
+        public bool PhasewardCommunityUploadConsentConfirmed { get; set; } = false;
+        public string PhasewardCommunityUploadAccountHash { get; set; } = string.Empty;
+        public bool PhasewardCommunityRevokePending { get; set; } = false;
+        public bool PhasewardCommunityEnablePending { get; set; } = false;
+        public bool PhasewardCommunityEnableOnNextLogin { get; set; } = false;
         public bool AutoCaptureEnabled { get; set; } = true;
+        public bool ShowBossStatusOverlay { get; set; } = true;
         public bool ShowBossDeathPrediction { get; set; } = true;
+        public bool ShowPlayerDeathCounts { get; set; } = true;
         public DpsEncounterMode DpsEncounterMode { get; set; } = DpsEncounterMode.All;
         public string LanguageCode { get; set; } = "en";
         public bool CheckUpdatesAutomatically { get; set; } = true;
         public bool DownloadUpdatesInBackground { get; set; } = false;
+        public bool IntegrityMonitoringEnabled { get; set; } = true;
         public DateTimeOffset? LastUpdateCheckUtc { get; set; }
         public string? LastSeenOnboardingVersion { get; set; }
         public int CombatLogLimit { get; set; } = 500;

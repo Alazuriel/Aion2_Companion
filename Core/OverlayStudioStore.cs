@@ -39,7 +39,8 @@ public static class OverlayStudioStore
     public const string Dps = "dps-meter-compact-v2";
     public const string Phaseward = "dbm-assistant";
     public const string Timers = "event-timers-overlay";
-    public static readonly string[] Keys = { Dps, Phaseward, Timers };
+    public const string BossStatus = "boss-status-detached-v1";
+    public static readonly string[] Keys = { Dps, BossStatus, Phaseward, Timers };
     private static StudioLayout? _current;
     private static readonly object Gate = new();
     public static string FilePath => Path.Combine(CompanionSettings.SettingsDirectory, "overlay-studio.json");

@@ -20,6 +20,8 @@ public sealed class StoredSkillEvent
     public uint TargetRuntimeId { get; set; }
     public int TargetTemplateId { get; set; }
     public bool IsBossTarget { get; set; }
+    public byte? RawDirectionCode { get; set; }
+    public bool IsDot { get; set; }
 }
 
 public sealed class StoredPlayerStat
@@ -32,6 +34,10 @@ public sealed class StoredPlayerStat
     public long BossDamage { get; set; }
     public long Healing { get; set; }
     public long BossHealing { get; set; }
+    public int? DeathCount { get; set; }
+    public int? FrontHits { get; set; }
+    public int? BackHits { get; set; }
+    public int? UnknownHits { get; set; }
     public List<StoredSkillEvent> Events { get; set; } = new();
 }
 
@@ -79,7 +85,12 @@ public sealed class CombatLogEntry
         List<PlayerStat> players = Players.Select(player => new PlayerStat
         {
             Name = player.Name,
+            DeathCount = player.DeathCount,
+            FrontHits = player.FrontHits,
+            BackHits = player.BackHits,
+            UnknownHits = player.UnknownHits,
             ClassId = player.ClassId,
+            ClassIcon = SavedClassIconResolver.Resolve(player.ClassId, player.ClassName),
             ClassName = player.ClassName,
             ClassColor = string.IsNullOrWhiteSpace(player.ClassColor)
                 ? "#9CA3AF"
@@ -112,6 +123,8 @@ public sealed class CombatLogEntry
                     TargetRuntimeId = skillEvent.TargetRuntimeId,
                     TargetTemplateId = skillEvent.TargetTemplateId,
                     IsBossTarget = skillEvent.IsBossTarget,
+                    RawDirectionCode = skillEvent.RawDirectionCode,
+                    IsDot = skillEvent.IsDot,
                 })
                 .ToList(),
         }).ToList();
@@ -217,6 +230,10 @@ public sealed class CombatLogStore
             Players = snapshot.Players.Select(player => new StoredPlayerStat
             {
                 Name = player.Name,
+                DeathCount = player.DeathCount,
+                FrontHits = player.FrontHits,
+                BackHits = player.BackHits,
+                UnknownHits = player.UnknownHits,
                 ClassId = player.ClassId,
                 ClassName = player.ClassName,
                 ClassColor = player.ClassColor,
@@ -235,6 +252,8 @@ public sealed class CombatLogStore
                     TargetRuntimeId = skillEvent.TargetRuntimeId,
                     TargetTemplateId = skillEvent.TargetTemplateId,
                     IsBossTarget = skillEvent.IsBossTarget,
+                    RawDirectionCode = skillEvent.RawDirectionCode,
+                    IsDot = skillEvent.IsDot,
                 }).ToList(),
             }).ToList(),
         };

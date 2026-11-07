@@ -17,6 +17,8 @@ public sealed class DamageHit
     public byte ActorHitCount { get; init; }
     public byte Mods { get; init; }
     public byte Direction { get; init; }
+    // Present only for sw-kind 6. Meaning of value is unverified.
+    public bool HasDirectionByte { get; init; }
     public uint Sequence { get; init; }
     public uint Scalar { get; init; }
     public byte TrailerSeq { get; init; }
@@ -175,6 +177,7 @@ public static class DamageScanner
             ActorHitCount = actorHitCount,
             Mods = mods,
             Direction = direction,
+            HasDirectionByte = kind == 6,
             Sequence = sequence,
             Scalar = scalar,
             TrailerSeq = trailerSeq,

@@ -51,6 +51,7 @@ internal sealed class OverlayStudioPlacementWindow : Window
             Text = key switch
             {
                 OverlayStudioStore.Dps => "DPS METER",
+                OverlayStudioStore.BossStatus => "BOSS STATUS · position / size",
                 OverlayStudioStore.Phaseward => "PHASEWARD · live HUD location",
                 _ => "EVENT TIMERS"
             },
@@ -188,10 +189,10 @@ internal sealed class OverlayStudioPlacementWindow : Window
     {
         if (!_resizing) return;
         var point = e.GetPosition(this);
-        Width = Math.Clamp(_startWidth + point.X - _resizeOrigin.X, _key == OverlayStudioStore.Dps ? 280 : 360,
-            _key == OverlayStudioStore.Dps ? 440 : _key == OverlayStudioStore.Phaseward ? 760 : 650);
-        Height = Math.Clamp(_startHeight + point.Y - _resizeOrigin.Y, _key == OverlayStudioStore.Dps ? 120 : 220,
-            _key == OverlayStudioStore.Dps ? 580 : 650);
+        Width = Math.Clamp(_startWidth + point.X - _resizeOrigin.X, _key == OverlayStudioStore.Dps ? 280 : _key == OverlayStudioStore.BossStatus ? 260 : 360,
+            _key == OverlayStudioStore.Dps ? 440 : _key == OverlayStudioStore.BossStatus ? 480 : _key == OverlayStudioStore.Phaseward ? 760 : 650);
+        Height = Math.Clamp(_startHeight + point.Y - _resizeOrigin.Y, _key == OverlayStudioStore.Dps ? 120 : _key == OverlayStudioStore.BossStatus ? 125 : 220,
+            _key == OverlayStudioStore.Dps ? 580 : _key == OverlayStudioStore.BossStatus ? 260 : 650);
         e.Handled = true;
     }
 

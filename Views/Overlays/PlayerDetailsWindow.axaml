@@ -2,8 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="AION_2_Companion.Views.Overlays.PlayerDetailsWindow"
         x:CompileBindings="False"
-        Width="560" Height="580"
-        MinWidth="440" MinHeight="360"
+        Width="790" Height="660"
+        MinWidth="670" MinHeight="470"
         Title="AION 2 · Player"
         Background="Transparent"
         TransparencyLevelHint="Transparent"
@@ -26,19 +26,22 @@
         <GradientStop Color="#F2181118" Offset="1"/>
       </LinearGradientBrush>
     </Border.Background>
-    <Grid RowDefinitions="Auto,Auto,*,Auto">
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
 
       <!-- 0. Fejléc -->
       <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Background="Transparent" PointerPressed="HeaderDrag">
         <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-          <Border Name="DetailBadge" Width="32" Height="32" CornerRadius="9">
-            <TextBlock Name="DetailBadgeText" FontSize="12" FontWeight="Bold" Foreground="#0B0E13"
-                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          <Border Name="DetailBadge" Width="32" Height="32" CornerRadius="9" ClipToBounds="True">
+            <Grid>
+              <Image Name="DetailClassIcon" Width="30" Height="30" Stretch="Uniform" IsVisible="False"/>
+              <TextBlock Name="DetailBadgeText" FontSize="12" FontWeight="Bold" Foreground="#0B0E13"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
           </Border>
           <StackPanel Spacing="1">
             <TextBlock Text="{DynamicResource PlayerAnalysis}" Classes="kicker" FontSize="9"/>
             <TextBlock Name="DetailName" FontSize="17" FontWeight="SemiBold"/>
-            <TextBlock Name="DetailMeta" FontSize="11" Foreground="#71879B"/>
+            <TextBlock Name="DetailMeta" FontSize="11" Foreground="#71879B" TextWrapping="Wrap"/>
           </StackPanel>
         </StackPanel>
         <Button Grid.Column="1" Classes="ui quiet" Content="×" Padding="8,2" Click="CloseClick"/>
@@ -72,8 +75,41 @@
         </Border>
       </Grid>
 
-      <!-- 2. Skill lista -->
-      <Border Grid.Row="2" Classes="inset" CornerRadius="12" Padding="12,10" Margin="0,12">
+      <!-- LEGACY #19/#20: readable per-player encounter counters. Unknown is never zero. -->
+      <Border Grid.Row="2" Classes="inset" CornerRadius="12" Padding="12,11" Margin="0,12,0,0">
+        <StackPanel Spacing="9">
+          <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10">
+            <Border Background="#152A39" CornerRadius="9" Padding="12,9">
+              <StackPanel Spacing="3">
+                <TextBlock Text="DEATHS" FontSize="10" Foreground="#8DABC0" FontWeight="SemiBold"/>
+                <TextBlock Name="DetailDeathsCount" FontSize="19" FontWeight="SemiBold" Foreground="#F6B0AD"/>
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Background="#152A39" CornerRadius="9" Padding="12,9">
+              <StackPanel Spacing="3">
+                <TextBlock Text="FRONT HITS" FontSize="10" Foreground="#8DABC0" FontWeight="SemiBold"/>
+                <TextBlock Name="DetailFrontHits" FontSize="17" FontWeight="SemiBold" Foreground="#E5C88E" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Background="#152A39" CornerRadius="9" Padding="12,9">
+              <StackPanel Spacing="3">
+                <TextBlock Text="BACK HITS" FontSize="10" Foreground="#8DABC0" FontWeight="SemiBold"/>
+                <TextBlock Name="DetailBackHits" FontSize="17" FontWeight="SemiBold" Foreground="#80DCB8" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="3" Background="#152A39" CornerRadius="9" Padding="12,9">
+              <StackPanel Spacing="3">
+                <TextBlock Text="UNKNOWN HITS" FontSize="10" Foreground="#8DABC0" FontWeight="SemiBold"/>
+                <TextBlock Name="DetailUnknownHits" FontSize="17" FontWeight="SemiBold" Foreground="#B6C8D9" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Border>
+          </Grid>
+          <TextBlock Name="DetailPositionCoverage" Foreground="#7799AD" FontSize="11" TextWrapping="Wrap"/>
+        </StackPanel>
+      </Border>
+
+      <!-- 3. Skill lista -->
+      <Border Grid.Row="3" Classes="inset" CornerRadius="12" Padding="12,10" Margin="0,12">
         <Grid RowDefinitions="Auto,*">
           <Grid ColumnDefinitions="*,70,74,50,46,50" Margin="8,0,8,6">
             <TextBlock Text="{DynamicResource UiPlayerDetailSkill}" FontSize="9" FontWeight="SemiBold" Foreground="#7B8496"/>
@@ -133,8 +169,8 @@
         </Grid>
       </Border>
 
-      <!-- 3. Lábléc -->
-      <Grid Grid.Row="3" ColumnDefinitions="*,Auto">
+      <!-- 4. Lábléc -->
+      <Grid Grid.Row="4" ColumnDefinitions="*,Auto">
         <TextBlock Text="{DynamicResource PlayerAnalysisHint}"
                    FontSize="10" Foreground="#60768A" TextWrapping="Wrap" VerticalAlignment="Center"/>
         <Button Grid.Column="1" Classes="ui primary" Content="{DynamicResource Timeline}" FontSize="12" Click="TimelineClick"/>

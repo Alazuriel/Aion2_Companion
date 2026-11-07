@@ -4,28 +4,65 @@
              x:CompileBindings="False"
              Background="Transparent" Foreground="#EAF7FF"
              FontFamily="Inter, Segoe UI Variable Text, Segoe UI">
+  <UserControl.Resources>
+    <!-- Only the two Combat Archive lists use this theme. The normal Fluent selection
+         stripe is intentionally not part of the template. -->
+    <ControlTheme x:Key="CombatArchiveRowTheme" TargetType="ListBoxItem">
+      <Setter Property="Margin" Value="0,0,0,7"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="Background" Value="#112638"/>
+      <Setter Property="BorderBrush" Value="#2E5267"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  CornerRadius="{TemplateBinding CornerRadius}">
+            <ContentPresenter Name="PART_ContentPresenter"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              HorizontalContentAlignment="Stretch"/>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <!-- Hover is quiet, and never looks like a selection. -->
+      <Style Selector="^:pointerover">
+        <Setter Property="Background" Value="#193549"/>
+        <Setter Property="BorderBrush" Value="#4E7C90"/>
+      </Style>
+      <Style Selector="^:selected">
+        <Setter Property="Background" Value="#163B50"/>
+        <Setter Property="BorderBrush" Value="#45DFFF"/>
+        <Setter Property="BorderThickness" Value="2"/>
+      </Style>
+      <Style Selector="^:selected:pointerover">
+        <Setter Property="Background" Value="#1B455A"/>
+        <Setter Property="BorderBrush" Value="#7AF0FF"/>
+      </Style>
+      <Style Selector="^:focus-visible">
+        <Setter Property="BorderBrush" Value="#91EFFF"/>
+      </Style>
+    </ControlTheme>
+  </UserControl.Resources>
   <UserControl.Styles>
     <StyleInclude Source="avares://AION 2 Companion/Styles/Theme.axaml"/>
     <Style Selector="ListBox">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="BorderThickness" Value="0"/>
     </Style>
-    <Style Selector="ListBoxItem">
-      <Setter Property="Padding" Value="0"/>
-      <Setter Property="Margin" Value="0,0,0,8"/>
-      <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-    </Style>
     <Style Selector="TextBox">
-      <Setter Property="Background" Value="#B00A1728"/>
+      <Setter Property="Background" Value="#B1091A2A"/>
       <Setter Property="Foreground" Value="#EAF7FF"/>
-      <Setter Property="BorderBrush" Value="#2F5068"/>
+      <Setter Property="BorderBrush" Value="#31536B"/>
       <Setter Property="CornerRadius" Value="10"/>
       <Setter Property="Padding" Value="12,9"/>
     </Style>
     <Style Selector="Button.logTab">
       <Setter Property="Background" Value="Transparent"/>
-      <Setter Property="Foreground" Value="#819CB2"/>
+      <Setter Property="Foreground" Value="#8DAFC2"/>
       <Setter Property="BorderBrush" Value="Transparent"/>
       <Setter Property="BorderThickness" Value="0,0,0,2"/>
       <Setter Property="CornerRadius" Value="0"/>
@@ -33,80 +70,114 @@
       <Setter Property="MinHeight" Value="36"/>
     </Style>
     <Style Selector="Button.logTab.selected">
-      <Setter Property="Foreground" Value="#53DEFF"/>
-      <Setter Property="BorderBrush" Value="#53DEFF"/>
+      <Setter Property="Foreground" Value="#65E8FC"/>
+      <Setter Property="BorderBrush" Value="#42DAF4"/>
+      <Setter Property="Background" Value="#281C5363"/>
+    </Style>
+    <Style Selector="Border.tacticalCard">
+      <Setter Property="BorderBrush" Value="#30536A"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="13"/>
+      <Setter Property="Background" Value="#E80D1C2B"/>
+    </Style>
+    <Style Selector="TextBlock.tacticalLabel">
+      <Setter Property="Foreground" Value="#7DABC2"/>
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="LetterSpacing" Value="0.7"/>
     </Style>
   </UserControl.Styles>
 
-  <Grid RowDefinitions="Auto,Auto,*" Margin="0,0,8,8">
-    <!-- Page identity; the local storage path is deliberately visually secondary. -->
-    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,18">
-      <StackPanel Spacing="5">
+  <Grid RowDefinitions="Auto,Auto,*" Margin="0,0,8,8" RowSpacing="11">
+    <!-- Header: no downloaded imagery, no invented fight data. -->
+    <Grid ColumnDefinitions="*" Margin="4,0,4,0">
+      <StackPanel Spacing="3">
         <TextBlock Text="NEXFORGE // COMBAT ARCHIVE" Classes="kicker"/>
-        <TextBlock Text="{DynamicResource CombatLogTitle}" Classes="h1" FontSize="29"/>
-        <TextBlock Text="{DynamicResource CombatLogSubtitle}" Classes="body"/>
+        <TextBlock Text="{DynamicResource CombatLogTitle}" Classes="h1" FontSize="28" FontWeight="Bold"/>
       </StackPanel>
-      <StackPanel Grid.Column="1" Width="230" Spacing="5" VerticalAlignment="Bottom" Margin="14,0,0,0">
-        <TextBlock Text="{DynamicResource UiCombatLogLocalStorage}" Classes="eyebrow" TextAlignment="Right"/>
-        <TextBlock Name="StorageText" Classes="hint" TextAlignment="Right"
-                   TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
-      </StackPanel>
+      <!-- Retained for existing C# storage metadata; no local disk path in player UI. -->
+      <TextBlock Name="StorageText" IsVisible="False"/>
     </Grid>
 
-    <!-- Search & filters -->
-    <Border Grid.Row="1" Classes="panel" Padding="12" Margin="0,0,0,14">
-      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+    <!-- Search + encounter scope: each action has a single owner. -->
+    <Border Grid.Row="1" Classes="tacticalCard" Padding="10">
+      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
         <TextBox Name="SearchBox" Watermark="{DynamicResource CombatSearch}"
-                 VerticalAlignment="Center" MinHeight="38" TextChanged="SearchTextChanged"/>
-        <Border Grid.Column="1" Classes="inset" CornerRadius="10" Padding="3" VerticalAlignment="Center">
+                 MinHeight="38" TextChanged="SearchTextChanged"/>
+        <Border Grid.Column="1" Background="#141F3143" BorderBrush="#244C60" BorderThickness="1"
+                CornerRadius="10" Padding="3" VerticalAlignment="Center">
           <StackPanel Orientation="Horizontal" Spacing="3">
-            <Button Name="AllEncountersButton" Classes="ui" Content="{DynamicResource EncounterModeAll}"
-                    MinHeight="30" Padding="14,5" Click="EncounterModeClick" Tag="All"/>
-            <Button Name="BossEncountersButton" Classes="ui" Content="{DynamicResource EncounterModeBosses}"
-                    MinHeight="30" Padding="14,5" Click="EncounterModeClick" Tag="Bosses"/>
+            <Button Name="AllEncountersButton" Classes="ui" Tag="All"
+                    Content="{DynamicResource EncounterModeAll}" MinHeight="31" Padding="12,5"
+                    Click="EncounterModeClick"/>
+            <Button Name="BossEncountersButton" Classes="ui" Tag="Bosses"
+                    Content="{DynamicResource EncounterModeBosses}" MinHeight="31" Padding="12,5"
+                    Click="EncounterModeClick"/>
           </StackPanel>
         </Border>
         <CheckBox Grid.Column="2" Name="FavoritesOnlyToggle"
                   Content="{DynamicResource FavoritesOnly}" VerticalAlignment="Center"
-                  IsCheckedChanged="FavoritesFilterChanged"/>
+                  IsCheckedChanged="FavoritesFilterChanged" Margin="3,0,5,0"/>
       </Grid>
     </Border>
 
-    <Grid Grid.Row="2" ColumnDefinitions="266,14,*">
-      <!-- Fight browser -->
-      <Border Classes="panel" Padding="12">
-        <Grid RowDefinitions="Auto,Auto,*,Auto">
-          <StackPanel Spacing="5" Margin="5,4,5,12">
-            <TextBlock Text="{DynamicResource UiCombatLogFightLibrary}" Classes="kicker"/>
-            <TextBlock Text="{DynamicResource SavedFights}" FontSize="18" FontWeight="SemiBold"/>
-            <TextBlock Name="FightCountText" Classes="hint" TextWrapping="Wrap"/>
-          </StackPanel>
-          <Border Grid.Row="1" Background="#1A26394B" CornerRadius="10" Padding="10,8" Margin="0,0,0,10">
-            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-              <TextBlock Text="●" Foreground="#53DEFF" VerticalAlignment="Center" FontSize="10"/>
-              <TextBlock Grid.Column="1" Name="SessionText" Classes="hint" TextWrapping="Wrap"/>
-            </Grid>
-          </Border>
+    <Grid Grid.Row="2" ColumnDefinitions="258,12,*" MinHeight="420">
+      <!-- ENCOUNTER LIBRARY -->
+      <Border Classes="tacticalCard" Padding="11">
+        <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="8">
+          <Grid ColumnDefinitions="*,Auto" Margin="4,3,4,0">
+            <StackPanel Spacing="3">
+              <TextBlock Text="{DynamicResource UiCombatLogFightLibrary}" Classes="kicker" FontSize="10"/>
+              <TextBlock Text="{DynamicResource SavedFights}" FontSize="18" FontWeight="Bold"/>
+            </StackPanel>
+            <Border Grid.Column="1" Background="#234C6D" CornerRadius="16" Padding="9,4" VerticalAlignment="Center">
+              <TextBlock Name="FightCountText" FontSize="11" Foreground="#A6E9F5"/>
+            </Border>
+          </Grid>
+
+          <Grid Grid.Row="1" RowDefinitions="Auto,Auto" RowSpacing="4">
+            <ComboBox Name="SortBox" SelectedIndex="0" SelectionChanged="SortModeChanged" MinHeight="34"
+                      HorizontalAlignment="Stretch" FontSize="12">
+              <ComboBoxItem Tag="newest" Content="{DynamicResource UiCombatLogSortNewest}"/>
+              <ComboBoxItem Tag="oldest" Content="{DynamicResource UiCombatLogSortOldest}"/>
+              <ComboBoxItem Tag="damage" Content="{DynamicResource UiCombatLogSortDamage}"/>
+              <ComboBoxItem Tag="duration" Content="{DynamicResource UiCombatLogSortDuration}"/>
+            </ComboBox>
+            <Border Grid.Row="1" Name="SessionSummaryPanel" IsVisible="False" Background="#162B3D50" CornerRadius="9" Padding="9,5">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Ellipse Width="6" Height="6" Fill="#54E5C6" VerticalAlignment="Center"/>
+                <TextBlock Name="SessionText" Classes="hint" FontSize="10" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Border>
+          </Grid>
+
           <Grid Grid.Row="2">
             <ListBox Name="FightList" ItemsSource="{Binding Fights}"
+                     ItemContainerTheme="{StaticResource CombatArchiveRowTheme}"
                      SelectionChanged="FightSelectionChanged">
               <ListBox.ItemTemplate>
                 <DataTemplate>
-                  <Border CornerRadius="12" Background="#C9101E30" BorderBrush="#29475F"
-                          BorderThickness="1" Padding="12,11">
-                    <StackPanel Spacing="8">
-                      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="5">
-                        <TextBlock Text="{Binding FavoriteText}" Foreground="#F5BA66" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="1" Text="{Binding Title}" FontWeight="SemiBold" FontSize="14"
-                                   TextTrimming="CharacterEllipsis"/>
-                        <TextBlock Grid.Column="2" Text="{Binding DurationText}" Classes="mono accent" FontSize="12"/>
+                  <Border Classes="fightCard" Background="Transparent"
+                          BorderThickness="0" Padding="11,10">
+                    <StackPanel Spacing="7">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                        <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="1" Text="{Binding FavoriteText}" Foreground="#FFD174"
+                                   FontSize="15" VerticalAlignment="Center"/>
                       </Grid>
-                      <TextBlock Text="{Binding DateText}" Classes="hint" FontSize="11"/>
-                      <Border Background="#162C4155" CornerRadius="6" Padding="7,5">
-                        <TextBlock Text="{Binding TotalsText}" Classes="mono" Foreground="#BDD5E3" FontSize="11"
-                                   TextWrapping="Wrap"/>
-                      </Border>
-                      <TextBlock Text="{Binding StateText}" Classes="warn" FontSize="11"/>
+                      <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Text="{Binding DateText}" Classes="hint" FontSize="11"/>
+                        <TextBlock Grid.Column="1" Text="{Binding DurationText}" Classes="mono"
+                                   Foreground="#A4DFEB" FontSize="11"/>
+                      </Grid>
+                      <Border Height="1" Background="#29465B"/>
+                      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                        <TextBlock Text="⚔" Foreground="#66E6E6" VerticalAlignment="Center" FontSize="14"/>
+                        <TextBlock Grid.Column="1" Text="{Binding TotalsText}" Classes="mono"
+                                   Foreground="#A2CBD7" FontSize="10" TextWrapping="Wrap"/>
+                      </Grid>
+                      <TextBlock Text="{Binding StateText}" Classes="warn" FontSize="10"/>
                     </StackPanel>
                   </Border>
                 </DataTemplate>
@@ -114,100 +185,169 @@
             </ListBox>
             <TextBlock Name="EmptyLogText" Text="{DynamicResource NoMatchingFight}"
                        Classes="body" TextAlignment="Center" TextWrapping="Wrap"
-                       HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="220"/>
+                       HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="205"/>
           </Grid>
           <Button Grid.Row="3" Name="LoadOlderFightsButton" Classes="ui"
-                  Content="{DynamicResource LoadOlderFights}" Margin="0,12,0,0"
-                  HorizontalAlignment="Stretch" Click="LoadOlderFightsClick" IsVisible="False"/>
+                  Content="{DynamicResource LoadOlderFights}" HorizontalAlignment="Stretch"
+                  Click="LoadOlderFightsClick" IsVisible="False"/>
         </Grid>
       </Border>
 
-      <!-- Selected encounter: top-level actions and metrics stay in sight while tabs separate deep detail. -->
-      <Border Grid.Column="2" Classes="panel" Padding="18">
-        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
-          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
-            <StackPanel Spacing="6">
-              <TextBlock Text="{DynamicResource UiCombatLogSelectedEncounter}" Classes="kicker"/>
-              <TextBlock Name="EncounterName" Text="{DynamicResource NoSelectedFight}"
-                         FontSize="25" FontWeight="Bold"/>
-              <TextBlock Name="EncounterMeta" Text="—" Classes="body" TextWrapping="Wrap"/>
-            </StackPanel>
-            <Button Grid.Column="1" Name="OpenDpsButton" Classes="ui primary"
-                    Content="{DynamicResource DpsView}" MinWidth="104" VerticalAlignment="Top"
-                    Click="OpenDpsClick"/>
+      <!-- Encounter details scroll as one panel at smaller heights; skills stay available. -->
+      <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Disabled">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
+        <Border Grid.Row="0" BorderThickness="1" BorderBrush="#426A82"
+                CornerRadius="14" ClipToBounds="True" MinHeight="99">
+          <Border.Background>
+            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+              <GradientStop Offset="0" Color="#152D43"/>
+              <GradientStop Offset="0.52" Color="#102536"/>
+              <GradientStop Offset="1" Color="#1E223A"/>
+            </LinearGradientBrush>
+          </Border.Background>
+          <Grid RowDefinitions="3,*">
+            <Border>
+              <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,0%">
+                  <GradientStop Offset="0" Color="#40DFFF"/>
+                  <GradientStop Offset="0.7" Color="#475CE9"/>
+                  <GradientStop Offset="1" Color="#F28B71"/>
+                </LinearGradientBrush>
+              </Border.Background>
+            </Border>
+            <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="17,12,12,11">
+              <StackPanel Spacing="5" VerticalAlignment="Center">
+                <TextBlock Text="{DynamicResource UiCombatLogSelectedEncounter}" Classes="kicker" FontSize="10"/>
+                <TextBlock Name="EncounterName" Text="{DynamicResource NoSelectedFight}"
+                           FontSize="23" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Name="EncounterMeta" Text="—" FontSize="11" Foreground="#ABC2D6"
+                           TextWrapping="Wrap"/>
+              </StackPanel>
+              <Button Grid.Column="1" Name="OpenDpsButton" Classes="ui primary"
+                      Content="{DynamicResource DpsView}" VerticalAlignment="Center"
+                      MinWidth="86" Click="OpenDpsClick"/>
+            </Grid>
           </Grid>
+        </Border>
 
-          <WrapPanel Grid.Row="1" Margin="0,16,0,4" Orientation="Horizontal">
-            <Button Name="FavoriteButton" Classes="ui" Content="{DynamicResource Favorite}"
-                    Margin="0,0,8,7" Click="ToggleFavoriteClick"/>
+        <!-- Exactly one Compare, one Share, one Copy and one Favorite control. -->
+        <Border Grid.Row="1" Classes="tacticalCard" Padding="8,6">
+          <StackPanel Spacing="4">
+            <WrapPanel Orientation="Horizontal">
+            <Button Name="FavoriteButton" Classes="ui gold" Content="{DynamicResource Favorite}"
+                    Margin="0,0,6,0" MinHeight="31" Padding="10,5" Click="ToggleFavoriteClick"/>
             <Button Name="CompareButton" Classes="ui" Content="{DynamicResource Compare}"
-                    Margin="0,0,8,7" Click="CompareClick"/>
+                    Margin="0,0,6,0" MinHeight="31" Padding="10,5" Click="CompareClick"/>
             <Button Name="CopyButton" Classes="ui" Content="{DynamicResource CopyDiscord}"
-                    Margin="0,0,8,7" Click="CopyDiscordClick"/>
+                    Margin="0,0,6,0" MinHeight="31" Padding="10,5" Click="CopyDiscordClick"/>
             <Button Name="ShareButton" Classes="ui primary" Content="{DynamicResource LeaderboardShare}"
-                    Margin="0,0,8,7" Click="ShareResultClick"/>
+                    Margin="0,0,6,0" MinHeight="31" Padding="10,5" Click="ShareResultClick"/>
             <Button Name="DeleteButton" Classes="ui" Content="{DynamicResource Delete}"
-                    Foreground="#F58C86" Margin="0,0,0,7" Click="DeleteClick"/>
-          </WrapPanel>
-
-          <!-- Four fixed metrics -->
-          <Grid Grid.Row="2" ColumnDefinitions="*,*,*,*" ColumnSpacing="10" Margin="0,13,0,15">
-            <Border Background="#13283B" BorderBrush="#335C73" BorderThickness="1" CornerRadius="12" Padding="14,12">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{DynamicResource TotalDamage}" Classes="eyebrow"/>
-                <TextBlock Name="TotalDamageText" Classes="metric" FontSize="21"/>
-              </StackPanel>
-            </Border>
-            <Border Grid.Column="1" Background="#142E42" BorderBrush="#35677E" BorderThickness="1" CornerRadius="12" Padding="14,12">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{DynamicResource GroupDps}" Classes="eyebrow"/>
-                <TextBlock Name="TotalDpsText" Classes="metric accent" FontSize="21"/>
-              </StackPanel>
-            </Border>
-            <Border Grid.Column="2" Background="#13283B" BorderBrush="#335C73" BorderThickness="1" CornerRadius="12" Padding="14,12">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{DynamicResource TotalHealing}" Classes="eyebrow"/>
-                <TextBlock Name="TotalHealingText" Classes="metric" FontSize="21"/>
-              </StackPanel>
-            </Border>
-            <Border Grid.Column="3" Background="#13283B" BorderBrush="#335C73" BorderThickness="1" CornerRadius="12" Padding="14,12">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{DynamicResource GroupHps}" Classes="eyebrow"/>
-                <TextBlock Name="TotalHpsText" Classes="metric" FontSize="21"/>
-              </StackPanel>
-            </Border>
-          </Grid>
-
-          <!-- Use regular child Grids rather than lazy TabControl Content templates so FindControl works. -->
-          <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="10" Margin="0,0,0,12">
-            <Button Name="BreakdownTabButton" Classes="logTab selected" Content="{DynamicResource UiCombatLogPerformance}"
-                    Tag="Breakdown" Click="DetailsTabClick"/>
-            <Button Name="NotesTabButton" Classes="logTab" Content="{DynamicResource UiCombatLogNotes}"
-                    Tag="Notes" Click="DetailsTabClick"/>
-            <Button Name="EnemiesTabButton" Classes="logTab" Content="{DynamicResource UiCombatLogEncounterInfo}"
-                    Tag="Enemies" Click="DetailsTabClick"/>
+                    Foreground="#FF9598" MinHeight="31" Padding="10,5" Click="DeleteClick"/>
+            </WrapPanel>
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <TextBlock Name="ComparisonHint" Classes="hint" TextWrapping="Wrap"/>
+              <TextBlock Name="ActionStatusText" Classes="ok" TextWrapping="Wrap"/>
+            </StackPanel>
           </StackPanel>
+        </Border>
 
-          <Grid Grid.Row="4">
-            <Grid Name="DetailsBreakdownPanel" ColumnDefinitions="226,12,*">
-              <Border Classes="inset" Padding="12">
-                <Grid RowDefinitions="Auto,*">
-                  <StackPanel Margin="4,0,4,12" Spacing="4">
-                    <TextBlock Text="{DynamicResource Players}" Classes="section"/>
-                    <TextBlock Text="{DynamicResource UiCombatLogSelectPlayerInspectDamageHealing}" Classes="hint" TextWrapping="Wrap"/>
+        <Grid Grid.Row="2" ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
+          <Border Classes="tacticalCard" Padding="11,10" BorderBrush="#34747A">
+            <Border.Background>
+              <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                <GradientStop Offset="0" Color="#163A44"/><GradientStop Offset="1" Color="#11212E"/>
+              </LinearGradientBrush>
+            </Border.Background>
+            <StackPanel Spacing="6">
+              <TextBlock Text="{DynamicResource TotalDamage}" Classes="tacticalLabel"/>
+              <TextBlock Name="TotalDamageText" Classes="mono" FontSize="19" FontWeight="Bold"
+                         Foreground="#F1FAFF" TextTrimming="CharacterEllipsis"/>
+              <Border Height="2" Background="#58DBD0" CornerRadius="2"/>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="1" Classes="tacticalCard" Padding="11,10" BorderBrush="#355B80">
+            <Border.Background>
+              <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                <GradientStop Offset="0" Color="#173B51"/><GradientStop Offset="1" Color="#112134"/>
+              </LinearGradientBrush>
+            </Border.Background>
+            <StackPanel Spacing="6">
+              <TextBlock Text="{DynamicResource GroupDps}" Classes="tacticalLabel"/>
+              <TextBlock Name="TotalDpsText" Classes="mono" FontSize="19" FontWeight="Bold"
+                         Foreground="#74DFFC" TextTrimming="CharacterEllipsis"/>
+              <Border Height="2" Background="#5FA8F2" CornerRadius="2"/>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="2" Classes="tacticalCard" Padding="11,10" BorderBrush="#346C5C">
+            <Border.Background>
+              <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                <GradientStop Offset="0" Color="#164036"/><GradientStop Offset="1" Color="#13252F"/>
+              </LinearGradientBrush>
+            </Border.Background>
+            <StackPanel Spacing="6">
+              <TextBlock Text="{DynamicResource TotalHealing}" Classes="tacticalLabel"/>
+              <TextBlock Name="TotalHealingText" Classes="mono" FontSize="19" FontWeight="Bold"
+                         Foreground="#D6F9EB" TextTrimming="CharacterEllipsis"/>
+              <Border Height="2" Background="#4CD7AE" CornerRadius="2"/>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="3" Classes="tacticalCard" Padding="11,10" BorderBrush="#2F6470">
+            <Border.Background>
+              <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                <GradientStop Offset="0" Color="#153F44"/><GradientStop Offset="1" Color="#142637"/>
+              </LinearGradientBrush>
+            </Border.Background>
+            <StackPanel Spacing="6">
+              <TextBlock Text="{DynamicResource GroupHps}" Classes="tacticalLabel"/>
+              <TextBlock Name="TotalHpsText" Classes="mono" FontSize="19" FontWeight="Bold"
+                         Foreground="#76F4D2" TextTrimming="CharacterEllipsis"/>
+              <Border Height="2" Background="#45E0D2" CornerRadius="2"/>
+            </StackPanel>
+          </Border>
+        </Grid>
+
+        <Grid Grid.Row="3" RowDefinitions="Auto,*" Height="375">
+          <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,0,0,8">
+            <Button Name="BreakdownTabButton" Classes="logTab selected" Tag="Breakdown"
+                    Content="{DynamicResource UiCombatLogPerformance}" Click="DetailsTabClick"/>
+            <Button Name="NotesTabButton" Classes="logTab" Tag="Notes"
+                    Content="{DynamicResource UiCombatLogNotes}" Click="DetailsTabClick"/>
+            <Button Name="EnemiesTabButton" Classes="logTab" Tag="Enemies"
+                    Content="{DynamicResource UiCombatLogEncounterInfo}" Click="DetailsTabClick"/>
+          </StackPanel>
+          <Grid Grid.Row="1">
+            <Grid Name="DetailsBreakdownPanel" ColumnDefinitions="208,9,*">
+              <!-- Compact party roster. -->
+              <Border Classes="tacticalCard" Padding="10">
+                <Grid RowDefinitions="Auto,*" RowSpacing="8">
+                  <StackPanel Spacing="2" Margin="3,2">
+                    <TextBlock Text="{DynamicResource Players}" Classes="section" FontWeight="Bold"/>
                   </StackPanel>
                   <ListBox Grid.Row="1" Name="PlayerList" ItemsSource="{Binding Players}"
+                           ItemContainerTheme="{StaticResource CombatArchiveRowTheme}"
                            SelectionChanged="PlayerSelectionChanged">
                     <ListBox.ItemTemplate>
                       <DataTemplate>
-                        <Border Background="#142638" BorderBrush="#34556D" BorderThickness="1"
-                                CornerRadius="10" Padding="10">
+                        <Border Classes="playerCard" Background="Transparent"
+                                BorderThickness="0" Padding="9,8">
                           <StackPanel Spacing="5">
-                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                            <TextBlock Text="{Binding ClassName}" Classes="hint"/>
-                            <TextBlock Text="{Binding DamageText}" Classes="mono accent" FontSize="12" TextWrapping="Wrap"/>
-                            <TextBlock Text="{Binding HealingText}" Classes="mono" Foreground="#8DD9B5"
-                                       FontSize="11" TextWrapping="Wrap"/>
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6">
+                              <Ellipse Width="7" Height="7" Fill="{Binding ClassBrush}" VerticalAlignment="Center"/>
+                              <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold"
+                                         FontSize="12" TextTrimming="CharacterEllipsis"/>
+                              <TextBlock Grid.Column="2" Text="{Binding DpsShortText}" Classes="mono"
+                                         FontSize="10" Foreground="#65E2F5"/>
+                            </Grid>
+                            <ProgressBar Minimum="0" Maximum="100" Value="{Binding DamageShare}" Height="3"/>
+                            <Grid ColumnDefinitions="*,Auto">
+                              <TextBlock Text="{Binding ClassName}" Classes="hint" FontSize="10"
+                                         TextTrimming="CharacterEllipsis"/>
+                              <TextBlock Grid.Column="1" Text="{Binding HealingShortText}"
+                                         Foreground="#69D7B0" FontSize="10" TextTrimming="CharacterEllipsis"/>
+                            </Grid>
+                            <TextBlock Text="{Binding DeathText}" Classes="hint" FontSize="10"/>
                           </StackPanel>
                         </Border>
                       </DataTemplate>
@@ -215,43 +355,108 @@
                   </ListBox>
                 </Grid>
               </Border>
-              <Border Grid.Column="2" Classes="inset" Padding="12">
-                <Grid RowDefinitions="Auto,Auto,*">
-                  <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-                    <StackPanel Spacing="5">
+
+              <!-- Actual recorded metrics and skill breakdown (not mock charts). -->
+              <Border Grid.Column="2" Classes="tacticalCard" Padding="11">
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*" RowSpacing="6">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                    <StackPanel Spacing="3">
                       <TextBlock Name="SelectedPlayerName" Text="{DynamicResource PlayerDetails}"
-                                 Classes="section"/>
-                      <TextBlock Name="SelectedPlayerMeta" Text="—" Classes="hint" TextWrapping="Wrap"/>
-                      <TextBlock Name="RecordText" Classes="warn" FontSize="11" TextWrapping="Wrap"/>
+                                 FontSize="17" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                      <TextBlock Name="SelectedPlayerMeta" Text="—" Classes="hint" FontSize="10"
+                                 TextWrapping="Wrap"/>
+                      <TextBlock Name="PositionDetailsText" IsVisible="False"/>
+                      <TextBlock Name="RecordText" Classes="warn" FontSize="10" TextWrapping="Wrap"/>
                     </StackPanel>
-                    <WrapPanel Grid.Column="1" Margin="8,0,0,0">
+                    <WrapPanel Grid.Column="1" Orientation="Horizontal">
                       <Button Name="PlayerDetailsButton" Classes="ui" Content="{DynamicResource Details}"
-                              Margin="0,0,7,7" Click="OpenPlayerDetailsClick"/>
+                              MinHeight="30" Padding="9,4" Margin="0,0,5,0" Click="OpenPlayerDetailsClick"/>
                       <Button Name="TimelineButton" Classes="ui" Content="{DynamicResource Timeline}"
-                              Click="OpenTimelineClick"/>
+                              MinHeight="30" Padding="9,4" Click="OpenTimelineClick"/>
                     </WrapPanel>
                   </Grid>
-                  <Grid Grid.Row="1" ColumnDefinitions="*,80,48,50" Margin="4,18,4,9">
-                    <TextBlock Text="{DynamicResource UiCombatLogSkill}" Classes="eyebrow"/>
-                    <TextBlock Grid.Column="1" Text="{DynamicResource Total}" Classes="eyebrow" TextAlignment="Right"/>
-                    <TextBlock Grid.Column="2" Text="{DynamicResource Hit}" Classes="eyebrow" TextAlignment="Right"/>
-                    <TextBlock Grid.Column="3" Text="{DynamicResource Crit}" Classes="eyebrow" TextAlignment="Right"/>
+                  <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*" ColumnSpacing="5">
+                    <Border Background="#18334A" CornerRadius="9" Padding="8,8">
+                      <StackPanel Spacing="4">
+                        <TextBlock Text="DPS" Classes="tacticalLabel"/>
+                        <TextBlock Name="PlayerDpsText" Text="—" Classes="mono" FontSize="14"
+                                   FontWeight="Bold" Foreground="#6BE3F8" TextTrimming="CharacterEllipsis"/>
+                      </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Background="#17383A" CornerRadius="9" Padding="8,8">
+                      <StackPanel Spacing="4">
+                        <TextBlock Text="HPS" Classes="tacticalLabel"/>
+                        <TextBlock Name="PlayerHpsText" Text="—" Classes="mono" FontSize="14"
+                                   FontWeight="Bold" Foreground="#75F2CE" TextTrimming="CharacterEllipsis"/>
+                      </StackPanel>
+                    </Border>
+                    <Border Grid.Column="2" Background="#162B40" CornerRadius="9" Padding="8,8">
+                      <StackPanel Spacing="4">
+                        <TextBlock Text="{DynamicResource TotalDamage}" Classes="tacticalLabel" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Name="PlayerDamageText" Text="—" Classes="mono" FontSize="14"
+                                   Foreground="#F1FAFF" TextTrimming="CharacterEllipsis"/>
+                      </StackPanel>
+                    </Border>
+                    <Border Grid.Column="3" Background="#18382F" CornerRadius="9" Padding="8,8">
+                      <StackPanel Spacing="4">
+                        <TextBlock Text="{DynamicResource TotalHealing}" Classes="tacticalLabel" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Name="PlayerHealingText" Text="—" Classes="mono" FontSize="14"
+                                   Foreground="#B7F4D7" TextTrimming="CharacterEllipsis"/>
+                      </StackPanel>
+                    </Border>
                   </Grid>
-                  <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                  <!-- Legacy counters: real death count and positional-hit evidence preserved. -->
+                  <Border Grid.Row="2" Background="#15293C" CornerRadius="8" Padding="9,5">
+                    <StackPanel Spacing="5">
+                      <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="7">
+                        <StackPanel Spacing="2">
+                          <TextBlock Text="DEATHS" Classes="tacticalLabel"/>
+                          <TextBlock Name="LogDetailDeaths" Classes="mono" FontSize="12"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="2">
+                          <TextBlock Text="FRONT" Classes="tacticalLabel"/>
+                          <TextBlock Name="LogDetailFront" Classes="mono" FontSize="12"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="2">
+                          <TextBlock Text="BACK" Classes="tacticalLabel"/>
+                          <TextBlock Name="LogDetailBack" Classes="mono" FontSize="12"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="3" Spacing="2">
+                          <TextBlock Text="UNKNOWN" Classes="tacticalLabel"/>
+                          <TextBlock Name="LogDetailUnknown" Classes="mono" FontSize="12"/>
+                        </StackPanel>
+                      </Grid>
+                      <TextBlock Name="LogDetailCoverage" IsVisible="False"/>
+                    </StackPanel>
+                  </Border>
+                  <Border Grid.Row="3" Height="1" Background="#29485E"/>
+                  <Grid Grid.Row="4" ColumnDefinitions="*,80,45,46" ColumnSpacing="3" Margin="3,0,4,0">
+                    <TextBlock Text="{DynamicResource UiCombatLogSkill}" Classes="tacticalLabel"/>
+                    <TextBlock Grid.Column="1" Text="{DynamicResource Total}" Classes="tacticalLabel" TextAlignment="Right"/>
+                    <TextBlock Grid.Column="2" Text="{DynamicResource Hit}" Classes="tacticalLabel" TextAlignment="Right"/>
+                    <TextBlock Grid.Column="3" Text="{DynamicResource Crit}" Classes="tacticalLabel" TextAlignment="Right"/>
+                  </Grid>
+                  <ScrollViewer Grid.Row="5" VerticalScrollBarVisibility="Auto">
                     <ItemsControl ItemsSource="{Binding Skills}">
                       <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                          <Border BorderBrush="#243F55" BorderThickness="0,1,0,0" Padding="5,10">
-                            <Grid ColumnDefinitions="*,80,48,50">
-                              <StackPanel Orientation="Horizontal" Spacing="7">
-                                <TextBlock Text="{Binding TypeText}" FontSize="10"
-                                           Foreground="{Binding TypeColor}" Width="36" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
-                                           VerticalAlignment="Center"/>
+                          <Border BorderBrush="#254157" BorderThickness="0,0,0,1" Padding="3,8">
+                            <Grid ColumnDefinitions="*,80,45,46" ColumnSpacing="3">
+                              <StackPanel Spacing="5">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                                  <TextBlock Text="{Binding TypeText}" Foreground="{Binding TypeColor}"
+                                             FontSize="9" Width="27" VerticalAlignment="Center"/>
+                                  <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="11"
+                                             TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                </Grid>
+                                <ProgressBar Minimum="0" Maximum="100" Value="{Binding SharePercent}" Height="3"/>
                               </StackPanel>
-                              <TextBlock Grid.Column="1" Text="{Binding TotalText}" Classes="mono" TextAlignment="Right"/>
-                              <TextBlock Grid.Column="2" Text="{Binding HitsText}" Classes="mono" TextAlignment="Right"/>
-                              <TextBlock Grid.Column="3" Text="{Binding CritText}" Classes="mono" TextAlignment="Right"/>
+                              <TextBlock Grid.Column="1" Text="{Binding TotalText}" Classes="mono"
+                                         FontSize="11" TextAlignment="Right" VerticalAlignment="Center"/>
+                              <TextBlock Grid.Column="2" Text="{Binding HitsText}" Classes="mono"
+                                         FontSize="11" TextAlignment="Right" VerticalAlignment="Center"/>
+                              <TextBlock Grid.Column="3" Text="{Binding CritText}" Classes="mono"
+                                         FontSize="11" TextAlignment="Right" VerticalAlignment="Center"/>
                             </Grid>
                           </Border>
                         </DataTemplate>
@@ -262,42 +467,39 @@
               </Border>
             </Grid>
 
-            <Border Name="NotesContentPanel" Classes="inset" Padding="18" IsVisible="False">
-              <Grid RowDefinitions="Auto,*,Auto">
-                <StackPanel Spacing="5" Margin="0,0,0,14">
-                  <TextBlock Text="{DynamicResource UiCombatLogFightNotes}" Classes="section"/>
-                  <TextBlock Text="{DynamicResource UiCombatLogPersonalNotesStayLocalEncounterArchive}" Classes="hint"/>
+            <!-- Existing real notes persistence remains untouched. -->
+            <Border Name="NotesContentPanel" Classes="tacticalCard" Padding="18" IsVisible="False">
+              <Grid RowDefinitions="Auto,*,Auto" RowSpacing="10">
+                <StackPanel Spacing="5">
+                  <TextBlock Text="{DynamicResource UiCombatLogFightNotes}" Classes="section" FontWeight="Bold"/>
+                  <!-- Notes stay editable and local; no explanatory text needed. -->
                 </StackPanel>
                 <TextBox Grid.Row="1" Name="NotesBox" Watermark="{DynamicResource FightNotesWatermark}"
                          AcceptsReturn="True" TextWrapping="Wrap" MinHeight="120"
                          VerticalAlignment="Stretch"/>
                 <Button Grid.Row="2" Name="SaveNotesButton" Classes="ui primary"
                         Content="{DynamicResource SaveNotes}" HorizontalAlignment="Right"
-                        Margin="0,12,0,0" Click="SaveNotesClick"/>
+                        Click="SaveNotesClick"/>
               </Grid>
             </Border>
 
-            <Border Name="EncounterEnemiesPanel" Classes="inset" Padding="18" IsVisible="False">
+            <!-- Existing real encounter mob information. -->
+            <Border Name="EncounterEnemiesPanel" Classes="tacticalCard" Padding="18" IsVisible="False">
               <StackPanel Spacing="12">
-                <TextBlock Text="{DynamicResource UiCombatLogEncounterDetails}" Classes="section"/>
-                <TextBlock Text="{DynamicResource UiCombatLogEnemiesPullsRecordedDuringThisFight}" Classes="hint"/>
-                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="250">
-                  <TextBlock Name="EncounterMobsText" Text="—" TextWrapping="Wrap" Foreground="#CBDEEC"/>
-                </ScrollViewer>
+                <TextBlock Text="{DynamicResource UiCombatLogEncounterDetails}" Classes="section" FontWeight="Bold"/>
+                <!-- Actual encounter mob list below. -->
+                <Border Background="#132B3C" CornerRadius="10" Padding="14">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="220">
+                    <TextBlock Name="EncounterMobsText" Text="—" TextWrapping="Wrap" Foreground="#D4E8F2"/>
+                  </ScrollViewer>
+                </Border>
               </StackPanel>
             </Border>
           </Grid>
-
-          <Grid Grid.Row="5" ColumnDefinitions="*,Auto" Margin="2,13,2,0">
-            <StackPanel Spacing="4">
-              <TextBlock Name="ComparisonHint" Classes="hint" TextWrapping="Wrap"/>
-              <TextBlock Text="{DynamicResource HealingAccuracyHint}" Classes="hint" TextWrapping="Wrap"/>
-            </StackPanel>
-            <TextBlock Grid.Column="1" Name="ActionStatusText" Classes="ok"
-                       VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="230"/>
-          </Grid>
         </Grid>
-      </Border>
+
+        </Grid>
+      </ScrollViewer>
     </Grid>
   </Grid>
 </UserControl>

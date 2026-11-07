@@ -56,7 +56,8 @@ public partial class LeaderboardSubmissionDialog : Window
     public LeaderboardSubmissionDialog()
     {
         InitializeComponent();
-        Opened += async (_, _) => await RefreshVerifiedAsync();
+        if (!Program.ReadmeScreenshotsRequested)
+            Opened += async (_, _) => await RefreshVerifiedAsync();
         Closed += (_, _) => _lifetime.Cancel();
     }
 
@@ -89,6 +90,19 @@ public partial class LeaderboardSubmissionDialog : Window
         this.FindControl<TextBlock>("TeamHealingText")!.Text = measuredHealing ? Meter.Num(healing) : "—";
         this.FindControl<TextBlock>("TeamHpsText")!.Text = measuredHealing ? Meter.Num(healing / Math.Max(1, EffectiveDuration)) : "—";
         UpdatePersonalPreview();
+        UpdateFormState();
+    }
+
+    internal void ShowGroupPreviewForReadme()
+    {
+        _isGroup = true;
+        this.FindControl<TextBlock>("ServerText")!.Text = "EU Preview";
+        this.FindControl<TextBlock>("ServerMetaText")!.Text = "EU · PREVIEW";
+        this.FindControl<StackPanel>("IndividualPanel")!.IsVisible = false;
+        this.FindControl<StackPanel>("GroupPanel")!.IsVisible = true;
+        this.FindControl<Button>("IndividualModeButton")!.Classes.Set("primary", false);
+        this.FindControl<Button>("GroupModeButton")!.Classes.Set("primary", true);
+        this.FindControl<CheckBox>("ConsentBox")!.Content = L("UiSubmissionGroupPublicConsent");
         UpdateFormState();
     }
 

@@ -69,6 +69,13 @@ public partial class OverlayStudioWindow : Window
                 }
                 _stage.Widgets[key] = widget;
             }
+            // Live repositioning wins over stale saved Studio geometry.
+            if (key == OverlayStudioStore.BossStatus &&
+                CompanionSettings.GetOverlayPlacement(key) is OverlayPlacement currentPlace)
+            {
+                widget.X = currentPlace.X; widget.Y = currentPlace.Y;
+                widget.Width = currentPlace.Width; widget.Height = currentPlace.Height;
+            }
             FitToScreen(widget, key);
         }
         DrawPreviews();
@@ -128,12 +135,13 @@ public partial class OverlayStudioWindow : Window
     {
         bool dps = key == OverlayStudioStore.Dps;
         bool phaseward = key == OverlayStudioStore.Phaseward;
-        double width = dps ? 328 : phaseward ? 520 : 360;
-        double height = dps ? 408 : phaseward ? 340 : 310;
+        bool bossStatus = key == OverlayStudioStore.BossStatus;
+        double width = bossStatus ? 328 : dps ? 328 : phaseward ? 520 : 360;
+        double height = bossStatus ? 168 : dps ? 408 : phaseward ? 340 : 310;
         return new StudioWidget
         {
-            X = _screen.X + (dps ? 28 : phaseward ? (_screen.Width - 550) : 28),
-            Y = _screen.Y + (dps ? 45 : phaseward ? 60 : 500),
+            X = _screen.X + (dps ? 28 : bossStatus ? 28 : phaseward ? (_screen.Width - 550) : 28),
+            Y = _screen.Y + (dps ? 45 : bossStatus ? 470 : phaseward ? 60 : 500),
             Width = width, Height = height,
         };
     }
@@ -141,6 +149,7 @@ public partial class OverlayStudioWindow : Window
     private static string Label(string key) => key switch
     {
         OverlayStudioStore.Dps => "DPS METER",
+        OverlayStudioStore.BossStatus => "BOSS STATUS",
         OverlayStudioStore.Phaseward => "PHASEWARD",
         _ => "EVENT TIMERS",
     };
@@ -262,14 +271,14 @@ public partial class OverlayStudioWindow : Window
         _dragStart = null;
     }
 
-    private static double MinWidth(string key) => key == OverlayStudioStore.Dps ? 280 : 360;
-    private static double MinHeight(string key) => key == OverlayStudioStore.Dps ? 120 : 220;
+    private static double MinWidth(string key) => key == OverlayStudioStore.Dps ? 280 : key == OverlayStudioStore.BossStatus ? 260 : 360;
+    private static double MinHeight(string key) => key == OverlayStudioStore.Dps ? 120 : key == OverlayStudioStore.BossStatus ? 125 : 220;
 
     private void FitToScreen(StudioWidget w, string key)
     {
         w.Opacity = double.IsFinite(w.Opacity) ? Math.Clamp(w.Opacity, .35, 1) : 1;
-        double maxW = key == OverlayStudioStore.Dps ? 440 : key == OverlayStudioStore.Phaseward ? 760 : 650;
-        double maxH = key == OverlayStudioStore.Dps ? 580 : 650;
+        double maxW = key == OverlayStudioStore.Dps ? 440 : key == OverlayStudioStore.BossStatus ? 480 : key == OverlayStudioStore.Phaseward ? 760 : 650;
+        double maxH = key == OverlayStudioStore.Dps ? 580 : key == OverlayStudioStore.BossStatus ? 260 : 650;
         w.Width = double.IsFinite(w.Width) ? Math.Clamp(w.Width, MinWidth(key), Math.Max(MinWidth(key), Math.Min(maxW, _screen.Width / _screenScale))) : MinWidth(key);
         w.Height = double.IsFinite(w.Height) ? Math.Clamp(w.Height, MinHeight(key), Math.Max(MinHeight(key), Math.Min(maxH, _screen.Height / _screenScale))) : MinHeight(key);
         w.X = Math.Clamp(w.X, _screen.X, _screen.X + Math.Max(0, _screen.Width - (int)Math.Ceiling(w.Width * _screenScale)));

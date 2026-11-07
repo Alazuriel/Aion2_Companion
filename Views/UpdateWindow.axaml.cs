@@ -274,10 +274,13 @@ public partial class UpdateWindow : Window
             }
 
             SetStatus(LocalizationService.Get("UpdateLaunching"), "#58E0B2");
-            UpdateService.LaunchSilentInstaller(installer);
+            UpdateService.LaunchUpdatePackage(_update, installer);
 
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
                 desktop.Shutdown();
+                Environment.Exit(0);
+            }
             else
                 Close();
         }

@@ -1,0 +1,59 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="AION_2_Companion.Views.Overlays.BossStatusOverlayWindow"
+        x:CompileBindings="False"
+        Width="328" Height="168" MinWidth="260" MinHeight="125"
+        MaxWidth="480" MaxHeight="260"
+        Title="AION 2 · Boss Status"
+        Background="Transparent" TransparencyLevelHint="Transparent"
+        ExtendClientAreaToDecorationsHint="True" SystemDecorations="None"
+        Topmost="True" ShowInTaskbar="False" ShowActivated="False" Focusable="False"
+        CanResize="True"
+        FontFamily="Inter, Segoe UI Variable Text, Segoe UI" Foreground="#EAF7FF">
+  <Window.Styles>
+    <StyleInclude Source="avares://AION 2 Companion/Styles/Theme.axaml"/>
+  </Window.Styles>
+  <Border BorderBrush="#45677F" BorderThickness="1" CornerRadius="14" Padding="10,9"
+          BoxShadow="0 14 38 0 #85000000">
+    <Border.Background>
+      <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Color="#F20A1422" Offset="0"/>
+        <GradientStop Color="#E8142638" Offset="0.72"/>
+        <GradientStop Color="#F2181118" Offset="1"/>
+      </LinearGradientBrush>
+    </Border.Background>
+    <Grid RowDefinitions="Auto,Auto,*">
+      <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" PointerPressed="HeaderDrag">
+        <StackPanel Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+          <Ellipse Width="7" Height="7" Fill="#45DFFF"/>
+          <TextBlock Text="BOSS" FontSize="10" Foreground="#45DFFF" FontWeight="SemiBold"/>
+        </StackPanel>
+        <TextBlock Grid.Column="1" Name="BossNameText" Text="—" FontSize="12"
+                   FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="9,0"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <Button Grid.Column="2" Classes="ui quiet" Content="×" Padding="6,1"
+                FontSize="11" Click="CloseClick"/>
+      </Grid>
+      <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,9,0,0">
+        <TextBlock Text="{DynamicResource BossHp}" Classes="eyebrow" FontSize="9"/>
+        <TextBlock Grid.Column="1" Name="EnrageText" Classes="mono" FontSize="9"
+                   Foreground="#FF9B52" HorizontalAlignment="Center" IsVisible="False"/>
+        <TextBlock Grid.Column="2" Name="BossHpText" Classes="mono" FontSize="11"
+                   HorizontalAlignment="Right" TextTrimming="CharacterEllipsis"/>
+      </Grid>
+      <Grid Grid.Row="2" RowDefinitions="Auto,Auto" Margin="0,5,0,0">
+        <ProgressBar Grid.Row="0" Name="BossHpBar" Height="9" Minimum="0" Maximum="100"
+                     Background="#263A50" Foreground="#45DFFF"/>
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
+          <TextBlock Text="{DynamicResource DeathPrediction}" Classes="eyebrow" FontSize="9"
+                     VerticalAlignment="Center"/>
+          <TextBlock Grid.Column="1" Name="DeathPredictionText" Classes="mono" FontSize="11"
+                     Foreground="#58E0B2" Margin="9,0" VerticalAlignment="Center"/>
+          <Button Grid.Column="2" Name="DeathPredictionToggle" Classes="ui quiet" Content="◉"
+                  FontSize="9" MinHeight="22" Padding="7,1"
+                  Click="DeathPredictionToggleClick" ToolTip.Tip="{DynamicResource ToggleDeathPrediction}"/>
+        </Grid>
+      </Grid>
+    </Grid>
+  </Border>
+</Window>

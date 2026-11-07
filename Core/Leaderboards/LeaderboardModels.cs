@@ -64,7 +64,12 @@ public sealed record LeaderboardSubmitRequest(
     [property: JsonPropertyName("public_consent")] bool PublicConsent,
     [property: JsonPropertyName("region")] string? Region = null,
     [property: JsonPropertyName("server_id")] int? ServerId = null,
-    [property: JsonPropertyName("combat_evidence")] LeaderboardCombatEvidence? CombatEvidence = null);
+    [property: JsonPropertyName("combat_evidence")] LeaderboardCombatEvidence? CombatEvidence = null,
+    // Deferred until the approved #36 API contract is deployed and negotiated.
+    [property: JsonPropertyName("death_count"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? DeathCount = null,
+    [property: JsonPropertyName("front_hits"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? FrontHits = null,
+    [property: JsonPropertyName("back_hits"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? BackHits = null,
+    [property: JsonPropertyName("unknown_hits"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? UnknownHits = null);
 
 /// <summary>Real, unsynthesized damage events from the saved encounter: [offset_ms, damage].</summary>
 public sealed record LeaderboardCombatEvidence(

@@ -28,12 +28,21 @@ public sealed class SkillEvent
     public uint TargetRuntimeId { get; init; }
     public int TargetTemplateId { get; init; }
     public bool IsBossTarget { get; init; }
+    // Raw capture evidence. DO NOT interpret as front/back before packet validation.
+    public byte? RawDirectionCode { get; init; }
+    public bool IsDot { get; init; }
 }
 
 public sealed class PlayerStat
 {
     private const double MinimumRateDurationSeconds = 1.0;
     public string Name { get; init; } = string.Empty;
+    // LEGACY #19 v0.1: null means unknown, not zero.
+    [System.Text.Json.Serialization.JsonIgnore]
+    public int? DeathCount { get; init; }
+    public int? FrontHits { get; init; }
+    public int? BackHits { get; init; }
+    public int? UnknownHits { get; init; }
     public int ClassId { get; init; }
     public Bitmap? ClassIcon { get; init; }
     public string ClassName { get; init; } = string.Empty;
@@ -84,6 +93,10 @@ public sealed class MeterSnapshot
             Players = Players.Select(player => new PlayerStat
             {
                 Name = player.Name,
+                DeathCount = player.DeathCount,
+                FrontHits = player.FrontHits,
+                BackHits = player.BackHits,
+                UnknownHits = player.UnknownHits,
                 ClassId = player.ClassId,
                 ClassIcon = player.ClassIcon,
                 ClassName = player.ClassName,
@@ -106,6 +119,8 @@ public sealed class MeterSnapshot
                         TargetRuntimeId = entry.TargetRuntimeId,
                         TargetTemplateId = entry.TargetTemplateId,
                         IsBossTarget = entry.IsBossTarget,
+                        RawDirectionCode = entry.RawDirectionCode,
+                        IsDot = entry.IsDot,
                     }).ToList(),
             }).ToList(),
             Mobs = Mobs,

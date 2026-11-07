@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -21,6 +22,12 @@ public enum UpdateCheckState
     Failed,
 }
 
+public enum UpdatePackageKind
+{
+    Installer,
+    Patch,
+}
+
 public sealed record UpdateInfo(
     string Version,
     string Name,
@@ -30,7 +37,8 @@ public sealed record UpdateInfo(
     string FileName,
     long Size,
     string Sha256,
-    string ReleaseUrl);
+    string ReleaseUrl,
+    UpdatePackageKind PackageKind = UpdatePackageKind.Installer);
 
 public sealed record UpdateCheckResult(
     UpdateCheckState State,
@@ -42,6 +50,7 @@ public static class UpdateService
     private const string LatestReleaseApi =
         "https://api.github.com/repos/Alazuriel/Aion2_Companion/releases/latest";
     private const string InstallerPrefix = "Nexforge-AION2-Companion-Setup-";
+    private const string PatchPrefix = "Nexforge-AION2-Companion-Patch-";
     private const long MaxInstallerBytes = 512L * 1024 * 1024;
     private static readonly TimeSpan AutomaticCheckInterval = TimeSpan.FromHours(8);
 
@@ -84,23 +93,23 @@ public static class UpdateService
             if (!TryParseVersion(releaseVersion, out Version? availableVersion))
                 return new UpdateCheckResult(UpdateCheckState.ChannelUnavailable);
 
-            // Only install the asset for THIS release version, never another installer.
-            string expectedInstallerName = InstallerPrefix + releaseVersion + ".exe";
-            GitHubAsset? installer = release.Assets?.FirstOrDefault(asset =>
-                string.Equals(asset.Name, expectedInstallerName, StringComparison.OrdinalIgnoreCase));
-
-            if (installer is null ||
-                installer.Size <= 0 ||
-                installer.Size > MaxInstallerBytes ||
-                !TryReadSha256(installer.Digest, out string sha256) ||
-                !IsTrustedDownloadUrl(installer.BrowserDownloadUrl))
-            {
-                return new UpdateCheckResult(UpdateCheckState.ChannelUnavailable);
-            }
-
             Version currentVersion = typeof(UpdateService).Assembly.GetName().Version ?? new Version(0, 0, 0);
             if (availableVersion <= currentVersion)
                 return new UpdateCheckResult(UpdateCheckState.UpToDate);
+
+            string current = currentVersion.ToString(3);
+            string expectedPatchName = PatchPrefix + current + "-to-" + releaseVersion + ".zip";
+            string expectedInstallerName = InstallerPrefix + releaseVersion + ".exe";
+            GitHubAsset? package = FindValidAsset(release.Assets, expectedPatchName);
+            UpdatePackageKind packageKind = UpdatePackageKind.Patch;
+            if (package is null)
+            {
+                package = FindValidAsset(release.Assets, expectedInstallerName);
+                packageKind = UpdatePackageKind.Installer;
+            }
+
+            if (package is null || !TryReadSha256(package.Digest, out string sha256))
+                return new UpdateCheckResult(UpdateCheckState.ChannelUnavailable);
 
             return new UpdateCheckResult(
                 UpdateCheckState.UpdateAvailable,
@@ -109,11 +118,12 @@ public static class UpdateService
                     string.IsNullOrWhiteSpace(release.Name) ? $"Version {releaseVersion}" : release.Name,
                     TrimNotes(release.Body),
                     release.PublishedAt,
-                    installer.BrowserDownloadUrl,
-                    installer.Name,
-                    installer.Size,
+                    package.BrowserDownloadUrl,
+                    package.Name,
+                    package.Size,
                     sha256,
-                    release.HtmlUrl));
+                    release.HtmlUrl,
+                    packageKind));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -126,6 +136,58 @@ public static class UpdateService
         catch (Exception ex) when (ex is HttpRequestException or IOException or JsonException)
         {
             return new UpdateCheckResult(UpdateCheckState.Failed, Error: ex.Message);
+        }
+    }
+
+    public static async Task<UpdateInfo?> GetRepairInstallerAsync(
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using HttpResponseMessage response = await Http.GetAsync(
+                LatestReleaseApi,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
+            response.EnsureSuccessStatusCode();
+            await using Stream content = await response.Content.ReadAsStreamAsync(cancellationToken);
+            GitHubRelease? release = await JsonSerializer.DeserializeAsync<GitHubRelease>(
+                content,
+                cancellationToken: cancellationToken);
+            if (release is null || release.Draft || release.Prerelease)
+                return null;
+
+            string releaseVersion = NormalizeVersion(release.TagName);
+            if (!TryParseVersion(releaseVersion, out Version? releaseNumber))
+                return null;
+            Version currentNumber = typeof(UpdateService).Assembly.GetName().Version ?? new Version(0, 0, 0);
+            if (releaseNumber < currentNumber)
+                return null;
+
+            string expectedInstallerName = InstallerPrefix + releaseVersion + ".exe";
+            GitHubAsset? installer = FindValidAsset(release.Assets, expectedInstallerName);
+            if (installer is null || !TryReadSha256(installer.Digest, out string sha256))
+                return null;
+
+            return new UpdateInfo(
+                releaseVersion,
+                string.IsNullOrWhiteSpace(release.Name) ? $"Version {releaseVersion}" : release.Name,
+                TrimNotes(release.Body),
+                release.PublishedAt,
+                installer.BrowserDownloadUrl,
+                installer.Name,
+                installer.Size,
+                sha256,
+                release.HtmlUrl,
+                UpdatePackageKind.Installer);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or IOException or JsonException)
+        {
+            DebugConsole.Log("integrity", $"Repair source is unavailable: {ex.Message}");
+            return null;
         }
     }
 
@@ -210,7 +272,7 @@ public static class UpdateService
             throw;
         }
 
-        CleanupOldInstallers(updateDirectory, destinationPath);
+        CleanupOldPackages(updateDirectory, destinationPath);
         progress?.Report(1);
         return destinationPath;
     
@@ -221,7 +283,34 @@ public static class UpdateService
         }
     }
 
-    public static void LaunchSilentInstaller(string installerPath)
+    public static void LaunchUpdatePackage(UpdateInfo update, string packagePath)
+    {
+        if (update.PackageKind == UpdatePackageKind.Patch)
+        {
+            LaunchPatch(update, packagePath);
+            return;
+        }
+
+        LaunchSilentInstaller(packagePath);
+    }
+
+    public static Task<bool> VerifyPackageAsync(
+        string packagePath,
+        string expectedSha256,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(packagePath) ||
+            expectedSha256.Length != 64 ||
+            expectedSha256.Any(character => !Uri.IsHexDigit(character)) ||
+            !File.Exists(packagePath))
+        {
+            return Task.FromResult(false);
+        }
+
+        return VerifySha256Async(packagePath, expectedSha256, cancellationToken);
+    }
+
+    private static void LaunchSilentInstaller(string installerPath)
     {
         string language = LocalizationService.NormalizeLanguageCode(
             CompanionSettings.LanguageCode);
@@ -241,6 +330,80 @@ public static class UpdateService
 
         _ = Process.Start(startInfo)
             ?? throw new InvalidOperationException("Unable to start the background updater.");
+    }
+
+    private static void LaunchPatch(UpdateInfo update, string patchPath)
+    {
+        string installDirectory = Path.TrimEndingDirectorySeparator(
+            Path.GetFullPath(AppContext.BaseDirectory));
+        string programPath = Path.Combine(installDirectory, "AION 2 Companion.exe");
+        string powershell = Path.Combine(
+            Environment.SystemDirectory,
+            "WindowsPowerShell", "v1.0", "powershell.exe");
+        if (!File.Exists(powershell))
+            throw new FileNotFoundException("Windows PowerShell is unavailable.", powershell);
+
+        const string script = """
+$ErrorActionPreference = 'Stop'
+$patch = $env:NEXFORGE_UPDATE_PATCH
+$install = $env:NEXFORGE_UPDATE_INSTALL
+$program = $env:NEXFORGE_UPDATE_PROGRAM
+$expectedSource = $env:NEXFORGE_UPDATE_SOURCE
+$expectedTarget = $env:NEXFORGE_UPDATE_TARGET
+$waitPid = [int]$env:NEXFORGE_UPDATE_WAIT_PID
+$logFolder = Join-Path $env:LOCALAPPDATA 'Nexforge\AION 2 Companion\Updates'
+$errorLog = Join-Path $logFolder 'last-update-error.log'
+$temp = Join-Path ([IO.Path]::GetTempPath()) ('Nexforge\patch-' + [Guid]::NewGuid().ToString('N'))
+try {
+    $parent = Get-Process -Id $waitPid -ErrorAction SilentlyContinue
+    if ($parent) { Wait-Process -Id $waitPid -Timeout 120 -ErrorAction Stop }
+    New-Item -ItemType Directory -Force -Path $temp | Out-Null
+    Expand-Archive -LiteralPath $patch -DestinationPath $temp -Force
+    $manifestPath = Join-Path $temp 'patch-manifest.json'
+    $applyPath = Join-Path $temp 'Apply-Patch.ps1'
+    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $applyPath -PathType Leaf)) { throw 'Invalid patch package.' }
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+    if ([int]$manifest.schema -ne 1 -or [string]$manifest.product -ne 'AION 2 Companion' -or
+        [string]$manifest.source_version -ne $expectedSource -or
+        [string]$manifest.target_version -ne $expectedTarget) { throw 'Patch version does not match this installation.' }
+    & $applyPath -InstallDirectory $install
+    Remove-Item -LiteralPath $errorLog -Force -ErrorAction SilentlyContinue
+}
+catch {
+    New-Item -ItemType Directory -Force -Path $logFolder | Out-Null
+    Set-Content -LiteralPath $errorLog -Value ((Get-Date).ToUniversalTime().ToString('o') + "`n" + $_) -Encoding utf8
+}
+finally {
+    Remove-Item -LiteralPath $temp -Recurse -Force -ErrorAction SilentlyContinue
+    if (Test-Path -LiteralPath $program) { Start-Process -FilePath $program -WorkingDirectory $install }
+}
+""";
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = powershell,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+        };
+        startInfo.ArgumentList.Add("-NoProfile");
+        startInfo.ArgumentList.Add("-NonInteractive");
+        startInfo.ArgumentList.Add("-WindowStyle");
+        startInfo.ArgumentList.Add("Hidden");
+        startInfo.ArgumentList.Add("-ExecutionPolicy");
+        startInfo.ArgumentList.Add("Bypass");
+        startInfo.ArgumentList.Add("-EncodedCommand");
+        startInfo.ArgumentList.Add(Convert.ToBase64String(Encoding.Unicode.GetBytes(script)));
+        startInfo.Environment["NEXFORGE_UPDATE_PATCH"] = Path.GetFullPath(patchPath);
+        startInfo.Environment["NEXFORGE_UPDATE_INSTALL"] = installDirectory;
+        startInfo.Environment["NEXFORGE_UPDATE_PROGRAM"] = programPath;
+        startInfo.Environment["NEXFORGE_UPDATE_SOURCE"] =
+            (typeof(UpdateService).Assembly.GetName().Version ?? new Version(0, 0, 0)).ToString(3);
+        startInfo.Environment["NEXFORGE_UPDATE_TARGET"] = update.Version;
+        startInfo.Environment["NEXFORGE_UPDATE_WAIT_PID"] = Environment.ProcessId.ToString();
+        _ = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Unable to start the background patcher.");
     }
 
     private static HttpClient CreateClient()
@@ -311,9 +474,24 @@ public static class UpdateService
             StringComparison.OrdinalIgnoreCase);
     }
 
-    private static void CleanupOldInstallers(string directory, string keepPath)
+    private static GitHubAsset? FindValidAsset(GitHubAsset[]? assets, string expectedName)
     {
-        foreach (string path in Directory.GetFiles(directory, $"{InstallerPrefix}*.exe"))
+        GitHubAsset? asset = assets?.FirstOrDefault(candidate =>
+            string.Equals(candidate.Name, expectedName, StringComparison.OrdinalIgnoreCase));
+        return asset is not null &&
+               asset.Size > 0 &&
+               asset.Size <= MaxInstallerBytes &&
+               TryReadSha256(asset.Digest, out _) &&
+               IsTrustedDownloadUrl(asset.BrowserDownloadUrl)
+            ? asset
+            : null;
+    }
+
+    private static void CleanupOldPackages(string directory, string keepPath)
+    {
+        string[] installers = Directory.GetFiles(directory, $"{InstallerPrefix}*.exe");
+        string[] patches = Directory.GetFiles(directory, $"{PatchPrefix}*.zip");
+        foreach (string path in installers.Concat(patches))
         {
             if (string.Equals(path, keepPath, StringComparison.OrdinalIgnoreCase))
                 continue;

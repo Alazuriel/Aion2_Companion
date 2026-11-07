@@ -1,13 +1,17 @@
 using System;
+using System.IO;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using AION_2_Companion.Core;
+using AION_2_Companion.Core.GameData;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 
 namespace AION_2_Companion.Views.Overlays;
 
@@ -54,15 +58,104 @@ public partial class PlayerDetailsWindow : Window
         FillSkills();
     }
 
+    // Class bitmaps are not embedded in the saved NSL/JSON snapshot. Prefer
+    // PlayerStat.ClassIcon, then recover the NFG-defined bundled image.
+    private static readonly Lazy<ClassDatabase?> HeaderClassDatabase = new(() =>
+    {
+        try
+        {
+            var path = Path.Combine(AppContext.BaseDirectory, "Data", "ForgeData", "AION2_Class.nfg");
+            return File.Exists(path) ? ClassDatabase.Load(path) : null;
+        }
+        catch
+        {
+            return null;
+        }
+    });
+
+    private static readonly object HeaderIconLock = new();
+    private static readonly Dictionary<string, Bitmap> HeaderIconCache =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private static Bitmap? ResolveHeaderClassIcon(PlayerStat player)
+    {
+        if (player.ClassIcon is not null)
+            return player.ClassIcon;
+
+        var database = HeaderClassDatabase.Value;
+        var definition = player.ClassId is >= 0 and <= byte.MaxValue
+            ? database?.GetByJobValue((byte)player.ClassId)
+            : null;
+        if (definition is null && !string.IsNullOrWhiteSpace(player.ClassName))
+        {
+            definition = database?.GetByKey(player.ClassName.Trim())
+                ?? database?.Classes.FirstOrDefault(item =>
+                    string.Equals(item.Name, player.ClassName.Trim(), StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (TryLoadHeaderIcon(definition?.Icon) is { } resolved)
+            return resolved;
+
+        string key = (definition?.Key ?? player.ClassName ?? string.Empty).Trim().ToLowerInvariant();
+        // Restrict fallback to known built-in resources (never construct untrusted paths).
+        return key switch
+        {
+            "assassin" or "chanter" or "cleric" or "elementalist"
+                or "gladiator" or "ranger" or "sorcerer" or "templar" =>
+                TryLoadHeaderIcon($"Data/Assets/Classes/{key}.png"),
+            _ => null,
+        };
+    }
+
+    private static Bitmap? TryLoadHeaderIcon(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return null;
+        string relative = path.Trim().Replace('\\', '/').TrimStart('/');
+        if (relative.Contains("..", StringComparison.Ordinal) ||
+            relative.Contains(":", StringComparison.Ordinal))
+            return null;
+        lock (HeaderIconLock)
+        {
+            if (HeaderIconCache.TryGetValue(relative, out var bitmap))
+                return bitmap;
+            try
+            {
+                var assembly = typeof(PlayerDetailsWindow).Assembly.GetName().Name;
+                using var stream = AssetLoader.Open(new Uri($"avares://{assembly}/{relative}"));
+                var loaded = new Bitmap(stream);
+                HeaderIconCache.Add(relative, loaded);
+                return loaded;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+    }
+
     private void FillHeader()
     {
         this.FindControl<Border>("DetailBadge")!.Background = Visuals.ForId(_player.ClassId);
-        this.FindControl<TextBlock>("DetailBadgeText")!.Text = _player.ClassId.ToString();
+        var badgeIcon = ResolveHeaderClassIcon(_player);
+        var classImage = this.FindControl<Image>("DetailClassIcon")!;
+        classImage.Source = badgeIcon;
+        classImage.IsVisible = badgeIcon is not null;
+        var badgeLabel = this.FindControl<TextBlock>("DetailBadgeText")!;
+        badgeLabel.Text = string.IsNullOrWhiteSpace(_player.ClassName)
+            ? "?" : _player.ClassName.Trim()[..1].ToUpperInvariant();
+        badgeLabel.IsVisible = badgeIcon is null;
         this.FindControl<TextBlock>("DetailName")!.Text = _player.Name;
 
         int secs = (int)_snapshot.Duration;
         this.FindControl<TextBlock>("DetailMeta")!.Text = LocalizationService.Format(
             "PlayerFightMeta", $"{secs / 60:00}:{secs % 60:00}", _player.Events.Count);
+        this.FindControl<TextBlock>("DetailDeathsCount")!.Text = PositionDetails.DeathsValue(_player);
+        this.FindControl<TextBlock>("DetailFrontHits")!.Text = PositionDetails.FrontValue(_player);
+        this.FindControl<TextBlock>("DetailBackHits")!.Text = PositionDetails.BackValue(_player);
+        this.FindControl<TextBlock>("DetailUnknownHits")!.Text = PositionDetails.UnknownValue(_player);
+        this.FindControl<TextBlock>("DetailPositionCoverage")!.Text =
+            PositionDetails.CoverageNote(_player);
 
         this.FindControl<TextBlock>("DetailDps")!.Text = Meter.Format(_player.Dps, MeterMode.Dps);
         this.FindControl<TextBlock>("DetailDamage")!.Text = Meter.Num(_player.Damage);

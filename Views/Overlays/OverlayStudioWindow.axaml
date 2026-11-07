@@ -34,6 +34,7 @@
           <TextBlock Text="Selected widget" FontWeight="SemiBold" FontSize="15"/>
           <ComboBox Name="WidgetSelect" SelectionChanged="WidgetChanged">
             <ComboBoxItem Content="DPS Meter" Tag="dps-meter-compact-v2"/>
+            <ComboBoxItem Content="Boss Status" Tag="boss-status-detached-v1"/>
             <ComboBoxItem Content="Phaseward HUD" Tag="dbm-assistant"/>
             <ComboBoxItem Content="Event Timers" Tag="event-timers-overlay"/>
           </ComboBox>

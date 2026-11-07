@@ -50,6 +50,21 @@ public sealed class CombatLogPlayerRow
     public string DamageText => $"{Meter.Num(Player.Damage)} · {Meter.Format(Player.Dps, MeterMode.Dps)}";
     public string HealingText =>
         $"{LocalizationService.Get("Healing")} {Meter.Num(Player.Healing)} · {Meter.Format(Player.Hps, MeterMode.Hps)}";
+    public string DeathText => $"💀 {(Player.DeathCount.HasValue ? Player.DeathCount.Value.ToString() : "?")}";
+    public string PositionText => PositionDetails.Format(Player, compact: true);
+    public string DpsShortText => Meter.Format(Player.Dps, MeterMode.Dps);
+    public string HealingShortText => Meter.Format(Player.Hps, MeterMode.Hps);
+    public IBrush ClassBrush
+    {
+        get
+        {
+            try { return Brush.Parse(Player.ClassColor); }
+            catch (FormatException) { return Brushes.Gray; }
+        }
+    }
+    // Visual relative scale of real saved damage, not an independent encounter metric.
+    public double DamageShare { get; init; }
+
 }
 
 public sealed class CombatLogSkillRow
@@ -60,11 +75,12 @@ public sealed class CombatLogSkillRow
     public string TotalText { get; init; } = string.Empty;
     public string HitsText { get; init; } = string.Empty;
     public string CritText { get; init; } = string.Empty;
+    public double SharePercent { get; init; }
 }
 
 public partial class CombatLogWindow : UserControl
 {
-    private const int LogPageSize = 40;
+    private const int LogPageSize = 20;
     private readonly CombatLogStore _store = CombatLogStore.Shared;
     private readonly List<CombatLogEntry> _allEntries = new();
     private CombatLogEntry? _selectedEntry;
@@ -76,6 +92,9 @@ public partial class CombatLogWindow : UserControl
     private int _nextLogOffset;
     private int _totalLogCount;
     private int _loadGeneration;
+    private bool _readmeDemo;
+    private string _sortMode = "newest";
+    private bool _viewInitialized;
 
     public ObservableCollection<CombatLogListRow> Fights { get; } = new();
     public ObservableCollection<CombatLogPlayerRow> Players { get; } = new();
@@ -87,6 +106,8 @@ public partial class CombatLogWindow : UserControl
         DataContext = this;
 
         this.FindControl<TextBlock>("StorageText")!.Text = CombatLogStore.LogDirectory;
+        // XAML may raise SortModeChanged before the control name scope is ready.
+        _viewInitialized = true;
         _store.Changed += StoreChanged;
         LocalizationService.LanguageChanged += LanguageChanged;
         CompanionSettings.DpsEncounterModeChanged += EncounterModeChanged;
@@ -97,6 +118,20 @@ public partial class CombatLogWindow : UserControl
             CompanionSettings.DpsEncounterModeChanged -= EncounterModeChanged;
         };
         RefreshLogs();
+    }
+
+    internal void LoadReadmeDemo(IReadOnlyList<CombatLogEntry> entries)
+    {
+        _readmeDemo = true;
+        _loadGeneration++;
+        this.FindControl<TextBlock>("StorageText")!.Text = "LOCAL STORAGE";
+        _allEntries.Clear();
+        _allEntries.AddRange(entries);
+        _nextLogOffset = entries.Count;
+        _totalLogCount = entries.Count;
+        SetLogLoading(false);
+        ApplyFilter(entries.FirstOrDefault()?.Id);
+        UpdateSessionSummary();
     }
 
     private void LanguageChanged(object? sender, EventArgs e)
@@ -115,10 +150,14 @@ public partial class CombatLogWindow : UserControl
             UpdateSessionSummary();
         });
 
-    private bool BossOnly => CompanionSettings.DpsEncounterMode == DpsEncounterMode.Bosses;
+    private bool BossOnly => !_readmeDemo &&
+        CompanionSettings.DpsEncounterMode == DpsEncounterMode.Bosses;
 
     private async void RefreshLogs()
     {
+        if (_readmeDemo)
+            return;
+
         string? selectedId = _selectedEntry?.Id;
         int generation = ++_loadGeneration;
         int reloadCount = Math.Max(LogPageSize, _nextLogOffset);
@@ -189,6 +228,17 @@ public partial class CombatLogWindow : UserControl
                 .Contains(query, StringComparison.CurrentCultureIgnoreCase));
         }
 
+        // Sorting affects loaded history only; original page loading is unchanged.
+        filtered = _sortMode switch
+        {
+            "oldest" => filtered.OrderBy(entry => entry.EndedAtUtc),
+            "damage" => filtered.OrderByDescending(entry => entry.ToSnapshot(BossOnly).TotalDamage)
+                                .ThenByDescending(entry => entry.EndedAtUtc),
+            "duration" => filtered.OrderByDescending(entry => entry.Duration)
+                                  .ThenByDescending(entry => entry.EndedAtUtc),
+            _ => filtered.OrderByDescending(entry => entry.EndedAtUtc)
+        };
+
         Fights.Clear();
         foreach (CombatLogEntry entry in filtered)
             Fights.Add(new CombatLogListRow { Entry = entry, BossOnly = BossOnly });
@@ -196,13 +246,11 @@ public partial class CombatLogWindow : UserControl
         this.FindControl<Button>("AllEncountersButton")!.Classes.Set("primary", !BossOnly);
         this.FindControl<Button>("BossEncountersButton")!.Classes.Set("primary", BossOnly);
 
-        this.FindControl<TextBlock>("FightCountText")!.Text =
-            _totalLogCount > _allEntries.Count
-                ? LocalizationService.Format(
-                    "FightCountLoaded", Fights.Count, _allEntries.Count, _totalLogCount)
-                : Fights.Count == _allEntries.Count
-                    ? LocalizationService.Format("FightCount", Fights.Count)
-                    : LocalizationService.Format("FightCountFiltered", Fights.Count, _allEntries.Count);
+        // Keep the badge concise. Filtering only covers loaded encounters, never claim a global match count.
+        bool isFiltering = BossOnly || favoritesOnly || !string.IsNullOrWhiteSpace(query);
+        this.FindControl<TextBlock>("FightCountText")!.Text = isFiltering
+            ? $"{Fights.Count} / {_allEntries.Count}"
+            : $"{_allEntries.Count} / {_totalLogCount}";
         this.FindControl<TextBlock>("EmptyLogText")!.IsVisible =
             Fights.Count == 0 && !_isLoadingLogs;
         SetLogLoading(_isLoadingLogs);
@@ -240,6 +288,16 @@ public partial class CombatLogWindow : UserControl
         this.FindControl<Button>("BreakdownTabButton")!.Classes.Set("selected", breakdown);
         this.FindControl<Button>("NotesTabButton")!.Classes.Set("selected", notes);
         this.FindControl<Button>("EnemiesTabButton")!.Classes.Set("selected", enemies);
+    }
+
+    private void SortModeChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox { SelectedItem: ComboBoxItem { Tag: string mode } })
+            return;
+        _sortMode = mode;
+        if (!_viewInitialized)
+            return;
+        ApplyFilter(_selectedEntry?.Id);
     }
 
     private void SearchTextChanged(object? sender, TextChangedEventArgs e) => ApplyFilter();
@@ -286,8 +344,15 @@ public partial class CombatLogWindow : UserControl
         this.FindControl<TextBox>("NotesBox")!.Text = row.Entry.Notes;
 
         Players.Clear();
+        long highestDamage = _selectedSnapshot.Players.Select(player => player.Damage)
+            .DefaultIfEmpty(0).Max();
         foreach (PlayerStat player in _selectedSnapshot.Players.OrderByDescending(player => player.Damage))
-            Players.Add(new CombatLogPlayerRow { Player = player });
+            Players.Add(new CombatLogPlayerRow
+            {
+                Player = player,
+                DamageShare = highestDamage > 0
+                    ? Math.Clamp(100d * player.Damage / highestDamage, 0, 100) : 0
+            });
 
         SetFightButtonsEnabled(true);
         this.FindControl<Button>("ShareButton")!.IsEnabled =
@@ -305,9 +370,18 @@ public partial class CombatLogWindow : UserControl
 
         _selectedPlayer = row.Player;
         this.FindControl<TextBlock>("SelectedPlayerName")!.Text = row.Player.Name;
-        this.FindControl<TextBlock>("SelectedPlayerMeta")!.Text =
-            $"{row.ClassName}  ·  {LocalizationService.Format("EventCount", row.Player.Events.Count)}  ·  " +
-            $"DPS {Meter.Num(row.Player.Dps)}  ·  HPS {Meter.Num(row.Player.Hps)}";
+        this.FindControl<TextBlock>("SelectedPlayerMeta")!.Text = row.ClassName;
+        this.FindControl<TextBlock>("PositionDetailsText")!.Text = PositionDetails.Format(row.Player, compact: true);
+        this.FindControl<TextBlock>("LogDetailDeaths")!.Text = PositionDetails.DeathsValue(row.Player);
+        this.FindControl<TextBlock>("LogDetailFront")!.Text = PositionDetails.FrontValue(row.Player);
+        this.FindControl<TextBlock>("LogDetailBack")!.Text = PositionDetails.BackValue(row.Player);
+        this.FindControl<TextBlock>("LogDetailUnknown")!.Text = PositionDetails.UnknownValue(row.Player);
+        this.FindControl<TextBlock>("LogDetailCoverage")!.Text = PositionDetails.CoverageNote(row.Player);
+        this.FindControl<TextBlock>("PlayerDpsText")!.Text = Meter.Format(row.Player.Dps, MeterMode.Dps);
+        this.FindControl<TextBlock>("PlayerHpsText")!.Text = Meter.Format(row.Player.Hps, MeterMode.Hps);
+        this.FindControl<TextBlock>("PlayerDamageText")!.Text = Meter.Num(row.Player.Damage);
+        this.FindControl<TextBlock>("PlayerHealingText")!.Text = Meter.Num(row.Player.Healing);
+        long skillTotal = row.Player.Events.Sum(skillEvent => Math.Max(0, skillEvent.Amount));
 
         Skills.Clear();
         foreach (var group in row.Player.Events
@@ -330,6 +404,8 @@ public partial class CombatLogWindow : UserControl
                 TotalText = Meter.Num(group.Total),
                 HitsText = group.Hits.ToString(),
                 CritText = group.Hits > 0 ? $"{(double)group.Crits / group.Hits * 100:F0}%" : "—",
+                SharePercent = skillTotal > 0
+                    ? Math.Clamp(100d * group.Total / skillTotal, 0, 100) : 0,
             });
         }
 
@@ -407,7 +483,8 @@ public partial class CombatLogWindow : UserControl
 
         if (session.Count == 0)
         {
-            this.FindControl<TextBlock>("SessionText")!.Text = LocalizationService.Get("NoSessionFight");
+            this.FindControl<Border>("SessionSummaryPanel")!.IsVisible = false;
+            this.FindControl<TextBlock>("SessionText")!.Text = string.Empty;
             return;
         }
 
@@ -423,6 +500,7 @@ public partial class CombatLogWindow : UserControl
             "SessionSummary", session.Count, $"{total / 60:00}:{total % 60:00}", Meter.Num(damage),
             Meter.Num(healing), best.Entry.MobName,
             Meter.Num(best.Snapshot.TotalDamage / Math.Max(0.001, best.Entry.Duration)));
+        this.FindControl<Border>("SessionSummaryPanel")!.IsVisible = true;
     }
 
     private void ClearDetails()
@@ -459,6 +537,16 @@ public partial class CombatLogWindow : UserControl
         Skills.Clear();
         this.FindControl<TextBlock>("SelectedPlayerName")!.Text = LocalizationService.Get("PlayerDetails");
         this.FindControl<TextBlock>("SelectedPlayerMeta")!.Text = "—";
+        this.FindControl<TextBlock>("PositionDetailsText")!.Text = string.Empty;
+        this.FindControl<TextBlock>("LogDetailDeaths")!.Text = "—";
+        this.FindControl<TextBlock>("LogDetailFront")!.Text = "N/A";
+        this.FindControl<TextBlock>("LogDetailBack")!.Text = "N/A";
+        this.FindControl<TextBlock>("LogDetailUnknown")!.Text = "?";
+        this.FindControl<TextBlock>("LogDetailCoverage")!.Text = string.Empty;
+        this.FindControl<TextBlock>("PlayerDpsText")!.Text = "—";
+        this.FindControl<TextBlock>("PlayerHpsText")!.Text = "—";
+        this.FindControl<TextBlock>("PlayerDamageText")!.Text = "—";
+        this.FindControl<TextBlock>("PlayerHealingText")!.Text = "—";
         this.FindControl<TextBlock>("RecordText")!.Text = string.Empty;
         this.FindControl<Button>("PlayerDetailsButton")!.IsEnabled = false;
         this.FindControl<Button>("TimelineButton")!.IsEnabled = false;
@@ -565,7 +653,7 @@ public partial class CombatLogWindow : UserControl
     private void OpenDpsClick(object? sender, RoutedEventArgs e)
     {
         if (_selectedSnapshot is not null)
-            OverlayWindowManager.ToggleDps(_selectedSnapshot);
+            OverlayWindowManager.ShowSavedFightDps(_selectedSnapshot);
     }
 
     private async void ShareResultClick(object? sender, RoutedEventArgs e)

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -11,6 +11,8 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using AION_2_Companion.Core;
 
 namespace AION_2_Companion.Views.Overlays;
@@ -44,6 +46,26 @@ public partial class TimelineWindow : Window
     private double? _cursorTime;
     private Line? _cursorMarker;
     private bool _syncingScroll;
+    // Mouse wheel events may arrive many times before one rendered frame.
+    // Coalesce zoom work instead of re-creating thousands of Avalonia controls per tick.
+    private readonly DispatcherTimer _zoomDebounce = new() { Interval = TimeSpan.FromMilliseconds(115) };
+    private double _zoomAnchorTime;
+    private double _zoomAnchorViewportX;
+    private CancellationTokenSource? _prepareCts;
+    private int _prepareVersion;
+    private bool _isPreparing;
+    private int _visibleSkillCount = 18;
+    private const int SkillPageSize = 18;
+    private SkillEvent[] _sortedEvents = Array.Empty<SkillEvent>();
+    private readonly Dictionary<string, int[]> _laneBuckets = new(StringComparer.Ordinal);
+    private static readonly IBrush[] CurveColors =
+    {
+        Brush.Parse("#42E6FA"), Brush.Parse("#F4AD61"), Brush.Parse("#CE90F0"),
+        Brush.Parse("#8CE1A6"), Brush.Parse("#FF8585"), Brush.Parse("#8CB8FA"),
+        Brush.Parse("#E4D17E"), Brush.Parse("#E98ECC"), Brush.Parse("#7AC9A6"),
+    };
+    private static IBrush CurveBrush(int index) => CurveColors[index % CurveColors.Length];
+
     // UI-only cached series; invalidated on fight/metric change, not on mouse movement.
     private readonly Dictionary<(int Player, MeterMode Mode), double[]> _seriesCache = new();
     private readonly Dictionary<string, List<SkillEvent>> _skillCache = new(StringComparer.Ordinal);
@@ -57,7 +79,17 @@ public partial class TimelineWindow : Window
     {
         AvaloniaXamlLoader.Load(this);
         LocalizationService.LanguageChanged += LanguageChanged;
-        Closed += (_, _) => LocalizationService.LanguageChanged -= LanguageChanged;
+        _zoomDebounce.Tick += (_, _) =>
+        {
+            _zoomDebounce.Stop();
+            RenderPendingZoom();
+        };
+        Closed += (_, _) =>
+        {
+            _prepareCts?.Cancel();
+            _zoomDebounce.Stop();
+            LocalizationService.LanguageChanged -= LanguageChanged;
+        };
 
         // Vízszintes scroll szinkron chart ↔ sávok
         var chart = this.FindControl<Canvas>("ChartCanvas")!;
@@ -109,6 +141,7 @@ public partial class TimelineWindow : Window
 
     public void UpdatePlayer(PlayerStat player, MeterSnapshot snapshot)
     {
+        _zoomDebounce.Stop();
         _player = player;
         _snapshot = snapshot;
         _selected = Math.Max(0, snapshot.Players.ToList().IndexOf(player));
@@ -119,28 +152,133 @@ public partial class TimelineWindow : Window
         _mode = MeterMode.Dps;
         _seriesCache.Clear();
         _skillCache.Clear();
-        foreach (SkillEvent ev in _player.Events)
-        {
-            if (!_skillCache.TryGetValue(ev.Skill, out List<SkillEvent>? group))
-                _skillCache[ev.Skill] = group = new List<SkillEvent>();
-            group.Add(ev);
-        }
+        _laneBuckets.Clear();
+        _visibleSkillCount = SkillPageSize;
         _lastTooltipTime = double.NaN;
         _lastTooltipActiveMask = -1;
         _zoom = 1.0;
         _cursorTime = null;
-
-        this.FindControl<TextBlock>("TimelineTitle")!.Text = LocalizationService.Format(
-            "TimelineTitleFormat", player.Name);
-        this.FindControl<TextBlock>("TimelineSub")!.Text = LocalizationService.Format(
-            "TimelineSubtitle", FormatTime(snapshot.Duration), snapshot.Players.Count);
-
         ComputeScale();
         BuildChips();
-        BuildLanes();
+        UpdateSelectionHeader();
         UpdateModeUi();
-        DrawChart();
-        HideEventDetail();
+        _ = PrepareAndDrawAsync();
+    }
+
+    private void UpdateSelectionHeader()
+    {
+        this.FindControl<TextBlock>("TimelineTitle")!.Text = _player.Name;
+        // Preserve the user's existing saved-fight death/positional hit indicators.
+        // The header is refreshed for the newly inspected player on every chip switch.
+        var summary = LocalizationService.Format(
+            "TimelineSubtitle", FormatTime(_snapshot.Duration), _snapshot.Players.Count) +
+            $"  ·  💀 {(_player.DeathCount.HasValue ? _player.DeathCount.Value.ToString() : "?")}" +
+            $"  ·  {PositionDetails.Format(_player, compact: true)}";
+        this.FindControl<TextBlock>("TimelineSub")!.Text = summary;
+        int selectedCount = _active.Count(x => x);
+        this.FindControl<TextBlock>("SelectedCountText")!.Text = selectedCount > 1
+            ? $"{selectedCount} players compared" : "Select more players to compare";
+    }
+
+    private sealed class PreparedData
+    {
+        public Dictionary<int, double[]> Series { get; init; } = new();
+        public Dictionary<string, List<SkillEvent>> SkillGroups { get; init; } = new(StringComparer.Ordinal);
+        public Dictionary<string, int[]> LaneBuckets { get; init; } = new(StringComparer.Ordinal);
+        public SkillEvent[] SortedEvents { get; set; } = Array.Empty<SkillEvent>();
+    }
+
+    private async Task PrepareAndDrawAsync()
+    {
+        _zoomDebounce.Stop();
+        _prepareCts?.Cancel();
+        _prepareCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _prepareCts = cts;
+        int version = ++_prepareVersion;
+        CancellationToken token = cts.Token;
+        var snapshot = _snapshot;
+        var selectedPlayer = _player;
+        var mode = _mode;
+        double cellSeconds = _cellSeconds;
+        double duration = Duration;
+
+        _isPreparing = true;
+        var overlay = this.FindControl<Border>("LoadingOverlay");
+        if (overlay is not null) overlay.IsVisible = true;
+        var loading = this.FindControl<TextBlock>("LoadingText");
+        if (loading is not null) loading.Text = "Processing saved combat data…";
+
+        try
+        {
+            // Allow one frame for the overlay/spinner to paint before expensive work.
+            // Covers fast jobs too; older combat-file deserialization happens in the caller.
+            await Task.Delay(140, token);
+            // The costly part (5 s rolling series, event grouping and lane bucketing)
+            // runs away from the Avalonia UI thread. Never access controls in Task.Run.
+            var data = await Task.Run(() =>
+            {
+                var output = new PreparedData();
+                for (int i = 0; i < snapshot.Players.Count; i++)
+                {
+                    token.ThrowIfCancellationRequested();
+                    output.Series[i] = Meter.Series(snapshot.Players[i], mode, snapshot.Duration);
+                }
+                token.ThrowIfCancellationRequested();
+                int cellCount = Math.Max(1, (int)Math.Ceiling(duration / cellSeconds));
+                foreach (var group in selectedPlayer.Events.GroupBy(ev => ev.Skill, StringComparer.Ordinal))
+                {
+                    token.ThrowIfCancellationRequested();
+                    var events = group.ToList();
+                    output.SkillGroups[group.Key] = events;
+                    var buckets = new int[cellCount];
+                    foreach (var ev in events)
+                    {
+                        int cell = Math.Clamp((int)(ev.Time / cellSeconds), 0, cellCount - 1);
+                        buckets[cell]++;
+                    }
+                    output.LaneBuckets[group.Key] = buckets;
+                }
+                output.SortedEvents = selectedPlayer.Events.OrderBy(ev => ev.Time).ToArray();
+                token.ThrowIfCancellationRequested();
+                return output;
+            }, token);
+
+            if (token.IsCancellationRequested || version != _prepareVersion) return;
+            // All Avalonia changes, including bitmap loading, stay on the UI thread.
+            _seriesCache.Clear();
+            foreach (var item in data.Series)
+                _seriesCache[(item.Key, mode)] = item.Value;
+            _skillCache.Clear();
+            foreach (var item in data.SkillGroups)
+                _skillCache[item.Key] = item.Value;
+            _laneBuckets.Clear();
+            foreach (var item in data.LaneBuckets)
+                _laneBuckets[item.Key] = item.Value;
+            _sortedEvents = data.SortedEvents;
+            _visibleSkillCount = SkillPageSize;
+            BuildLanes();
+            UpdateModeUi();
+            DrawChart();
+            HideEventDetail();
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            if (version != _prepareVersion) return;
+            var time = this.FindControl<TextBlock>("EventDetailTime");
+            var detail = this.FindControl<TextBlock>("EventDetailList");
+            if (time is not null) time.Text = "Timeline unavailable";
+            if (detail is not null) detail.Text = ex.Message;
+        }
+        finally
+        {
+            if (version == _prepareVersion)
+            {
+                _isPreparing = false;
+                if (overlay is not null) overlay.IsVisible = false;
+            }
+        }
     }
 
     // ---------- Skála ----------
@@ -173,18 +311,25 @@ public partial class TimelineWindow : Window
     private void OnWheel(object? sender, PointerWheelEventArgs e)
     {
         if (e.Delta.Y == 0) return;
+        e.Handled = true; // Do not also vertically scroll the parent or fire nested zoom handlers.
+        if (_isPreparing) return;
+
         double factor = e.Delta.Y > 0 ? 1.2 : 1.0 / 1.2;
         double newZoom = Math.Clamp(_zoom * factor, 0.35, 10.0);
         if (Math.Abs(newZoom - _zoom) < 0.001) return;
 
         var viewport = this.FindControl<ScrollViewer>("ChartScroll")!;
         var canvas = this.FindControl<Canvas>("ChartCanvas")!;
-        // Anchor zoom to the cursor's logical fight time, even over the lane viewport.
-        // The chart owns a leading 170dp Y-axis region; lanes have fixed 170dp labels.
+        var lanesViewport = this.FindControl<ScrollViewer>("LaneScroll");
         double viewportX;
         double anchorTime;
-        var lanesViewport = this.FindControl<ScrollViewer>("LaneScroll");
-        if (ReferenceEquals(sender, lanesViewport) && lanesViewport is not null)
+        if (_zoomDebounce.IsEnabled)
+        {
+            // Geometry still depicts the previous scale until redraw: reuse the original anchor.
+            anchorTime = _zoomAnchorTime;
+            viewportX = _zoomAnchorViewportX;
+        }
+        else if (ReferenceEquals(sender, lanesViewport) && lanesViewport is not null)
         {
             double laneX = Math.Clamp(e.GetPosition(lanesViewport).X, 0, lanesViewport.Viewport.Width);
             anchorTime = Math.Clamp((lanesViewport.Offset.X + laneX) / _pxPerSecond, 0, Duration);
@@ -197,26 +342,42 @@ public partial class TimelineWindow : Window
             if (!double.IsFinite(canvasX)) canvasX = viewport.Offset.X + viewportX;
             anchorTime = Math.Clamp((canvasX - ChartLeft) / _pxPerSecond, 0, Duration);
         }
+
         double oldScale = _pxPerSecond;
         _zoom = newZoom;
         ComputeScale();
-        if (Math.Abs(oldScale - _pxPerSecond) < 0.001) { e.Handled = true; return; }
-        BuildLanes();
+        if (Math.Abs(oldScale - _pxPerSecond) < 0.001) return;
         UpdateModeUi();
+        ScheduleZoomRefresh(anchorTime, viewportX);
+    }
+
+    private void ScheduleZoomRefresh(double anchorTime, double viewportX)
+    {
+        _zoomAnchorTime = anchorTime;
+        _zoomAnchorViewportX = viewportX;
+        _zoomDebounce.Stop();
+        _zoomDebounce.Start();
+    }
+
+    private void RenderPendingZoom()
+    {
+        if (_isPreparing || !IsVisible) return;
+        BuildLanes();
         DrawChart();
-        // Let Avalonia measure the new extent before restoring the viewport.
+        double anchorTime = _zoomAnchorTime;
+        double viewportX = _zoomAnchorViewportX;
         Dispatcher.UIThread.Post(() =>
         {
-            if (!IsVisible || !ReferenceEquals(this.FindControl<Canvas>("ChartCanvas"), canvas)) return;
+            if (!IsVisible) return;
             var chartScroll = this.FindControl<ScrollViewer>("ChartScroll")!;
             double max = Math.Max(0, chartScroll.Extent.Width - chartScroll.Viewport.Width);
             double next = Math.Clamp(TimeToX(anchorTime) - viewportX, 0, max);
             chartScroll.Offset = chartScroll.Offset.WithX(next);
             var lanes = this.FindControl<ScrollViewer>("LaneScroll");
             if (lanes is not null)
-                lanes.Offset = lanes.Offset.WithX(Math.Clamp(next, 0, Math.Max(0, lanes.Extent.Width - lanes.Viewport.Width)));
+                lanes.Offset = lanes.Offset.WithX(Math.Clamp(next, 0,
+                    Math.Max(0, lanes.Extent.Width - lanes.Viewport.Width)));
         }, DispatcherPriority.Loaded);
-        e.Handled = true;
     }
 
     private double TickStep()
@@ -241,12 +402,12 @@ public partial class TimelineWindow : Window
 
     private void ModeClick(object? sender, RoutedEventArgs e)
     {
-        if (sender is Button { Tag: string tag } && Enum.TryParse<MeterMode>(tag, out var mode))
+        if (sender is Button { Tag: string tag } && Enum.TryParse<MeterMode>(tag, out var mode) && mode != _mode)
         {
             _mode = mode;
-            UpdateModeUi();
             _lastTooltipTime = double.NaN;
-            DrawChart();
+            UpdateModeUi();
+            _ = PrepareAndDrawAsync();
         }
     }
 
@@ -256,14 +417,16 @@ public partial class TimelineWindow : Window
         SetModeActive("ModeDamage", MeterMode.Damage);
         SetModeActive("ModeHps", MeterMode.Hps);
         SetModeActive("ModeHeal", MeterMode.Heal);
-
         this.FindControl<TextBlock>("ChartTitle")!.Text = _mode switch
         {
-            MeterMode.Dps => LocalizationService.Format("TimelineChartDps", _zoom),
-            MeterMode.Hps => LocalizationService.Format("TimelineChartHps", _zoom),
-            MeterMode.Damage => LocalizationService.Format("TimelineChartDamage", _zoom),
-            _ => LocalizationService.Format("TimelineChartHealing", _zoom),
+            MeterMode.Dps => "DPS Over Time",
+            MeterMode.Hps => "HPS Over Time",
+            MeterMode.Damage => "Total Damage Over Time",
+            _ => "Total Healing Over Time",
         };
+        this.FindControl<TextBlock>("ZoomText")!.Text = $"Zoom ×{_zoom:0.0}";
+        this.FindControl<TextBlock>("ChartMeta")!.Text =
+            $"{_active.Count(x => x)} players · wheel to zoom · click for events";
     }
 
     private void SetModeActive(string name, MeterMode m) =>
@@ -287,7 +450,7 @@ public partial class TimelineWindow : Window
                 Width = 10,
                 Height = 10,
                 CornerRadius = new CornerRadius(3),
-                Background = Visuals.ForId(p.ClassId),
+                Background = CurveBrush(i),
                 VerticalAlignment = VerticalAlignment.Center,
             });
             content.Children.Add(new TextBlock
@@ -304,7 +467,7 @@ public partial class TimelineWindow : Window
                 Padding = new Thickness(10, 4),
                 Margin = new Thickness(0, 0, 6, 6),
             };
-            chip.Classes.Add("ui");
+            chip.Classes.Add("tacticalTab");
             chip.Click += ChipClick;
             host.Children.Add(chip);
         }
@@ -314,17 +477,25 @@ public partial class TimelineWindow : Window
 
     private void ChipClick(object? sender, RoutedEventArgs e)
     {
-        if (sender is not Button { Tag: int i })
+        if (sender is not Button { Tag: int i } || i < 0 || i >= _active.Length)
             return;
-
-        bool othersOn = _active.Where((_, k) => k != i).Any(x => x);
-        if (_active[i] && !othersOn)
+        // Never leave the comparison plot empty.
+        if (_active[i] && _active.Count(x => x) == 1)
             return;
-
-        _active[i] = !_active[i];
-        UpdateChips();
+        bool wasActive = _active[i];
+        _active[i] = !wasActive;
+        if (!wasActive)
+            _selected = i; // Newly selected chip becomes the skill/event inspector.
+        else if (_selected == i)
+            _selected = Array.FindIndex(_active, x => x);
+        if (_selected >= 0 && _selected < _snapshot.Players.Count)
+            _player = _snapshot.Players[_selected];
+        _cursorTime = null;
         _lastTooltipTime = double.NaN;
-        DrawChart();
+        UpdateChips();
+        UpdateSelectionHeader();
+        UpdateModeUi();
+        _ = PrepareAndDrawAsync();
     }
 
     private void UpdateChips()
@@ -337,10 +508,46 @@ public partial class TimelineWindow : Window
         }
     }
 
+    private void SoloPlayerClick(object? sender, RoutedEventArgs e)
+    {
+        if (_selected < 0 || _selected >= _active.Length) return;
+        for (int i = 0; i < _active.Length; i++) _active[i] = i == _selected;
+        UpdateChips();
+        UpdateSelectionHeader();
+        UpdateModeUi();
+        _ = PrepareAndDrawAsync();
+    }
+
+    private void ZoomInClick(object? sender, RoutedEventArgs e) => ChangeZoom(1.25);
+    private void ZoomOutClick(object? sender, RoutedEventArgs e) => ChangeZoom(0.8);
+    private void ZoomResetClick(object? sender, RoutedEventArgs e) => ChangeZoom(1.0, reset: true);
+
+    private void ChangeZoom(double factor, bool reset = false)
+    {
+        if (_isPreparing) return;
+        double nextZoom = Math.Clamp(reset ? 1.0 : _zoom * factor, 0.35, 10.0);
+        if (Math.Abs(nextZoom - _zoom) < 0.001) return;
+        var viewport = this.FindControl<ScrollViewer>("ChartScroll")!;
+        double middleX = viewport.Viewport.Width / 2.0;
+        double focusTime = Math.Clamp((viewport.Offset.X + middleX - ChartLeft) / _pxPerSecond, 0, Duration);
+        _zoom = nextZoom;
+        ComputeScale();
+        UpdateModeUi();
+        ScheduleZoomRefresh(focusTime, middleX);
+    }
+
+    private void LoadMoreSkillsClick(object? sender, RoutedEventArgs e)
+    {
+        if (_isPreparing) return;
+        _visibleSkillCount += SkillPageSize;
+        BuildLanes();
+    }
+
     // ---------- Hover / kattintás ----------
 
     private void ChartPointerMoved(object? sender, PointerEventArgs e)
     {
+        if (_isPreparing) return;
         var c = this.FindControl<Canvas>("ChartCanvas");
         if (c is null) return;
 
@@ -376,6 +583,7 @@ public partial class TimelineWindow : Window
 
     private void ChartPointerPressed(object? sender, PointerPressedEventArgs e)
     {
+        if (_isPreparing) return;
         var c = this.FindControl<Canvas>("ChartCanvas");
         if (c is null) return;
 
@@ -391,50 +599,44 @@ public partial class TimelineWindow : Window
     private void ShowEventsAt(double timeSeconds)
     {
         _cursorTime = Math.Clamp(timeSeconds, 0, Duration);
-        // Clicks must not rebuild the entire Canvas or change chart geometry.
         MoveCursorMarker();
-
         double window = Math.Max(0.3, _cellSeconds);
-        var hits = _player.Events
-            .Where(ev => Math.Abs(ev.Time - timeSeconds) <= window / 2)
-            .OrderBy(ev => ev.Time)
-            .ToList();
-
-        var panel = this.FindControl<Border>("EventDetailPanel");
+        double start = timeSeconds - window / 2;
+        double end = timeSeconds + window / 2;
+        // Binary search the prepared time-sorted index, avoiding a full replay scan
+        // whenever the user clicks on a long combat timeline.
+        int lo = 0, hi = _sortedEvents.Length;
+        while (lo < hi)
+        {
+            int mid = lo + (hi - lo) / 2;
+            if (_sortedEvents[mid].Time < start) lo = mid + 1;
+            else hi = mid;
+        }
+        int first = lo;
+        while (lo < _sortedEvents.Length && _sortedEvents[lo].Time <= end) lo++;
+        int total = lo - first;
         var timeTb = this.FindControl<TextBlock>("EventDetailTime");
         var listTb = this.FindControl<TextBlock>("EventDetailList");
-        if (panel is null || timeTb is null || listTb is null)
-            return;
-
-        panel.IsVisible = true;
-
-        if (hits.Count == 0)
+        if (timeTb is null || listTb is null) return;
+        timeTb.Text = total == 0
+            ? LocalizationService.Format("TimeValue", FormatTime(timeSeconds))
+            : LocalizationService.Format("TimelineEventHeader", FormatTime(timeSeconds), window / 2, total);
+        if (total == 0) { listTb.Text = LocalizationService.Get("NoEventsWindow"); return; }
+        const int cap = 100;
+        var lines = new List<string>();
+        for (int i = first; i < Math.Min(lo, first + cap); i++)
         {
-            timeTb.Text = LocalizationService.Format("TimeValue", FormatTime(timeSeconds));
-            listTb.Text = LocalizationService.Get("NoEventsWindow");
-            return;
+            var ev = _sortedEvents[i];
+            string suffix = ev.Crit ? "  CRIT" : ev.IsHeal ? "  HEAL" : "";
+            lines.Add($"{FormatTime(ev.Time)}  ·  {ev.Skill}  ·  {Meter.Num(ev.Amount)}{suffix}");
         }
-
-        timeTb.Text = LocalizationService.Format(
-            "TimelineEventHeader", FormatTime(timeSeconds), window / 2, hits.Count);
-        // Cap rendered text while keeping the exact total count in the header.
-        const int maxVisibleEvents = 120;
-        var visible = hits.Take(maxVisibleEvents).Select(ev =>
-        {
-            string crit = ev.Crit ? "  CRIT" : "";
-            string heal = ev.IsHeal ? "  (heal)" : "";
-            return $"{FormatTime(ev.Time)}  ·  {ev.Skill}  ·  {Meter.Num(ev.Amount)}{crit}{heal}";
-        });
-        listTb.Text = string.Join("\n", visible);
-        if (hits.Count > maxVisibleEvents)
-            listTb.Text += $"\n… +{hits.Count - maxVisibleEvents} more events";
+        if (total > cap) lines.Add($"… +{total - cap} events");
+        listTb.Text = string.Join("\n", lines);
     }
 
     private void HideEventDetail()
     {
-        // Keep the detail pane's allocated space even before the first click.
-        // Collapsing/reopening this row moved the chart and skill lanes.
-        this.FindControl<TextBlock>("EventDetailTime")!.Text = LocalizationService.Get("TimelineHint");
+        this.FindControl<TextBlock>("EventDetailTime")!.Text = "Select a skill event";
         this.FindControl<TextBlock>("EventDetailList")!.Text = string.Empty;
     }
 
@@ -538,7 +740,7 @@ public partial class TimelineWindow : Window
 
             var line = new Polyline
             {
-                Stroke = Visuals.ForId(p.ClassId),
+                Stroke = CurveBrush(i),
                 StrokeThickness = isSel ? 2.6 : 1.5,
                 Opacity = isSel ? 1.0 : 0.75,
             };
@@ -580,7 +782,8 @@ public partial class TimelineWindow : Window
         c.Children.Add(_cursorMarker);
         MoveCursorMarker();
 
-        // Csúcs
+        // Show peak annotation only for a single plotted player, never for comparisons.
+        if (activeIdx.Count != 1) return;
         if (!seriesMap.TryGetValue(_selected, out var selData) || selData.Length < 2)
             return;
 
@@ -640,8 +843,7 @@ public partial class TimelineWindow : Window
         labels.Children.Clear();
         ticks.Children.Clear();
 
-        this.FindControl<TextBlock>("LanesTitle")!.Text = LocalizationService.Format(
-            "SkillsTimeline", _player.Name, _zoom, _pxPerSecond);
+        this.FindControl<TextBlock>("LanesTitle")!.Text = $"{_player.Name} · ×{_zoom:0.0}";
 
         double cellWidth = _cellSeconds * _pxPerSecond;
         int cellCount = Math.Max(1, (int)Math.Ceiling(Duration / _cellSeconds));
@@ -656,6 +858,8 @@ public partial class TimelineWindow : Window
 
         if (lanes.Count == 0)
         {
+            this.FindControl<TextBlock>("LaneCountLabel")!.Text = "0 skills";
+            this.FindControl<Button>("LoadMoreSkillsButton")!.IsVisible = false;
             labels.Children.Add(new TextBlock
             {
                 Text = LocalizationService.Get("NoRecordedEvents"),
@@ -666,7 +870,11 @@ public partial class TimelineWindow : Window
             return;
         }
 
-        foreach (var lane in lanes)
+        int visible = Math.Min(lanes.Count, _visibleSkillCount);
+        this.FindControl<TextBlock>("LaneCountLabel")!.Text = $"{visible} / {lanes.Count} skills";
+        this.FindControl<Button>("LoadMoreSkillsButton")!.IsVisible = visible < lanes.Count;
+
+        foreach (var lane in lanes.Take(visible))
         {
             bool isHeal = lane.Value[0].IsHeal;
             IBrush brush = isHeal ? Visuals.Heal : Visuals.ForText(lane.Key);
@@ -675,7 +883,7 @@ public partial class TimelineWindow : Window
                 .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
 
             labels.Children.Add(BuildLabel(lane.Key, brush, icon));
-            ticks.Children.Add(BuildLaneTrack(lane.Value, cellCount, cellWidth, brush));
+            ticks.Children.Add(BuildLaneTrack(_laneBuckets[lane.Key], cellWidth, brush));
         }
     }
 
@@ -731,24 +939,11 @@ public partial class TimelineWindow : Window
         return panel;
     }
 
-    private Control BuildLaneTrack(
-        IReadOnlyList<SkillEvent> lane,
-        int cellCount,
-        double cellWidth,
-        IBrush brush)
+    private Control BuildLaneTrack(int[] counts, double cellWidth, IBrush brush)
     {
-        var counts = new int[cellCount];
-        foreach (var ev in lane)
-        {
-            int cell = Math.Clamp((int)(ev.Time / _cellSeconds), 0, cellCount - 1);
-            counts[cell]++;
-        }
-
-        int maxCount = Math.Max(1, counts.Max());
+        int cellCount = counts.Length;
         double trackWidth = cellCount * cellWidth;
-
         var track = new Canvas { Width = trackWidth, Height = LaneHeight };
-
         track.Children.Add(new Rectangle
         {
             Width = trackWidth,
@@ -756,6 +951,8 @@ public partial class TimelineWindow : Window
             Fill = Brushes.Transparent,
         });
 
+        // A single hit test per skill row; each visual segment is inert.
+        // Keeps precise event inspection while avoiding thousands of controls/handlers.
         track.PointerPressed += (_, e) =>
         {
             var pos = e.GetPosition(track);
@@ -767,41 +964,44 @@ public partial class TimelineWindow : Window
             }
         };
 
-        for (int i = 0; i < cellCount; i++)
+        // Preserve the old per-bucket hit-count tooltip without one Tooltip/handler per cell.
+        int hoveredBucket = -1;
+        track.PointerMoved += (_, e) =>
         {
-            if (counts[i] == 0) continue;
+            int bucket = Math.Clamp((int)(e.GetPosition(track).X / cellWidth), 0, cellCount - 1);
+            if (bucket == hoveredBucket) return;
+            hoveredBucket = bucket;
+            double start = bucket * _cellSeconds;
+            ToolTip.SetTip(track, LocalizationService.Format(
+                "TimelineHitTooltip", FormatTime(start), FormatTime(start + _cellSeconds), counts[bucket]));
+        };
 
-            double strength = (double)counts[i] / maxCount;
-            double cellStart = i * _cellSeconds;
+        // The full source buckets are preserved; only render at most 48 groups.
+        // On long fights this limits the UI to <= 18 * 48 visible cells, not 18 * 240.
+        const int maxRenderedGroups = 48;
+        int stride = Math.Max(1, (int)Math.Ceiling(cellCount / (double)maxRenderedGroups));
+        int peak = Math.Max(1, counts.Max());
+        for (int first = 0; first < cellCount; first += stride)
+        {
+            int last = Math.Min(cellCount, first + stride);
+            int hits = 0;
+            for (int i = first; i < last; i++) hits += counts[i];
+            if (hits == 0) continue;
 
+            double strength = Math.Min(1.0, hits / (double)(peak * (last - first)));
             var block = new Border
             {
-                Width = Math.Max(3, cellWidth - 1),
+                Width = Math.Max(2, (last - first) * cellWidth - 1),
                 Height = LaneHeight - 6,
                 CornerRadius = new CornerRadius(3),
                 Background = brush,
-                Opacity = 0.35 + 0.65 * strength,
-                Cursor = new Cursor(StandardCursorType.Hand),
+                Opacity = 0.38 + 0.62 * strength,
+                IsHitTestVisible = false,
             };
-
-            ToolTip.SetTip(block, LocalizationService.Format(
-                "TimelineHitTooltip",
-                FormatTime(cellStart),
-                FormatTime(cellStart + _cellSeconds),
-                counts[i]));
-
-            int captured = i;
-            block.PointerPressed += (_, e) =>
-            {
-                ShowEventsAt(captured * _cellSeconds + _cellSeconds / 2);
-                e.Handled = true;
-            };
-
-            Canvas.SetLeft(block, cellStart * _pxPerSecond);
+            Canvas.SetLeft(block, first * cellWidth);
             Canvas.SetTop(block, 3);
             track.Children.Add(block);
         }
-
         return track;
     }
 
@@ -850,16 +1050,10 @@ public partial class TimelineWindow : Window
 
     private void LanguageChanged(object? sender, EventArgs e)
     {
-        if (_player is null || _snapshot is null)
-            return;
-
-        this.FindControl<TextBlock>("TimelineTitle")!.Text = LocalizationService.Format(
-            "TimelineTitleFormat", _player.Name);
-        this.FindControl<TextBlock>("TimelineSub")!.Text = LocalizationService.Format(
-            "TimelineSubtitle", FormatTime(_snapshot.Duration), _snapshot.Players.Count);
-        BuildLanes();
+        if (_player is null || _snapshot is null) return;
+        UpdateSelectionHeader();
         UpdateModeUi();
-        DrawChart();
+        if (!_isPreparing) { BuildLanes(); DrawChart(); }
     }
 
     private void CloseClick(object? sender, RoutedEventArgs e) => Close();

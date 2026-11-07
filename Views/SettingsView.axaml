@@ -5,6 +5,11 @@
              Foreground="#EAF7FF">
   <UserControl.Styles>
     <StyleInclude Source="avares://AION 2 Companion/Styles/Settings.axaml"/>
+    <Style Selector="CheckBox.phaseward-choice">
+      <Setter Property="Foreground" Value="#E4F1FA"/>
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+
   </UserControl.Styles>
 
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -171,6 +176,90 @@
                 <Button Grid.Column="1" Classes="ui" Content="{DynamicResource Open}" Click="OpenPhasewardOverlayClick" VerticalAlignment="Center"/>
               </Grid>
             </Border>
+            <Border Classes="settings-row" BorderBrush="#335875" BorderThickness="1" CornerRadius="14" Padding="13">
+              <StackPanel Spacing="12">
+                <StackPanel Spacing="4">
+                  <TextBlock x:Name="PhasewardSettingsHeading" Text="PHASEWARD // COMMUNITY" FontWeight="Bold" Foreground="#55DBF4" FontSize="11"/>
+                  <TextBlock x:Name="PhasewardSettingsSubheading" Text="Boss observations can be sent to Nexforge for server-side research." FontSize="12" Foreground="#9DBBD1" TextWrapping="Wrap"/>
+                </StackPanel>
+                <Border BorderBrush="#36556A" BorderThickness="1" Background="#101E2D" CornerRadius="10" Padding="13">
+                  <StackPanel Spacing="5">
+                    <CheckBox x:Name="PhasewardCommunityUploadToggle" Content="Send boss observations to Nexforge"/>
+                    <TextBlock x:Name="PhasewardCommunityUploadStatus" Classes="hint" Margin="25,0,0,0" TextWrapping="Wrap"/>
+                  </StackPanel>
+                </Border>
+                <Border BorderBrush="#36556A" BorderThickness="1" Background="#101E2D" CornerRadius="10" Padding="13">
+                  <StackPanel Spacing="5">
+                    <CheckBox x:Name="PhasewardTraceV2UploadToggle" Content="Share detailed boss research (V2)"/>
+                    <TextBlock x:Name="PhasewardV2PrivacyBrief" Classes="hint" Margin="25,0,0,0" TextWrapping="Wrap"
+                               Text="Raw packets may contain identifiers or location data. Separate consent required."/>
+                    <TextBlock x:Name="PhasewardTraceV2UploadStatus" Classes="hint" Margin="25,0,0,0" TextWrapping="Wrap"/>
+                  </StackPanel>
+                </Border>
+                <Border x:Name="PhasewardAdvancedExpander" CornerRadius="12" BorderBrush="#31546D" BorderThickness="1" Background="#0D2032" ClipToBounds="True">
+                  <StackPanel Spacing="0">
+                    <!-- Own disclosure: avoids the default Fluent Expander black header and popup chrome. -->
+                    <Button x:Name="PhasewardAdvancedDisclosure" Background="#10263A" BorderBrush="Transparent" BorderThickness="0"
+                            Foreground="#E7F5FC" Padding="14,11" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                          <TextBlock x:Name="PhasewardAdvancedTitle" Text="ADVANCED // RECORDING" FontSize="11" FontWeight="SemiBold" Foreground="#7BE1F5"/>
+                          <TextBlock x:Name="PhasewardAdvancedSubtitle" Text="Local capture and queue tools" FontSize="11" Foreground="#9CB7C9" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1" x:Name="PhasewardAdvancedChevron" Text="⌄" FontSize="19" Foreground="#A9D8E9" VerticalAlignment="Center"/>
+                      </Grid>
+                    </Button>
+                    <StackPanel x:Name="PhasewardAdvancedContent" IsVisible="False" Spacing="0" Margin="14,0,14,11">
+                      <Border BorderBrush="#2D4F66" BorderThickness="0,1,0,0" Padding="0,11,0,11">
+                        <StackPanel Spacing="5">
+                          <TextBlock x:Name="PhasewardAdvancedLearningTag" Text="LOCAL ANALYSIS" FontSize="10" Foreground="#7599B3" FontWeight="SemiBold"/>
+                          <CheckBox x:Name="PhasewardLearningToggle" Classes="phaseward-choice" Content="Local pattern recognition"/>
+                          <TextBlock x:Name="PhasewardLearningStatusText" Margin="25,1,0,0" Foreground="#8DADBF" FontSize="11" TextWrapping="Wrap"/>
+                        </StackPanel>
+                      </Border>
+                      <Border BorderBrush="#2D4F66" BorderThickness="0,1,0,0" Padding="0,11,0,11">
+                        <StackPanel Spacing="6">
+                          <TextBlock x:Name="PhasewardAdvancedCaptureTag" Text="LOCAL CAPTURE" FontSize="10" Foreground="#7599B3" FontWeight="SemiBold"/>
+                          <CheckBox x:Name="PhasewardDetailedTraceToggle" Classes="phaseward-choice" Content="Record detailed boss data"/>
+                          <TextBlock x:Name="PhasewardAdvancedCaptureHelp" Text="Required for new Research V2 uploads" Margin="25,0,0,0" Foreground="#8DADBF" FontSize="11" TextWrapping="Wrap"/>
+                          <Button x:Name="PhasewardTraceV2Clear" HorizontalAlignment="Left" Margin="25,0,0,0" Background="#102A40"
+                                  BorderBrush="#31536D" BorderThickness="1" CornerRadius="7" Padding="10,5" Foreground="#BDDDEB" FontSize="11"
+                                  Content="Delete queued Research V2 archives"/>
+                        </StackPanel>
+                      </Border>
+                      <Border BorderBrush="#2D4F66" BorderThickness="0,1,0,0" Padding="0,11,0,11">
+                        <StackPanel Spacing="6">
+                          <TextBlock x:Name="PhasewardAdvancedQueueTag" Text="COMMUNITY QUEUE" FontSize="10" Foreground="#7599B3" FontWeight="SemiBold"/>
+                          <CheckBox x:Name="PhasewardCommunityQueueToggle" Classes="phaseward-choice" Content="Prepare community observations"/>
+                          <WrapPanel Margin="25,0,0,0" Orientation="Horizontal">
+                            <TextBlock x:Name="PhasewardCommunityQueueStatus" Foreground="#8DADBF" FontSize="11" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <Button x:Name="PhasewardCommunityQueueClear" Background="#102A40" BorderBrush="#31536D" BorderThickness="1"
+                                    CornerRadius="7" Padding="10,5" Foreground="#BDDDEB" FontSize="11"
+                                    Content="Delete pending observations" VerticalAlignment="Center"/>
+                          </WrapPanel>
+                        </StackPanel>
+                      </Border>
+                      <TextBlock x:Name="PhasewardAdvancedDependencyInfo" Text="Server uploads enable required capture automatically. Turning uploads off may leave local recording enabled."
+                                 Margin="1,0,1,9" FontSize="11" Foreground="#88B0C5" TextWrapping="Wrap"/>
+                      <Button x:Name="PhasewardTechnicalDisclosure" Background="Transparent" BorderBrush="Transparent" BorderThickness="0"
+                              HorizontalAlignment="Left" Padding="0,5" HorizontalContentAlignment="Left">
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                          <TextBlock Text="ⓘ" Foreground="#72A5C1" FontSize="13"/>
+                          <TextBlock x:Name="PhasewardAdvancedTechnicalTitle" Text="Technical information" Foreground="#93BDD4" FontSize="11"/>
+                        </StackPanel>
+                      </Button>
+                      <StackPanel x:Name="PhasewardTechnicalContent" IsVisible="False" Spacing="8" Margin="4,6,0,2">
+                        <TextBlock x:Name="PhasewardLearningHint" Classes="hint" TextWrapping="Wrap"/>
+                        <TextBlock x:Name="PhasewardCommunityUploadHint" Classes="hint" TextWrapping="Wrap"/>
+                        <TextBlock x:Name="PhasewardTraceV2UploadHint" Classes="hint" TextWrapping="Wrap"/>
+                        <TextBlock x:Name="PhasewardCommunityQueueHint" Classes="hint" TextWrapping="Wrap"/>
+                      </StackPanel>
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+
+              </StackPanel>
+            </Border>
             <Border Classes="settings-row"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="3"><TextBlock Text="Overlay Studio" Classes="settings-label"/><TextBlock Text="Move and resize HUD overlays on the screen. Use DEMO mode to preview Phaseward mechanics before saving." Classes="hint" TextWrapping="Wrap"/></StackPanel><Button Grid.Column="1" Classes="ui" Content="Open Studio" Click="OpenOverlayStudioClick" VerticalAlignment="Center"/></Grid></Border>
           </StackPanel>
         </Grid>
@@ -199,6 +288,24 @@
             </Border>
             <Border Classes="settings-row"><StackPanel Spacing="4"><CheckBox x:Name="AutoUpdateToggle" Content="{DynamicResource AutoUpdateToggle}"/><TextBlock Text="{DynamicResource AutoUpdateHint}" Classes="hint" Margin="25,0,0,0"/></StackPanel></Border>
             <Border Classes="settings-row"><StackPanel Spacing="4"><CheckBox x:Name="BackgroundUpdateToggle" Content="{DynamicResource BackgroundUpdateToggle}"/><TextBlock Text="{DynamicResource BackgroundUpdateHint}" Classes="hint" Margin="25,0,0,0"/></StackPanel></Border>
+            <Border Classes="settings-row">
+              <StackPanel Spacing="4">
+                <CheckBox x:Name="IntegrityMonitoringToggle" Content="{DynamicResource IntegrityMonitoringToggle}"/>
+                <TextBlock Text="{DynamicResource IntegrityMonitoringHint}" Classes="hint" Margin="25,0,0,0" TextWrapping="Wrap"/>
+              </StackPanel>
+            </Border>
+            <Border Classes="settings-row">
+              <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                <Ellipse x:Name="IntegrityStatusDot" Width="8" Height="8" Fill="#71879B" VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Spacing="3">
+                  <TextBlock x:Name="IntegrityStatusTitle" Classes="settings-label"/>
+                  <TextBlock x:Name="IntegrityStatusText" Classes="hint" TextWrapping="Wrap"/>
+                </StackPanel>
+                <Button x:Name="IntegrityCheckButton" Grid.Column="2" Classes="ui"
+                        Content="{DynamicResource IntegrityCheckAgain}" Click="IntegrityCheckClick"
+                        VerticalAlignment="Center"/>
+              </Grid>
+            </Border>
             <Border Classes="settings-row"><Grid ColumnDefinitions="*,Auto" ColumnSpacing="16"><StackPanel Spacing="3"><TextBlock Text="{DynamicResource CurrentVersion}" Classes="settings-label"/><TextBlock x:Name="UpdateCheckStatusText" Classes="hint" TextWrapping="Wrap"/></StackPanel><Button x:Name="CheckUpdateButton" Grid.Column="1" Classes="ui" Content="{DynamicResource CheckForUpdates}" Click="CheckUpdateClick" VerticalAlignment="Center"/></Grid></Border>
           </StackPanel>
         </Grid>

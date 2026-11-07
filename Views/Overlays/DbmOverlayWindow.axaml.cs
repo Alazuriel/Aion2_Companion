@@ -113,6 +113,16 @@ public partial class DbmOverlayWindow : Window
 
     private static IEnumerable<PhasewardHudBar> BuildBars(PhasewardSnapshot snapshot)
     {
+        // Predictive rules come only from cross-validated previous pulls.
+        // They are conspicuously labelled estimates; actual observed casts remain authoritative.
+        foreach (PhasewardLearnedPrediction prediction in snapshot.LearnedPredictions)
+            if (prediction.SecondsRemaining is > 0 and <= 90)
+                yield return new PhasewardHudBar(
+                    $"{prediction.Name} · {LocalizationService.Get("PwLearnedShort")} " +
+                    $"({prediction.SupportingPulls})",
+                    prediction.SecondsRemaining, prediction.WindowSeconds,
+                    Color.Parse("#72D9AE"), Estimated: true);
+
         foreach (PhasewardTimerStatus timer in snapshot.Timers)
             if (!timer.Elapsed && timer.SecondsRemaining > 0 && timer.SecondsRemaining <= 300)
                 yield return new PhasewardHudBar(LocalizationService.Get("PwFrenzy"),

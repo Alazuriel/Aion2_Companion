@@ -72,6 +72,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private readonly HashSet<uint> _fightTargets = new();
     private readonly HashSet<uint> _deadFightTargets = new();
+    // LEGACY #19 v0.1 — per-boss-attempt player deaths, never mixed with NPC deaths.
+    private PlayerDeathTracker _playerDeaths = new();
 
     // Ideiglenesen lezárt fightok. Egy másik mob sebzése NEM archiválja
     // az előzőt azonnal; 8,5s-ig vissza tudunk térni rá.
@@ -223,6 +225,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
     private sealed class PausedFightState
     {
         public required Dictionary<uint, PlayerDamageStats> Players { get; init; }
+        public required PlayerDeathTracker PlayerDeaths { get; init; }
         public required HashSet<uint> Targets { get; init; }
         public required HashSet<uint> DeadTargets { get; init; }
         public required HashSet<uint> CombatMobs { get; init; }
@@ -255,6 +258,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         public uint TargetRuntimeId { get; init; }
         public int TargetTemplateId { get; set; }
         public bool IsBossTarget { get; set; }
+        public byte? RawDirectionCode { get; init; }
     }
     
 
@@ -327,6 +331,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
                 return;
             }
 
+            ObservePlayerHealth(hp.Target, hp.Health, frame.Time);
             TrackTargetMetadata(hp.Target);
             BossDefinition? hpBoss = ResolveTarget(hp.Target).Boss;
             if (!_bossHpTracker.TryUpdate(
@@ -425,6 +430,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         {
             bool newlyDetected = _currentBoss is null;
             _currentBoss = target.Boss;
+            BeginPlayerDeathsIfNeeded();
             _currentBossRuntimeId = runtimeId;
             _currentMobTemplateId = target.TemplateId;
             _currentMobName = target.Boss.LocalizedName(
@@ -474,7 +480,71 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         }
     }
 
-        private void CombatDeathCheck(WireFrame frame)
+        // LEGACY #19 v0.1: observe ONLY stable, named player runtime IDs.
+    private bool TryIdentifyDeathPlayer(uint entityId, out string name)
+    {
+        name = string.Empty;
+        if (entityId == 0 || _summonOwners.ContainsKey(entityId) ||
+            _pendingSummons.Contains(entityId) || _KnowMobs.ContainsKey(entityId))
+            return false;
+
+        if (entityId == _SelfId && !string.IsNullOrWhiteSpace(_selfName))
+        {
+            name = _selfName;
+            return true;
+        }
+
+        var matches = PartyMembers.Where(p => p.Id == entityId &&
+            !string.IsNullOrWhiteSpace(p.Name)).Take(2).ToArray();
+        if (matches.Length != 1)
+            return false; // identity collision or stale/unknown party ID
+
+        name = matches[0].Name;
+        return true;
+    }
+
+    private void BeginPlayerDeathsIfNeeded()
+    {
+        if (!_fightActive || _currentBoss is null || _playerDeaths.Started)
+            return;
+
+        // No confident zero when boss detection happened well after pull start.
+        bool nearPull = _fightStartTimestamp > 0 &&
+            (Stopwatch.GetTimestamp() - _fightStartTimestamp) / (double)Stopwatch.Frequency <= 2.0;
+        var known = new List<(uint Id, string Name)>();
+        if (_SelfId != 0 && !string.IsNullOrWhiteSpace(_selfName))
+            known.Add((_SelfId, _selfName));
+        foreach (var member in PartyMembers)
+        {
+            if (member.Id != 0 && member.Id != _SelfId &&
+                !string.IsNullOrWhiteSpace(member.Name) &&
+                !_summonOwners.ContainsKey(member.Id) && !_pendingSummons.Contains(member.Id) &&
+                !_KnowMobs.ContainsKey(member.Id))
+                known.Add((member.Id, member.Name));
+        }
+        _playerDeaths.Start(known, nearPull);
+    }
+
+    private void ObservePlayerDeath(WireFrame frame)
+    {
+        if (!_fightActive || _currentBoss is null ||
+            !DeathFrameParser.TryParse(frame.Payload, out uint entityId) ||
+            !TryIdentifyDeathPlayer(entityId, out string name))
+            return;
+        BeginPlayerDeathsIfNeeded();
+        _playerDeaths.ObserveDeath(entityId, name, frame.Time);
+    }
+
+    private void ObservePlayerHealth(uint entityId, uint health, DateTimeOffset observedAt)
+    {
+        if (!_fightActive || _currentBoss is null ||
+            !TryIdentifyDeathPlayer(entityId, out string name))
+            return;
+        BeginPlayerDeathsIfNeeded();
+        _playerDeaths.ObserveHealth(entityId, name, health, observedAt);
+    }
+
+    private void CombatDeathCheck(WireFrame frame)
     {
         if (frame.Opcode != OpcodeId.Death)
             return;
@@ -581,6 +651,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         var state = new PausedFightState
         {
             Players = new Dictionary<uint, PlayerDamageStats>(_damageByPlayer),
+            PlayerDeaths = _playerDeaths,
             Targets = new HashSet<uint>(_fightTargets),
             DeadTargets = new HashSet<uint>(_deadFightTargets),
             CombatMobs = new HashSet<uint>(_MobsInCombat),
@@ -613,6 +684,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         _fightEndTimestamp = 0;
         _lastDamageTimestamp = 0;
         _damageByPlayer.Clear();
+        _playerDeaths = new PlayerDeathTracker();
         _fightTargets.Clear();
         _deadFightTargets.Clear();
         _MobsInCombat.Clear();
@@ -652,6 +724,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         _pausedFights.Remove(previous);
 
         _damageByPlayer.Clear();
+        _playerDeaths = previous.PlayerDeaths;
         foreach (var (id, stats) in previous.Players)
             _damageByPlayer[id] = stats;
         _fightTargets.Clear();
@@ -760,7 +833,9 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         // A snapshot elkészítése UTÁN törlünk, hogy a boss nevét ne veszítsük el.
         _MobsInCombat.Clear();
         _deadFightTargets.Clear();
-        PhasewardHub.Current?.Reset();
+        // Normal finalized fight (including timeout/wipe with unknown outcome):
+        // queue anonymized Phaseward observations only when Community Sync was opted in.
+        PhasewardHub.Current?.Reset(communityPullCompleted: true);
         ScheduleAutomaticDpsOverlayHide();
     }
 
@@ -948,6 +1023,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
             return false;
 
         _damageByPlayer.Clear();
+        _playerDeaths = new PlayerDeathTracker();
         _fightTargets.Clear();
         _deadFightTargets.Clear();
         _currentMobName = string.Empty;
@@ -975,6 +1051,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         {
             _bossStartTimestamp = timestamp;
             _bossLastHitTimestamp = timestamp;
+            BeginPlayerDeathsIfNeeded();
         }
 
         DebugConsole.Log("healing",
@@ -2211,6 +2288,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         if (!_fightActive)
         {
             _damageByPlayer.Clear();
+            _playerDeaths = new PlayerDeathTracker();
             _fightTargets.Clear();
             _deadFightTargets.Clear();
             _MobsInCombat.Clear();
@@ -2315,6 +2393,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
                 TargetRuntimeId = hit.Target,
                 TargetTemplateId = targetMetadata.TemplateId,
                 IsBossTarget = isBossTarget,
+                RawDirectionCode = hit.HasDirectionByte ? hit.Direction : null,
             });
         }
 
@@ -2398,7 +2477,8 @@ public MeterSnapshot BuildSnapshot(bool bossOnly = false)
             _fightStartTimestamp,
             db,
             bossOnly,
-            bossStartOffset));
+            bossStartOffset,
+            _currentBoss is not null ? _playerDeaths.GetCount(entry.Key, stats.Name) : null));
     }
 
 
@@ -2408,6 +2488,7 @@ public MeterSnapshot BuildSnapshot(bool bossOnly = false)
         players.Add(new PlayerStat
         {
             Name = _selfName,
+            DeathCount = _currentBoss is not null ? _playerDeaths.GetCount(_SelfId, _selfName) : null,
             ClassId = (int)(_selfClassId ?? 0),
             ClassName = _selfClassName,
             ClassColor = _selfClassColor,
@@ -2436,6 +2517,7 @@ public MeterSnapshot BuildSnapshot(bool bossOnly = false)
         players.Add(new PlayerStat
         {
             Name = member.Name,
+            DeathCount = _currentBoss is not null ? _playerDeaths.GetCount(member.Id, member.Name) : null,
             ClassId = member.ClassId ?? 0,
             ClassName = member.ClassName,
             ClassColor = member.ClassColor,
@@ -2572,7 +2654,8 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
         long fightStart,
         SkillDatabase? skillDatabase,
         bool bossOnly,
-        double bossStartOffset)
+        double bossStartOffset,
+        int? deathCount)
     {
         // A fight teljes eseménylistáját nem építjük újra másodpercenként.
         // Csak az előző snapshot óta érkezett találatokat alakítjuk át.
@@ -2602,6 +2685,8 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
                 TargetRuntimeId = hit.TargetRuntimeId,
                 TargetTemplateId = hit.TargetTemplateId,
                 IsBossTarget = hit.IsBossTarget,
+                RawDirectionCode = hit.RawDirectionCode,
+                IsDot = hit.IsDot,
             });
         }
 
@@ -2615,6 +2700,13 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
         return new PlayerStat
         {
             Name = st.Name,
+            DeathCount = deathCount,
+            // Orientation has NOT been validated against game evidence.
+            // Persist only a count of unclassified captured boss damage events.
+            FrontHits = null,
+            BackHits = null,
+            UnknownHits = st.SnapshotEvents.Any(e => !e.IsHeal && e.IsBossTarget)
+                ? st.SnapshotEvents.Count(e => !e.IsHeal && !e.IsDot && e.IsBossTarget) : null,
             ClassId = (int)(st.ClassId ?? 0),
             ClassName = st.ClassName,
             ClassColor = st.ClassColor,
@@ -2638,6 +2730,8 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
                         TargetRuntimeId = entry.TargetRuntimeId,
                         TargetTemplateId = entry.TargetTemplateId,
                         IsBossTarget = entry.IsBossTarget,
+                        RawDirectionCode = entry.RawDirectionCode,
+                        IsDot = entry.IsDot,
                     }).ToList()
                 : st.SnapshotEvents,
         };
@@ -2645,10 +2739,24 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
 
     private void PushMeter()
     {
-        if (OverlayWindowManager.DpsWindow is not { IsVisible: true })
+        // LEGACY-BOSS-DETACHED-V0.1: Boss status runs independently of DPS visibility.
+        bool dpsVisible = OverlayWindowManager.DpsWindow is { IsVisible: true };
+        bool bossActive = _fightActive && _currentBoss is not null;
+        if (!dpsVisible && (!CompanionSettings.ShowBossStatusOverlay || !bossActive))
+        {
+            OverlayWindowManager.UpdateBossStatus(null);
             return;
+        }
 
-        OverlayWindowManager.UpdateDps(BuildOverlaySnapshot());
+        MeterSnapshot snapshot = BuildOverlaySnapshot();
+        if (dpsVisible)
+            OverlayWindowManager.UpdateDps(snapshot);
+
+        // Never show a stale boss snapshot from a previous pull or after a wipe.
+        OverlayWindowManager.UpdateBossStatus(
+            bossActive && snapshot.IsBossEncounter
+                ? snapshot
+                : null);
     }
 
     private void CountDps()
@@ -2699,6 +2807,8 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
 
     private void OnFrameDecoded(WireFrame frame)
     {
+        // Phaseward V2 needs unknown opcodes and cast context BEFORE UI/runtime filtering.
+        PhasewardDetailedTraceRecorder.ObserveFrame(frame);
         StoreDecodedFrame(frame);
         Interlocked.Increment(ref _pendingDecodedFrameCount);
 
@@ -2887,6 +2997,7 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
         // Ha meghal a mob, a fightnak vége/a pet kivétele a summonjaink közül!
         if (opcode == OpcodeId.Death)
         {
+            ObservePlayerDeath(frame);
             TryRemoveDeathEntity(frame);
             CombatDeathCheck(frame);
         }

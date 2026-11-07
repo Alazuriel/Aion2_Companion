@@ -57,6 +57,15 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        // README exports are fully automated. Keep the render host away from the
+        // interactive desktop so the pipeline never steals focus or captures a cursor.
+        if (Program.ReadmeScreenshotsRequested)
+        {
+            ShowInTaskbar = false;
+            WindowStartupLocation = WindowStartupLocation.Manual;
+            Position = new PixelPoint(-20000, -20000);
+        }
+
         this.FindControl<Button>("DeveloperNavButton")!.IsVisible = Program.DeveloperMode;
         this.FindControl<TextBlock>("DeveloperSectionLabel")!.IsVisible = Program.DeveloperMode;
 

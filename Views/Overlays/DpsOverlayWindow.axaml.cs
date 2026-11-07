@@ -18,8 +18,15 @@ public sealed class PartyRow
     public int Index { get; init; }
     public string Rank { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
+    // LEGACY #19 v0.1 — small inline deaths badge.
+    public string DeathBadge { get; init; } = string.Empty;
+    public double NameMaxWidth { get; init; } = 180;
+    public string DeathTooltip { get; init; } = string.Empty;
+    public IBrush DeathBrush { get; init; } = Brushes.Gray;
+    public bool ShowDeaths { get; init; }
     public string ClassLabel { get; init; } = string.Empty;
     public Bitmap? ClassIcon { get; init; }
+    public bool ShowClassFallback { get; init; }
     public IBrush ClassBrush { get; init; } = Brushes.Gray;
     public string Metric { get; init; } = string.Empty;
     public string Total { get; init; } = string.Empty;
@@ -41,6 +48,7 @@ public partial class DpsOverlayWindow : Window
     private static readonly double[] Opacities = { 1.0, 0.85, 0.7 };
 
     private MeterSnapshot _snapshot;
+    private bool _showingSavedFight;
     private int _modeIndex;
     private int _opacityIndex;
     private bool _collapsed;
@@ -57,8 +65,11 @@ public partial class DpsOverlayWindow : Window
         _snapshot = snapshot;
         AvaloniaXamlLoader.Load(this);
         DataContext = this;
-        OverlayPlacementTracker.Attach(this, "dps-meter-compact-v2", "dps-meter");
-        Opened += (_, _) => WindowClickThrough.Apply(this, enabled: false);
+        if (!Program.ReadmeScreenshotsRequested)
+        {
+            OverlayPlacementTracker.Attach(this, "dps-meter-compact-v2", "dps-meter");
+            Opened += (_, _) => WindowClickThrough.Apply(this, enabled: false);
+        }
         LocalizationService.LanguageChanged += LanguageChanged;
         CompanionSettings.DpsEncounterModeChanged += EncounterModeChanged;
         Closed += (_, _) =>
@@ -66,6 +77,12 @@ public partial class DpsOverlayWindow : Window
             LocalizationService.LanguageChanged -= LanguageChanged;
             CompanionSettings.DpsEncounterModeChanged -= EncounterModeChanged;
         };
+        Refresh();
+    }
+
+    public void SetSavedFightView(bool saved)
+    {
+        _showingSavedFight = saved;
         Refresh();
     }
 
@@ -102,7 +119,7 @@ public partial class DpsOverlayWindow : Window
     private void Refresh()
     {
         var mode = Mode;
-        bool bossOnly = CompanionSettings.DpsEncounterMode == DpsEncounterMode.Bosses;
+        bool bossOnly = !_showingSavedFight && CompanionSettings.DpsEncounterMode == DpsEncounterMode.Bosses;
         var s = bossOnly
             ? _snapshot.IsBossEncounter ? _snapshot.ToBossOnly() : new MeterSnapshot()
             : _snapshot;
@@ -133,47 +150,7 @@ public partial class DpsOverlayWindow : Window
         this.FindControl<TextBlock>("EncounterModeHint")!.Text = LocalizationService.Get(
             bossOnly ? "BossTargetsOnly" : "AllTargets");
 
-        Border bossPanel = this.FindControl<Border>("BossStatusPanel")!;
-        bossPanel.IsVisible = s.IsBossEncounter;
-        if (s.IsBossEncounter)
-        {
-            double percent = Math.Clamp(s.BossHpPercent ?? 0, 0, 100);
-            this.FindControl<ProgressBar>("BossHpBar")!.Value = percent;
-            this.FindControl<TextBlock>("BossHpText")!.Text = s.BossCurrentHp.HasValue
-                ? s.BossHpPercent.HasValue && s.MobMaxHp > 0
-                    ? $"{Meter.Num(s.BossCurrentHp.Value)} / {Meter.Num(s.MobMaxHp)}  ·  {percent:F1}%"
-                    : Meter.Num(s.BossCurrentHp.Value)
-                : s.MobMaxHp > 0
-                    ? $"— / {Meter.Num(s.MobMaxHp)}"
-                    : LocalizationService.Get("BossHpWaiting");
-
-            // Unknown/missing timer is not an Enrage state. Avoid displaying "--".
-            // Only show the label for a real, finite countdown or a confirmed enraged boss.
-            TextBlock enrageText = this.FindControl<TextBlock>("EnrageText")!;
-            if (s.EnrageRemainingSeconds is double enrageRemaining && double.IsFinite(enrageRemaining))
-            {
-                enrageText.IsVisible = true;
-                enrageText.Text = enrageRemaining <= 0
-                    ? LocalizationService.Get("Enraged")
-                    : LocalizationService.Format("EnrageIn", FormatTime(enrageRemaining));
-            }
-            else
-            {
-                enrageText.IsVisible = false;
-                enrageText.Text = string.Empty;
-            }
-
-            bool predictionEnabled = CompanionSettings.ShowBossDeathPrediction;
-            this.FindControl<Button>("DeathPredictionToggle")!.Classes.Set(
-                "primary", predictionEnabled);
-            this.FindControl<TextBlock>("DeathPredictionText")!.Text = !predictionEnabled
-                ? LocalizationService.Get("Off")
-                : s.EstimatedDeathSeconds is double estimate
-                    ? FormatPredictionTime(estimate)
-                    : s.BossCurrentHp.HasValue
-                        ? LocalizationService.Get("DeathPredictionCalculating")
-                        : LocalizationService.Get("DeathPredictionUnavailable");
-        }
+        // LEGACY-BOSS-DETACHED-V0.1: status rendered by independent BossStatusOverlayWindow.
 
         // Rangsor
         var items = s.Players
@@ -197,11 +174,26 @@ public partial class DpsOverlayWindow : Window
                 Index = it.Index,
                 Rank = (r + 1).ToString(),
                 Name = it.Player.Name,
+                DeathBadge = it.Player.DeathCount is int deaths ? $"💀 {deaths}" : "💀 ?",
+                NameMaxWidth = s.IsBossEncounter && CompanionSettings.ShowPlayerDeathCounts ? 94 : 180,
+                DeathTooltip = it.Player.DeathCount is int confirmed
+                    ? LocalizationService.Format("PlayerDeathsCount", confirmed)
+                    : LocalizationService.Get("PlayerDeathsUnknown"),
+                DeathBrush = it.Player.DeathCount switch
+                {
+                    0 => Brush.Parse("#4FDBAB"),
+                    1 => Brush.Parse("#F8798B"),
+                    2 => Brush.Parse("#F14661"),
+                    >= 3 => Brush.Parse("#D92146"),
+                    _ => Brush.Parse("#9BA9B9"),
+                },
+                ShowDeaths = s.IsBossEncounter && CompanionSettings.ShowPlayerDeathCounts,
                 ClassLabel = string.IsNullOrWhiteSpace(it.Player.ClassName)
                     ? "?"
                     : it.Player.ClassName[..1].ToUpperInvariant(),
                 ClassBrush = Brush.Parse(it.Player.ClassColor),
                 ClassIcon = it.Player.ClassIcon,
+                ShowClassFallback = it.Player.ClassIcon is null,
                 Metric = rate ? Meter.Format(it.Metric, rateMode) : Meter.Num(it.Metric),
                 Total = Meter.Num(it.Amount),
                 Share = groupTotal > 0 ? $"{it.Amount / groupTotal * 100:F0}%" : "–",
@@ -222,9 +214,11 @@ public partial class DpsOverlayWindow : Window
         this.FindControl<TextBlock>("HdrShare")!.IsVisible = _showShare;
         this.FindControl<TextBlock>("HdrCrit")!.IsVisible = _showCrit;
 
+        this.FindControl<Button>("BossOverlayToggle")!.Classes.Set("primary", CompanionSettings.ShowBossStatusOverlay);
         this.FindControl<Button>("ToggleTotal")!.Classes.Set("primary", _showTotal);
         this.FindControl<Button>("ToggleShare")!.Classes.Set("primary", _showShare);
         this.FindControl<Button>("ToggleCrit")!.Classes.Set("primary", _showCrit);
+        this.FindControl<Button>("ToggleDeaths")!.Classes.Set("primary", CompanionSettings.ShowPlayerDeathCounts);
 
         this.FindControl<TextBlock>("FooterText")!.Text = s.Players.Count == 0
             ? LocalizationService.Get(bossOnly ? "BossModeWaiting" : "DpsWaiting")
@@ -292,16 +286,6 @@ public partial class DpsOverlayWindow : Window
         return $"{total / 60:00}:{total % 60:00}";
     }
 
-    private static string FormatPredictionTime(double seconds)
-    {
-        int total = Math.Max(0, (int)Math.Ceiling(seconds));
-        if (total >= 3600)
-            return $"{total / 3600}:{total / 60 % 60:00}:{total % 60:00}";
-        return total >= 60
-            ? $"{total / 60}:{total % 60:00}"
-            : $"{total}s";
-    }
-
     // ---------- Vezérlők ----------
 
     private void PrevModeClick(object? sender, RoutedEventArgs e)
@@ -334,6 +318,12 @@ public partial class DpsOverlayWindow : Window
         Refresh();
     }
 
+    private void ToggleDeathsClick(object? sender, RoutedEventArgs e)
+    {
+        CompanionSettings.ShowPlayerDeathCounts = !CompanionSettings.ShowPlayerDeathCounts;
+        Refresh();
+    }
+
     private void EncounterModeClick(object? sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: string mode })
@@ -343,10 +333,9 @@ public partial class DpsOverlayWindow : Window
             : DpsEncounterMode.All;
     }
 
-    private void DeathPredictionToggleClick(object? sender, RoutedEventArgs e)
+    private void BossOverlayToggleClick(object? sender, RoutedEventArgs e)
     {
-        CompanionSettings.ShowBossDeathPrediction =
-            !CompanionSettings.ShowBossDeathPrediction;
+        OverlayWindowManager.SetBossStatusEnabled(!CompanionSettings.ShowBossStatusOverlay);
         Refresh();
     }
 
@@ -360,7 +349,7 @@ public partial class DpsOverlayWindow : Window
     {
         _collapsed = !_collapsed;
         this.FindControl<Grid>("Body")!.IsVisible = !_collapsed;
-        Height = _collapsed ? 150 : 408;
+        Height = _collapsed ? 135 : 350;
     }
 
     private void RowPressed(object? sender, PointerPressedEventArgs e)

@@ -31,10 +31,10 @@ public partial class MainWindow : Window
     private bool _closeDialogOpen;
     private bool _petFarmLoaded;
     private bool _automaticUpdateRunning;
-    private UpdateInfo? _legacyUpdateAvailable;
-    private string? _legacyLastOfferedVersion;
-    private string? _legacyLastBackgroundVersion;
-    private readonly CancellationTokenSource _legacyUpdateCancellation = new();
+    private UpdateInfo? _availableUpdate;
+    private string? _lastOfferedUpdateVersion;
+    private string? _lastBackgroundUpdateVersion;
+    private readonly CancellationTokenSource _updateCancellation = new();
     private bool _startupCompleted;
     private bool _testLoginConnecting;
     private bool _testLoginCanCancel;
@@ -268,7 +268,7 @@ public partial class MainWindow : Window
         _testLoginCanCancel = false;
     }
 
-    // LEGACY-UPDATER-PHASE1-CHECK: notification only, no automatic installation.
+    // Update checks only notify the user; installation always requires confirmation.
     private async Task<bool> CheckForUpdatesAsync(bool forceAtStartup = false)
     {
         if (_automaticUpdateRunning || !CompanionSettings.CheckUpdatesAutomatically ||
@@ -278,35 +278,35 @@ public partial class MainWindow : Window
         _automaticUpdateRunning = true;
         try
         {
-            UpdateCheckResult result = await UpdateService.CheckAsync(_legacyUpdateCancellation.Token);
-            if (_legacyUpdateCancellation.IsCancellationRequested ||
+            UpdateCheckResult result = await UpdateService.CheckAsync(_updateCancellation.Token);
+            if (_updateCancellation.IsCancellationRequested ||
                 result.State != UpdateCheckState.UpdateAvailable || result.Update is null)
                 return false;
 
             UpdateInfo update = result.Update;
-            _legacyUpdateAvailable = update;
-            if (!string.Equals(_legacyLastOfferedVersion, update.Version, StringComparison.OrdinalIgnoreCase))
+            _availableUpdate = update;
+            if (!string.Equals(_lastOfferedUpdateVersion, update.Version, StringComparison.OrdinalIgnoreCase))
             {
-                _legacyLastOfferedVersion = update.Version;
-                this.FindControl<TextBlock>("LegacyUpdateNoticeText")!.Text =
+                _lastOfferedUpdateVersion = update.Version;
+                this.FindControl<TextBlock>("UpdateNoticeText")!.Text =
                     string.Format(LocalizationService.Get("UpdateFound"), update.Version);
-                this.FindControl<Border>("LegacyUpdateNotice")!.IsVisible = true;
+                this.FindControl<Border>("UpdateNotice")!.IsVisible = true;
             }
 
             if (CompanionSettings.DownloadUpdatesInBackground &&
-                !string.Equals(_legacyLastBackgroundVersion, update.Version, StringComparison.OrdinalIgnoreCase))
+                !string.Equals(_lastBackgroundUpdateVersion, update.Version, StringComparison.OrdinalIgnoreCase))
             {
-                _legacyLastBackgroundVersion = update.Version;
+                _lastBackgroundUpdateVersion = update.Version;
                 _ = Task.Run(async () =>
                 {
                     try
                     {
                         // Only download and verify. Never launch an installer here.
                         await UpdateService.DownloadAsync(update,
-                            cancellationToken: _legacyUpdateCancellation.Token);
+                            cancellationToken: _updateCancellation.Token);
                         DebugConsole.Log("update", $"Verified update v{update.Version} is ready to install.");
                     }
-                    catch (OperationCanceledException) when (_legacyUpdateCancellation.IsCancellationRequested) { }
+                    catch (OperationCanceledException) when (_updateCancellation.IsCancellationRequested) { }
                     catch (Exception ex)
                     {
                         DebugConsole.Log("update", $"Optional background download failed: {ex.Message}");
@@ -314,7 +314,7 @@ public partial class MainWindow : Window
                 });
             }
         }
-        catch (OperationCanceledException) when (_legacyUpdateCancellation.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (_updateCancellation.IsCancellationRequested) { }
         catch (Exception ex)
         {
             DebugConsole.Log("update", $"Automatic update check failed: {ex.Message}");
@@ -326,12 +326,12 @@ public partial class MainWindow : Window
         return false;
     }
 
-    private void LegacyUpdateLaterClick(object? sender, RoutedEventArgs e) =>
-        this.FindControl<Border>("LegacyUpdateNotice")!.IsVisible = false;
+    private void UpdateLaterClick(object? sender, RoutedEventArgs e) =>
+        this.FindControl<Border>("UpdateNotice")!.IsVisible = false;
 
-    private void LegacyUpdateChangelogClick(object? sender, RoutedEventArgs e)
+    private void UpdateChangelogClick(object? sender, RoutedEventArgs e)
     {
-        UpdateInfo? update = _legacyUpdateAvailable;
+        UpdateInfo? update = _availableUpdate;
         if (update is null)
             return;
         if (!Uri.TryCreate(update.ReleaseUrl, UriKind.Absolute, out Uri? url) ||
@@ -352,12 +352,12 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void LegacyUpdateOpenClick(object? sender, RoutedEventArgs e)
+    private async void UpdateOpenClick(object? sender, RoutedEventArgs e)
     {
-        UpdateInfo? update = _legacyUpdateAvailable;
+        UpdateInfo? update = _availableUpdate;
         if (update is null)
             return;
-        this.FindControl<Border>("LegacyUpdateNotice")!.IsVisible = false;
+        this.FindControl<Border>("UpdateNotice")!.IsVisible = false;
         try
         {
             await new UpdateWindow(update).ShowDialog(this);
@@ -552,7 +552,7 @@ public partial class MainWindow : Window
         _trayIcon?.Dispose();
         _trayIcon = null;
         _automaticUpdateTimer.Stop();
-        _legacyUpdateCancellation.Cancel();
+        _updateCancellation.Cancel();
         _onboardingPulseTimer.Stop();
         DisarmTestLoginCancel();
         EventTimerService.Shared.NotificationRaised -= EventTimerNotificationRaised;

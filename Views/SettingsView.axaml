@@ -14,7 +14,7 @@
 
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <StackPanel Spacing="16" MaxWidth="980" HorizontalAlignment="Stretch" Margin="0,0,8,28">
-      <!-- LEGACY #21 · native Nexforge styling; no automated submission -->
+      <!-- Nexforge styling; diagnostic reports are never submitted automatically. -->
       <Border CornerRadius="20" BorderBrush="#3F617E" BorderThickness="1" Padding="20">
         <Border.Background>
           <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">

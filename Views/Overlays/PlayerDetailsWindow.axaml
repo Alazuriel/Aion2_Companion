@@ -75,7 +75,7 @@
         </Border>
       </Grid>
 
-      <!-- LEGACY #19/#20: readable per-player encounter counters. Unknown is never zero. -->
+      <!-- Per-player encounter counters preserve unknown values instead of showing zero. -->
       <Border Grid.Row="2" Classes="inset" CornerRadius="12" Padding="12,11" Margin="0,12,0,0">
         <StackPanel Spacing="9">
           <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10">

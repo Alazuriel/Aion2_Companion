@@ -1,4 +1,4 @@
-// LEGACY #21 / #24 - Nexforge diagnostics center. Local-first, per-report consent.
+// Nexforge diagnostics center with local-first, per-report consent.
 using System;
 using System.Globalization;
 using System.Linq;

@@ -252,7 +252,7 @@ public partial class UpdateWindow : Window
             _downloadCancellation.Token.ThrowIfCancellationRequested();
             _laterButton.IsEnabled = false;
 
-            // LEGACY-SAFE-UPDATE-HANDOFF: download and hash verification are complete.
+            // Download and hash verification are complete before update handoff.
             // The user already explicitly requested installation. Only now stop monitoring,
             // and never interrupt a live or grace-period combat encounter.
             if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktopLifetime &&

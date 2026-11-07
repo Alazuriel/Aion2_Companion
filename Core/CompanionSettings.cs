@@ -307,7 +307,7 @@ public static class CompanionSettings
         }
     }
 
-    // LEGACY #19 v0.1: compact DPS row badge, boss encounters only.
+    // Compact player-death badge for boss encounters.
     public static bool ShowPlayerDeathCounts
     {
         get { lock (Sync) return Load().ShowPlayerDeathCounts; }
@@ -323,7 +323,7 @@ public static class CompanionSettings
         }
     }
 
-    // LEGACY-BOSS-DETACHED-V0.1: independently controlled boss status overlay.
+    // The boss status overlay can be controlled independently from the DPS overlay.
     public static bool ShowBossStatusOverlay
     {
         get { lock (Sync) return Load().ShowBossStatusOverlay; }

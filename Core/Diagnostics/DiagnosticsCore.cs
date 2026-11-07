@@ -1,4 +1,4 @@
-// LEGACY - issue #21: privacy-safe diagnostics, no game or user data.
+// Privacy-safe diagnostics that exclude game and user data.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

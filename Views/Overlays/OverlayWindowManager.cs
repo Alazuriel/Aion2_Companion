@@ -15,7 +15,7 @@ namespace AION_2_Companion.Views.Overlays;
 /// </summary>
 public static class OverlayWindowManager
 {
-    // LEGACY-BOSS-DETACHED-V0.1
+    // Boss status has its own independently managed overlay.
     private static BossStatusOverlayWindow? _bossStatus;
     private static MeterSnapshot? _activeBossSnapshot;
     private static DpsOverlayWindow? _dps;

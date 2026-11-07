@@ -1,4 +1,4 @@
-// LEGACY issue #21 - low-overhead heartbeat and an independent watchdog process.
+// Low-overhead heartbeat and an independent watchdog process.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

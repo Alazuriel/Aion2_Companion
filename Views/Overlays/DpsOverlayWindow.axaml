@@ -69,7 +69,7 @@
                    HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
       </Grid>
 
-      <!-- LEGACY-BOSS-DETACHED-V0.1: boss HP moved to BossStatusOverlayWindow -->
+      <!-- Boss HP is rendered by the independent boss status overlay. -->
 
       <!-- 1. Élő összegzés: pillanatnyi, átlag, csúcs -->
       <Grid Grid.Row="2" ColumnDefinitions="*,*,*" Margin="0,8,0,0">
@@ -109,7 +109,7 @@
           <Button Name="ToggleTotal" Classes="ui" Content="{DynamicResource TotalShort}" FontSize="10" MinHeight="26" Padding="8,1" Click="ToggleTotalClick"/>
           <Button Name="ToggleShare" Classes="ui" Content="%" FontSize="10" MinHeight="26" Padding="8,1" Click="ToggleShareClick"/>
           <Button Name="ToggleCrit" Classes="ui" Content="{DynamicResource CritShort}" FontSize="10" MinHeight="26" Padding="8,1" Click="ToggleCritClick"/>
-          <!-- LEGACY #19 v0.1: boss-only player deaths toggle -->
+          <!-- Boss-only player death counter toggle. -->
           <Button Name="ToggleDeaths" Classes="ui" Content="💀" FontSize="10" MinHeight="26" Padding="8,1" Click="ToggleDeathsClick" ToolTip.Tip="{DynamicResource TogglePlayerDeaths}"/>
         </StackPanel>
 

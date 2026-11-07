@@ -72,7 +72,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private readonly HashSet<uint> _fightTargets = new();
     private readonly HashSet<uint> _deadFightTargets = new();
-    // LEGACY #19 v0.1 — per-boss-attempt player deaths, never mixed with NPC deaths.
+    // Player deaths are tracked per boss attempt and never mixed with NPC deaths.
     private PlayerDeathTracker _playerDeaths = new();
 
     // Ideiglenesen lezárt fightok. Egy másik mob sebzése NEM archiválja
@@ -480,7 +480,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         }
     }
 
-        // LEGACY #19 v0.1: observe ONLY stable, named player runtime IDs.
+        // Only stable, named player runtime IDs are eligible.
     private bool TryIdentifyDeathPlayer(uint entityId, out string name)
     {
         name = string.Empty;
@@ -2137,7 +2137,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
 
     public void StartCaptureAfterLogin() => StartCapture();
     
-    // LEGACY-SAFE-UPDATE-HANDOFF: preserve live and grace-period encounters.
+    // Preserve live and grace-period encounters during update handoff.
     // The Update Center invokes this only after an explicit install click and
     // after verifying the downloaded installer. It never stops a running fight.
     public bool HasActiveEncounterForUpdate =>
@@ -2739,7 +2739,7 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
 
     private void PushMeter()
     {
-        // LEGACY-BOSS-DETACHED-V0.1: Boss status runs independently of DPS visibility.
+        // Boss status runs independently of DPS overlay visibility.
         bool dpsVisible = OverlayWindowManager.DpsWindow is { IsVisible: true };
         bool bossActive = _fightActive && _currentBoss is not null;
         if (!dpsVisible && (!CompanionSettings.ShowBossStatusOverlay || !bossActive))

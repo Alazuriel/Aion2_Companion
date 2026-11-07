@@ -18,7 +18,7 @@ public sealed class PartyRow
     public int Index { get; init; }
     public string Rank { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
-    // LEGACY #19 v0.1 — small inline deaths badge.
+    // Compact inline player-death badge.
     public string DeathBadge { get; init; } = string.Empty;
     public double NameMaxWidth { get; init; } = 180;
     public string DeathTooltip { get; init; } = string.Empty;
@@ -150,7 +150,7 @@ public partial class DpsOverlayWindow : Window
         this.FindControl<TextBlock>("EncounterModeHint")!.Text = LocalizationService.Get(
             bossOnly ? "BossTargetsOnly" : "AllTargets");
 
-        // LEGACY-BOSS-DETACHED-V0.1: status rendered by independent BossStatusOverlayWindow.
+        // Boss status is rendered by the independent boss status overlay.
 
         // Rangsor
         var items = s.Players

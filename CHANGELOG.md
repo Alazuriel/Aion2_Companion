@@ -4,6 +4,70 @@ All notable user-facing changes are recorded here. Versions follow Semantic Vers
 
 ## Unreleased
 
+## [0.2.1]
+
+**Nexforge Update — Every Fight Tells a Story**
+
+We're continuing to improve AION 2 Companion, with a focus on combat analysis, usability, update management, and the future of Phaseward.
+
+This update expands what you can learn from your encounters and introduces new ways to help us improve the tools you use.
+
+### Added
+
+- **Player Death Tracking** — Added an optional death counter next to player names in the DPS Meter during supported boss encounters.
+- **Combat Position Statistics** — Added Front, Back, and Unknown hit information to combat details when reliable data is available.
+- **Boss Status Overlay** — Added a separate window for boss HP information, encounter timing, and estimated time to defeat when available.
+- **Phaseward Community Research** — Added optional settings for sharing boss observations to help improve future encounter analysis.
+- **Detailed Boss Research** — Added a separate, opt-in research-sharing option for players who want to contribute more detailed encounter data.
+- **Installation Health Monitoring** — Added support for checking application files and preparing repairs when verification information is available.
+
+### Improved
+
+- **Combat History Redesign** — Updated the combat archive with a cleaner layout, improved encounter navigation, sorting options, and more accessible player statistics.
+- **Combat Timeline** — Reworked timeline rendering, zoom handling, event loading, and skill navigation to improve interaction with complex encounters.
+- **Player Details** — Improved the presentation of damage, healing, deaths, and available positional statistics.
+- **Saved Fight Display** — Improved class icon handling when reviewing previously recorded encounters.
+- **Update Center** — Improved support for smaller, compatible update packages, with the full installer available as a fallback.
+- **Localization** — Updated English, Hungarian, German, and Polish language resources.
+
+### Fixed
+
+- Addressed an initialization issue that could cause the redesigned Combat History view to fail while loading its sorting controls.
+
+### Security & Privacy
+
+- Sharing Phaseward research data is optional.
+- Detailed research uploads require separate consent. They may include recorded network data containing identifiers or location information.
+- Players can review the available sharing controls and disable research uploads in Settings.
+- Installation health checks and repair preparation are supported where compatible verification information is available.
+
+### Phaseward — Still Under Development 💜
+
+We know many of you are looking forward to a reliable boss encounter assistant.
+
+Phaseward now includes additional tools for collecting and studying boss observations, but **it is not yet reliable enough to depend on for encounter warnings**. Some mechanics may be missed, detected too late, or displayed inaccurately.
+
+We're continuing to work on these limitations, and we'd love your help.
+
+If you experience an incorrect warning, a missing mechanic, or unexpected behavior, please let us know through the Companion Feedback system.
+
+You can also choose to participate in Phaseward's community research features. Every useful observation helps us better understand what needs improvement.
+
+**Thank you for your patience and for helping us build something better together!**
+
+### Known Issues & Limitations
+
+- **Phaseward:** Boss mechanic detection and warning timing are still experimental. Do not rely on Phaseward for critical gameplay decisions.
+- **Combat Statistics:** Death and positional hit information may be unavailable for some encounters. Unknown values are not treated as confirmed zeroes.
+- **Combat Timeline:** Large or complex encounters may still require further performance improvements.
+- **Online Features:** Group submissions, research sharing, and other connected features depend on service availability and eligibility.
+
+---
+
+Developed by **Nexforge Studios**.
+
+*An independent fan-made companion application. Not affiliated with or endorsed by NCSOFT.*
+
 ## [0.2.0]
 
 **Nexforge Update — Beyond the Damage**

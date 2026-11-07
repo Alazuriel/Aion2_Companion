@@ -37,7 +37,7 @@ public sealed class PlayerStat
 {
     private const double MinimumRateDurationSeconds = 1.0;
     public string Name { get; init; } = string.Empty;
-    // LEGACY #19 v0.1: null means unknown, not zero.
+    // A null death count means unknown, not zero.
     [System.Text.Json.Serialization.JsonIgnore]
     public int? DeathCount { get; init; }
     public int? FrontHits { get; init; }

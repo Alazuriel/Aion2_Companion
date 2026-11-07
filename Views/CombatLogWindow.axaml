@@ -405,7 +405,7 @@
                       </StackPanel>
                     </Border>
                   </Grid>
-                  <!-- Legacy counters: real death count and positional-hit evidence preserved. -->
+                  <!-- Confirmed deaths and positional-hit evidence. -->
                   <Border Grid.Row="2" Background="#15293C" CornerRadius="8" Padding="9,5">
                     <StackPanel Spacing="5">
                       <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="7">

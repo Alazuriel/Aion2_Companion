@@ -10,7 +10,7 @@ internal static class LocalizationCatalog
 {
     internal static IReadOnlyDictionary<string, string> English { get; } = new Dictionary<string, string>
     {
-        // LEGACY #27: Group Fight API contract v46.2; translate via LEXION-EN-KEYS.tsv.
+        // Group Fight API messages use the English catalog as their fallback.
         ["UiSubmissionGroupBossCatalogMissing"] = "The saved fight has no reliable numeric boss NPC ID in the approved local ForgeData catalog.",
         ["UiSubmissionGroupCatalogMismatch"] = "The server does not recognize this dungeon and boss NPC ID combination. Please update your ForgeData catalog.",
         ["UiSubmissionGroupConflict"] = "This submission ID was already used for different data. Nothing was overwritten.",
@@ -29,7 +29,7 @@ internal static class LocalizationCatalog
         ["UiSubmissionPrivateNamesAcknowledgement"] = "I understand that recorded participant names are retained privately for authorized review.",
         ["UiSubmissionPrivateNamesConsentRequired"] = "Please acknowledge the private-name handling notice before uploading.",
         ["UiSubmissionSendGroup"] = "Submit full fight",
-        // LEGACY: Submission Center NFL English fallback; LEXION handles HU/DE/PL.
+        // Submission Center English fallback; NFL packages provide other languages.
         ["UiSubmissionAlreadyReceived"] = "The server already received this result. Its existing review status is unchanged.",
         ["UiSubmissionCannotSwitchParticipant"] = "Only the verified account owner who actually participated in this saved encounter can submit a personal result. Switching to someone else is not allowed.",
         ["UiSubmissionCenterSubtitle"] = "Review the saved boss encounter before submitting. Only verified owners may submit personal results.",
@@ -72,8 +72,7 @@ internal static class LocalizationCatalog
         ["UiSubmissionVerificationUnavailable"] = "The server could not confirm your verified characters. Reconnect or retry; cached characters are not accepted.",
         ["UiSubmissionVerifiedLocation"] = "REGION / SERVER",
         ["UiSubmissionVerifiedOwner"] = "Verified character · automatic match",
-        // LEGACY: NFL lookup reference strings; translations belong to LEXION.
-        // LEGACY #19 v0.1: keys also available in built-in HU/DE/PL fallbacks.
+        // NFL lookup reference strings with built-in language fallbacks.
         ["TogglePlayerDeaths"] = "Show or hide player death counts in the DPS overlay",
         ["PlayerDeathsCount"] = "Confirmed player deaths: {0}",
         ["PlayerDeathsUnknown"] = "Player deaths unknown or not fully observed",

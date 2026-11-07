@@ -8,15 +8,17 @@ namespace AION_2_Companion.Views;
 
 public partial class CharacterVerificationWindow : Window
 {
-    private readonly CharacterVerificationViewModel _viewModel;
-
-    public CharacterVerificationWindow(CharacterIdentity identity, string serverName, string? imageUrl)
+    public CharacterVerificationWindow()
     {
         InitializeComponent();
-        _viewModel = new CharacterVerificationViewModel(identity, serverName, imageUrl);
-        DataContext = _viewModel;
-        Opened += async (_, _) => await _viewModel.InitializeAsync();
-        Closed += (_, _) => _viewModel.Dispose();
+    }
+
+    public CharacterVerificationWindow(CharacterIdentity identity, string serverName, string? imageUrl) : this()
+    {
+        var viewModel = new CharacterVerificationViewModel(identity, serverName, imageUrl);
+        DataContext = viewModel;
+        Opened += async (_, _) => await viewModel.InitializeAsync();
+        Closed += (_, _) => viewModel.Dispose();
     }
 
     private void TitleBarPointerPressed(object? sender, PointerPressedEventArgs e)

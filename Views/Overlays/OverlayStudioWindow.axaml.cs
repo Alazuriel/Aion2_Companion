@@ -244,8 +244,8 @@ public partial class OverlayStudioWindow : Window
         var widget = _stage.Widgets[_dragKey];
         if (_resizing)
         {
-            widget.Width = Math.Max(MinWidth(_dragKey), _dragStart.Width + dx / _screenScale);
-            widget.Height = Math.Max(MinHeight(_dragKey), _dragStart.Height + dy / _screenScale);
+            widget.Width = Math.Max(GetMinimumWidth(_dragKey), _dragStart.Width + dx / _screenScale);
+            widget.Height = Math.Max(GetMinimumHeight(_dragKey), _dragStart.Height + dy / _screenScale);
         }
         else
         {
@@ -271,16 +271,16 @@ public partial class OverlayStudioWindow : Window
         _dragStart = null;
     }
 
-    private static double MinWidth(string key) => key == OverlayStudioStore.Dps ? 280 : key == OverlayStudioStore.BossStatus ? 260 : 360;
-    private static double MinHeight(string key) => key == OverlayStudioStore.Dps ? 120 : key == OverlayStudioStore.BossStatus ? 125 : 220;
+    private static double GetMinimumWidth(string key) => key == OverlayStudioStore.Dps ? 280 : key == OverlayStudioStore.BossStatus ? 260 : 360;
+    private static double GetMinimumHeight(string key) => key == OverlayStudioStore.Dps ? 120 : key == OverlayStudioStore.BossStatus ? 125 : 220;
 
     private void FitToScreen(StudioWidget w, string key)
     {
         w.Opacity = double.IsFinite(w.Opacity) ? Math.Clamp(w.Opacity, .35, 1) : 1;
         double maxW = key == OverlayStudioStore.Dps ? 440 : key == OverlayStudioStore.BossStatus ? 480 : key == OverlayStudioStore.Phaseward ? 760 : 650;
         double maxH = key == OverlayStudioStore.Dps ? 580 : key == OverlayStudioStore.BossStatus ? 260 : 650;
-        w.Width = double.IsFinite(w.Width) ? Math.Clamp(w.Width, MinWidth(key), Math.Max(MinWidth(key), Math.Min(maxW, _screen.Width / _screenScale))) : MinWidth(key);
-        w.Height = double.IsFinite(w.Height) ? Math.Clamp(w.Height, MinHeight(key), Math.Max(MinHeight(key), Math.Min(maxH, _screen.Height / _screenScale))) : MinHeight(key);
+        w.Width = double.IsFinite(w.Width) ? Math.Clamp(w.Width, GetMinimumWidth(key), Math.Max(GetMinimumWidth(key), Math.Min(maxW, _screen.Width / _screenScale))) : GetMinimumWidth(key);
+        w.Height = double.IsFinite(w.Height) ? Math.Clamp(w.Height, GetMinimumHeight(key), Math.Max(GetMinimumHeight(key), Math.Min(maxH, _screen.Height / _screenScale))) : GetMinimumHeight(key);
         w.X = Math.Clamp(w.X, _screen.X, _screen.X + Math.Max(0, _screen.Width - (int)Math.Ceiling(w.Width * _screenScale)));
         w.Y = Math.Clamp(w.Y, _screen.Y, _screen.Y + Math.Max(0, _screen.Height - (int)Math.Ceiling(w.Height * _screenScale)));
     }

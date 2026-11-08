@@ -4,6 +4,57 @@ All notable user-facing changes are recorded here. Versions follow Semantic Vers
 
 ## Unreleased
 
+## [0.2.2]
+
+**Nexforge Update — Focus the Fight**
+
+This update focuses on combat analysis, encounter tracking, and a more focused Phaseward experience.
+
+We're continuing to refine Companion based on development progress and community feedback, while keeping experimental features separate from tools players can rely on.
+
+### Added
+
+- **Damage Taken Tracking** — View recorded incoming damage for party members in the DPS Meter, Combat History, and Combat Timeline.
+- **Incoming Damage Timeline** — Explore when damage was received during an encounter, where detailed combat data is available.
+- **Experimental Stagger Indicator** — Phaseward can now display a dedicated Stagger indicator with an estimated countdown when a possible Stagger event is detected.
+
+### Improved
+
+- **Phaseward HUD** — Simplified the live overlay to focus exclusively on Stagger. Other experimental mechanic warnings and predictions are temporarily hidden while we work on their accuracy.
+- **Boss Encounter Tracking** — Improved handling of encounters where a boss returns to full health, helping distinguish interrupted attempts from completed fights.
+- **Combat History** — Expanded saved encounter details with incoming damage statistics where available.
+- **Combat Timeline** — Added support for reviewing incoming damage alongside existing combat analysis.
+- **Overlay Studio** — Updated Phaseward positioning and preview behavior to reflect the simplified HUD.
+- **In-App Changelog** — Improved the presentation of release notes, including feature descriptions and important notices.
+- **Localization** — Updated language resources for English, Hungarian, German, and Polish.
+
+### Phaseward Development Update 💜
+
+Phaseward remains one of our biggest ongoing projects, but it is still experimental.
+
+With this update, we're narrowing the live HUD to Stagger detection while continuing to study other boss mechanics separately.
+
+**Stagger detection and timing estimates are not yet guaranteed to be accurate.** Some events may not be detected, and estimated durations may differ from what happens in-game.
+
+We're taking this approach because we'd rather improve one mechanic at a time than display warnings that players cannot depend on.
+
+Your feedback continues to be incredibly valuable. If you encounter incorrect Stagger timing or missing detections, please report them through Companion's Feedback system.
+
+**Thank you for helping us improve Phaseward, one encounter at a time!** 💜
+
+### Known Issues
+
+- **Phaseward:** Stagger detection and countdown timing remain experimental. Other boss mechanic warnings are temporarily unavailable in the live HUD.
+- **Damage Taken:** Older saved fights may not contain incoming damage data.
+- **Combat Analysis:** Some damage events may be unavailable when the necessary combat information could not be captured.
+- **Online Features:** Connected services and research features depend on service availability.
+
+---
+
+Developed by **Nexforge Studios**.
+
+*An independent fan-made companion application. Not affiliated with or endorsed by NCSOFT.*
+
 ## [0.2.1]
 
 **Nexforge Update — Every Fight Tells a Story**

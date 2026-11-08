@@ -42,7 +42,7 @@ public partial class DpsOverlayWindow : Window
 {
     private static readonly MeterMode[] Modes =
     {
-        MeterMode.Dps, MeterMode.Damage, MeterMode.Hps, MeterMode.Heal,
+        MeterMode.Dps, MeterMode.Damage, MeterMode.Hps, MeterMode.Heal, MeterMode.DamageTaken,
     };
 
     private static readonly double[] Opacities = { 1.0, 0.85, 0.7 };
@@ -124,12 +124,13 @@ public partial class DpsOverlayWindow : Window
             ? _snapshot.IsBossEncounter ? _snapshot.ToBossOnly() : new MeterSnapshot()
             : _snapshot;
         bool heal = mode is MeterMode.Hps or MeterMode.Heal;
+        bool taken = mode == MeterMode.DamageTaken;
         bool rate = mode is MeterMode.Dps or MeterMode.Hps;
         double dur = Math.Max(1, s.Duration);
 
         // Csoport-szintű idősor a mód szerint (sebzés vagy gyógyítás)
-        var groupSeries = GroupSeries(s, heal);
-        double groupTotal = groupSeries.Sum();
+        var groupSeries = taken ? Array.Empty<double>() : GroupSeries(s, heal);
+        double groupTotal = taken ? s.TotalDamageTaken : groupSeries.Sum();
         var rolling = Rolling(groupSeries, 5);
 
         // Összegzés
@@ -138,9 +139,12 @@ public partial class DpsOverlayWindow : Window
         double peak = rolling.Length > 0 ? rolling.Max() : 0;
         var rateMode = heal ? MeterMode.Hps : MeterMode.Dps;
 
-        this.FindControl<TextBlock>("NowValue")!.Text = Meter.Format(now, rateMode);
-        this.FindControl<TextBlock>("AvgValue")!.Text = Meter.Format(avg, rateMode);
-        this.FindControl<TextBlock>("PeakValue")!.Text = Meter.Format(peak, rateMode);
+        // No invented per-second values: taken-mode v0.1 has total counters only.
+        this.FindControl<TextBlock>("NowValue")!.Text = taken ? "—" : Meter.Format(now, rateMode);
+        this.FindControl<TextBlock>("AvgValue")!.Text = taken
+            ? (s.HasDamageTakenData ? $"{Meter.Num(avg)}/s" : "—")
+            : Meter.Format(avg, rateMode);
+        this.FindControl<TextBlock>("PeakValue")!.Text = taken ? "—" : Meter.Format(peak, rateMode);
         this.FindControl<TextBlock>("TimerText")!.Text = FormatTime(s.Duration);
         this.FindControl<TextBlock>("MobName")!.Text =
             string.IsNullOrWhiteSpace(s.MobTemplateName) ? "—" : s.MobTemplateName;
@@ -157,8 +161,9 @@ public partial class DpsOverlayWindow : Window
             .Select((p, i) =>
             {
                 var st = Stream(p, heal);
-                double metric = rate ? st.Amount / dur : st.Amount;
-                return (Player: p, Index: i, Amount: st.Amount, Hits: st.Hits, Crits: st.Crits, Metric: metric);
+                long amount = taken ? p.DamageTaken ?? 0 : st.Amount;
+                double metric = rate ? amount / dur : amount;
+                return (Player: p, Index: i, Amount: amount, Hits: taken ? 0 : st.Hits, Crits: taken ? 0 : st.Crits, Metric: metric);
             })
             .OrderByDescending(x => x.Metric)
             .ToList();
@@ -194,25 +199,26 @@ public partial class DpsOverlayWindow : Window
                 ClassBrush = Brush.Parse(it.Player.ClassColor),
                 ClassIcon = it.Player.ClassIcon,
                 ShowClassFallback = it.Player.ClassIcon is null,
-                Metric = rate ? Meter.Format(it.Metric, rateMode) : Meter.Num(it.Metric),
-                Total = Meter.Num(it.Amount),
+                Metric = taken && !it.Player.DamageTaken.HasValue ? "—" :
+                    (rate ? Meter.Format(it.Metric, rateMode) : Meter.Num(it.Metric)),
+                Total = taken && !it.Player.DamageTaken.HasValue ? "—" : Meter.Num(it.Amount),
                 Share = groupTotal > 0 ? $"{it.Amount / groupTotal * 100:F0}%" : "–",
-                Crit = it.Hits > 0 ? $"{(double)it.Crits / it.Hits * 100:F0}%" : "–",
+                Crit = taken ? "—" : it.Hits > 0 ? $"{(double)it.Crits / it.Hits * 100:F0}%" : "–",
                 Percent = top > 0 ? it.Metric / top * 100 : 0,
                 ShowTotal = _showTotal,
                 ShowShare = _showShare,
-                ShowCrit = _showCrit,
+                ShowCrit = !taken && _showCrit,
             });
         }
 
         // Fejléc és kapcsolók
         this.FindControl<TextBlock>("ModeLabel")!.Text = Meter.ModeName(mode);
-        this.FindControl<TextBlock>("HdrMetric")!.Text = rate
+        this.FindControl<TextBlock>("HdrMetric")!.Text = taken ? "TAKEN" : rate
             ? (heal ? "HPS" : "DPS")
             : LocalizationService.Get("Total");
         this.FindControl<TextBlock>("HdrTotal")!.IsVisible = _showTotal;
         this.FindControl<TextBlock>("HdrShare")!.IsVisible = _showShare;
-        this.FindControl<TextBlock>("HdrCrit")!.IsVisible = _showCrit;
+        this.FindControl<TextBlock>("HdrCrit")!.IsVisible = !taken && _showCrit;
 
         this.FindControl<Button>("BossOverlayToggle")!.Classes.Set("primary", CompanionSettings.ShowBossStatusOverlay);
         this.FindControl<Button>("ToggleTotal")!.Classes.Set("primary", _showTotal);

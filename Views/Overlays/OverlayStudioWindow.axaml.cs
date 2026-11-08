@@ -136,11 +136,11 @@ public partial class OverlayStudioWindow : Window
         bool dps = key == OverlayStudioStore.Dps;
         bool phaseward = key == OverlayStudioStore.Phaseward;
         bool bossStatus = key == OverlayStudioStore.BossStatus;
-        double width = bossStatus ? 328 : dps ? 328 : phaseward ? 520 : 360;
-        double height = bossStatus ? 168 : dps ? 408 : phaseward ? 340 : 310;
+        double width = bossStatus ? 328 : dps ? 328 : phaseward ? 260 : 360;
+        double height = bossStatus ? 168 : dps ? 408 : phaseward ? 170 : 310;
         return new StudioWidget
         {
-            X = _screen.X + (dps ? 28 : bossStatus ? 28 : phaseward ? (_screen.Width - 550) : 28),
+            X = _screen.X + (dps ? 28 : bossStatus ? 28 : phaseward ? (_screen.Width - 290) : 28),
             Y = _screen.Y + (dps ? 45 : bossStatus ? 470 : phaseward ? 60 : 500),
             Width = width, Height = height,
         };
@@ -271,8 +271,8 @@ public partial class OverlayStudioWindow : Window
         _dragStart = null;
     }
 
-    private static double GetMinimumWidth(string key) => key == OverlayStudioStore.Dps ? 280 : key == OverlayStudioStore.BossStatus ? 260 : 360;
-    private static double GetMinimumHeight(string key) => key == OverlayStudioStore.Dps ? 120 : key == OverlayStudioStore.BossStatus ? 125 : 220;
+    private static double GetMinimumWidth(string key) => key == OverlayStudioStore.Dps ? 280 : key == OverlayStudioStore.BossStatus ? 260 : key == OverlayStudioStore.Phaseward ? 200 : 360;
+    private static double GetMinimumHeight(string key) => key == OverlayStudioStore.Dps ? 120 : key == OverlayStudioStore.BossStatus ? 125 : key == OverlayStudioStore.Phaseward ? 120 : 220;
 
     private void FitToScreen(StudioWidget w, string key)
     {

@@ -245,6 +245,7 @@
           </Border.Transitions>
         </Border>
         <Border x:Name="OnboardingCard" Width="380" Classes="hero" Padding="22">
+          <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="12">
             <Grid ColumnDefinitions="*,Auto">
               <TextBlock x:Name="OnboardingCounter" Classes="kicker"/>
@@ -259,6 +260,7 @@
               <Button x:Name="OnboardingNextButton" Grid.Column="3" Classes="ui primary" Content="{DynamicResource Next}" Click="OnboardingNextClick"/>
             </Grid>
           </StackPanel>
+          </ScrollViewer>
         </Border>
       </Canvas>
     </Grid>

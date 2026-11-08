@@ -23,7 +23,10 @@ public sealed record PhasewardCue(
 public sealed record PhasewardEncounter(
     string Id, string Name, string Instance, int[] BossNpcIds,
     PhasewardMechanic[] Mechanics, PhasewardCue[] Cues,
-    string[] CommunityNotes, string[] FrenzyReferenceTimes);
+    string[] CommunityNotes, string[] FrenzyReferenceTimes)
+{
+    public string SourceKind { get; init; } = string.Empty;
+}
 
 public sealed class PhasewardPack
 {
@@ -202,7 +205,10 @@ public sealed class PhasewardPack
             .Concat(Lines(boss, "community_notes")).Distinct().ToArray();
         string[] frenzy = Lines(boss, "frenzy_mmss");
         var encounter = new PhasewardEncounter(encounterId, nameOfBoss, instance, ids.ToArray(),
-            mechanics.ToArray(), cues.ToArray(), community, frenzy);
+            mechanics.ToArray(), cues.ToArray(), community, frenzy)
+        {
+            SourceKind = Str(boss, "source_kind")
+        };
         int priority = Str(boss, "source_kind").Equals("guide", StringComparison.OrdinalIgnoreCase)
             || mechanics.Count > 0 ? 2 : 1;
         foreach (int id in ids) AddCandidate(id, encounter, priority);

@@ -90,7 +90,7 @@ public sealed class DiagnosticConsentWindow : Window
         hTexts.Children.Add(Label(L("Diagnostics Center", "Diagnosztikai központ", "Diagnosezentrum", "Centrum diagnostyki"), 25, Primary, FontWeight.Bold));
         Grid.SetColumn(hTexts, 1);
         headerRow.Children.Add(hTexts);
-        var headerBadge = Badge("ISSUE #21", Purple);
+        var headerBadge = Badge("LOCAL DIAGNOSTICS", Purple);
         headerBadge.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(headerBadge, 2);
         headerRow.Children.Add(headerBadge);

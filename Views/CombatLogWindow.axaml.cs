@@ -27,7 +27,10 @@ public sealed class CombatLogListRow
         get
         {
             MeterSnapshot snapshot = Entry.ToSnapshot(BossOnly);
-            return $"DMG {Meter.Num(snapshot.TotalDamage)}  ·  HEAL {Meter.Num(snapshot.TotalHealing)}";
+            string baseText = $"DMG {Meter.Num(snapshot.TotalDamage)}  ·  HEAL {Meter.Num(snapshot.TotalHealing)}";
+            return snapshot.HasDamageTakenData
+                ? baseText + $"  ·  TAKEN {Meter.Num(snapshot.TotalDamageTaken)}"
+                : baseText;
         }
     }
     public string StateText => Entry.Completed ? string.Empty : LocalizationService.Get("InterruptedFight");
@@ -49,7 +52,8 @@ public sealed class CombatLogPlayerRow
         : Player.ClassName;
     public string DamageText => $"{Meter.Num(Player.Damage)} · {Meter.Format(Player.Dps, MeterMode.Dps)}";
     public string HealingText =>
-        $"{LocalizationService.Get("Healing")} {Meter.Num(Player.Healing)} · {Meter.Format(Player.Hps, MeterMode.Hps)}";
+        $"{LocalizationService.Get("Healing")} {Meter.Num(Player.Healing)} · {Meter.Format(Player.Hps, MeterMode.Hps)}" +
+        (Player.DamageTaken.HasValue ? $"  ·  TAKEN {Meter.Num(Player.DamageTaken.Value)}" : "");
     public string DeathText => $"💀 {(Player.DeathCount.HasValue ? Player.DeathCount.Value.ToString() : "?")}";
     public string PositionText => PositionDetails.Format(Player, compact: true);
     public string DpsShortText => Meter.Format(Player.Dps, MeterMode.Dps);
@@ -339,6 +343,9 @@ public partial class CombatLogWindow : UserControl
         this.FindControl<TextBlock>("TotalDpsText")!.Text = Meter.Format(_selectedSnapshot.TotalDamage / duration, MeterMode.Dps);
         this.FindControl<TextBlock>("TotalHealingText")!.Text = Meter.Num(_selectedSnapshot.TotalHealing);
         this.FindControl<TextBlock>("TotalHpsText")!.Text = Meter.Format(_selectedSnapshot.TotalHealing / duration, MeterMode.Hps);
+        // Nexforge Damage Taken Log Timeline v0.2: Unknown != zero for legacy fight logs.
+        this.FindControl<TextBlock>("TotalTakenText")!.Text = _selectedSnapshot.HasDamageTakenData
+            ? Meter.Num(_selectedSnapshot.TotalDamageTaken) : "—";
         this.FindControl<Button>("FavoriteButton")!.Content =
             $"{(row.Entry.IsFavorite ? "★" : "☆")} {LocalizationService.Get("Favorite")}";
         this.FindControl<TextBox>("NotesBox")!.Text = row.Entry.Notes;
@@ -370,7 +377,10 @@ public partial class CombatLogWindow : UserControl
 
         _selectedPlayer = row.Player;
         this.FindControl<TextBlock>("SelectedPlayerName")!.Text = row.Player.Name;
-        this.FindControl<TextBlock>("SelectedPlayerMeta")!.Text = row.ClassName;
+        this.FindControl<TextBlock>("SelectedPlayerMeta")!.Text = row.ClassName +
+            (row.Player.DamageTaken.HasValue
+                ? $" · Damage Taken {Meter.Num(row.Player.DamageTaken.Value)}"
+                : " · Damage Taken — (older log)");
         this.FindControl<TextBlock>("PositionDetailsText")!.Text = PositionDetails.Format(row.Player, compact: true);
         this.FindControl<TextBlock>("LogDetailDeaths")!.Text = PositionDetails.DeathsValue(row.Player);
         this.FindControl<TextBlock>("LogDetailFront")!.Text = PositionDetails.FrontValue(row.Player);
@@ -381,6 +391,8 @@ public partial class CombatLogWindow : UserControl
         this.FindControl<TextBlock>("PlayerHpsText")!.Text = Meter.Format(row.Player.Hps, MeterMode.Hps);
         this.FindControl<TextBlock>("PlayerDamageText")!.Text = Meter.Num(row.Player.Damage);
         this.FindControl<TextBlock>("PlayerHealingText")!.Text = Meter.Num(row.Player.Healing);
+        this.FindControl<TextBlock>("PlayerTakenText")!.Text = row.Player.DamageTaken.HasValue
+            ? Meter.Num(row.Player.DamageTaken.Value) : "—";
         long skillTotal = row.Player.Events.Sum(skillEvent => Math.Max(0, skillEvent.Amount));
 
         Skills.Clear();
@@ -500,7 +512,7 @@ public partial class CombatLogWindow : UserControl
             "SessionSummary", session.Count, $"{total / 60:00}:{total % 60:00}", Meter.Num(damage),
             Meter.Num(healing), best.Entry.MobName,
             Meter.Num(best.Snapshot.TotalDamage / Math.Max(0.001, best.Entry.Duration)));
-        this.FindControl<Border>("SessionSummaryPanel")!.IsVisible = true;
+        this.FindControl<Border>("SessionSummaryPanel")!.IsVisible = false; // tucked away: redundant session strip
     }
 
     private void ClearDetails()
@@ -516,6 +528,7 @@ public partial class CombatLogWindow : UserControl
         this.FindControl<TextBlock>("TotalDpsText")!.Text = "—";
         this.FindControl<TextBlock>("TotalHealingText")!.Text = "—";
         this.FindControl<TextBlock>("TotalHpsText")!.Text = "—";
+        this.FindControl<TextBlock>("TotalTakenText")!.Text = "—";
         this.FindControl<TextBox>("NotesBox")!.Text = string.Empty;
         SetFightButtonsEnabled(false);
         ClearPlayerDetails();
@@ -547,6 +560,7 @@ public partial class CombatLogWindow : UserControl
         this.FindControl<TextBlock>("PlayerHpsText")!.Text = "—";
         this.FindControl<TextBlock>("PlayerDamageText")!.Text = "—";
         this.FindControl<TextBlock>("PlayerHealingText")!.Text = "—";
+        this.FindControl<TextBlock>("PlayerTakenText")!.Text = "—";
         this.FindControl<TextBlock>("RecordText")!.Text = string.Empty;
         this.FindControl<Button>("PlayerDetailsButton")!.IsEnabled = false;
         this.FindControl<Button>("TimelineButton")!.IsEnabled = false;

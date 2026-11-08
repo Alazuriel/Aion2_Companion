@@ -51,6 +51,16 @@ public partial class DbmOverlayWindow : Window
 
         _surface.IsHitTestVisible = false;
         Content = _surface;
+        // One-time compatibility with the former 520x340 overlay size.
+        // Run after both placement-restoration event handlers for this opening.
+        Opened += (_, _) => Dispatcher.UIThread.Post(() =>
+        {
+            if (Width is >= 500 and <= 550 && Height is >= 320 and <= 360)
+            {
+                Width = 260;
+                Height = 170;
+            }
+        }, DispatcherPriority.Background);
         _timer.Tick += (_, _) => { if (IsVisible) Refresh(); };
         Opened += (_, _) => { _timer.Start(); Refresh(); };
         Closed += (_, _) => _timer.Stop();
@@ -58,38 +68,76 @@ public partial class DbmOverlayWindow : Window
 
     private void Refresh()
     {
+        // The live HUD is deliberately Stagger-only, even in --developer mode.
+        // Research, cooldowns, cast cues, boss banners and other Phaseward alerts
+        // remain collected but are visible only in the Developer screen.
         PhasewardSnapshot snapshot = PhasewardHub.Snapshot();
         _surface.Children.Clear();
-        if (snapshot.State != "encounter")
+        if (snapshot.State != "encounter" || snapshot.BossRuntimeId == 0)
         {
             _surface.IsVisible = false;
             return;
         }
 
         DateTimeOffset now = DateTimeOffset.UtcNow;
-        var alert = ActiveAlert(snapshot, now);
-        if (alert is not null)
-            _surface.Children.Add(PhasewardHudVisuals.Alert(alert.Value.Title, alert.Value.Detail, alert.Value.Tint));
-
-        // Multiple known mechanics stay visible simultaneously, nearest first.
-        // No fake timers: only verified cooldowns, measurable HP estimates or reference events.
-        List<PhasewardHudBar> upcoming = BuildBars(snapshot)
-            .Where(x => double.IsFinite(x.Remaining) && x.Remaining > 0 &&
-                        double.IsFinite(x.Duration) && x.Duration > 0)
-            .OrderBy(x => x.Remaining)
-            .ThenBy(x => x.Name, StringComparer.Ordinal)
-            .ToList();
-
-        double height = Bounds.Height > 0 ? Bounds.Height : Height;
-        int capacity = PhasewardHudVisuals.VisibleRows(height, alert is not null);
-        for (int index = 0; index < Math.Min(capacity, upcoming.Count); index++)
-            _surface.Children.Add(PhasewardHudVisuals.Row(upcoming[index], index == 0));
-
+        PhasewardStaggerResearchState staggerResearch =
+            PhasewardStaggerResearch.Snapshot(snapshot.BossRuntimeId, now);
+        if (staggerResearch.Active &&
+            staggerResearch.SecondsRemaining is double remaining &&
+            double.IsFinite(remaining) && remaining > 0)
+        {
+            _surface.Children.Add(PhasewardHudVisuals.Row(
+                new PhasewardHudBar("STAGGER", remaining, 5.0, Color.Parse("#58D8EE")),
+                nearest: true));
+        }
         _surface.IsVisible = _surface.Children.Count > 0;
+    }
+
+    private void RenderBossesResearchStatus(PhasewardSnapshot snapshot, DateTimeOffset now)
+    {
+        PhasewardMechanicStatus? observed = snapshot.Mechanics
+            .Where(mechanic => mechanic.LastObserved is DateTimeOffset at &&
+                (now - at).TotalSeconds is >= 0 and <= 6)
+            .OrderByDescending(mechanic => mechanic.LastObserved)
+            .FirstOrDefault();
+        string origin = snapshot.IsBorrowedDifficulty
+            ? $"Variant {snapshot.BossNpcId}, source {snapshot.MechanicsSourceNpcId}"
+            : $"NPC {snapshot.BossNpcId}";
+        string observation = observed is null ? "waiting for boss cast" : $"cast: {observed.Name}";
+        _surface.Children.Add(PhasewardHudVisuals.Alert(
+            "RESEARCH TEST · UNVERIFIED", origin + " · " + observation,
+            Color.Parse("#EFC071")));
+    }
+
+    private void RenderBossesEmptyStatus(PhasewardSnapshot snapshot)
+    {
+        _surface.Children.Add(PhasewardHudVisuals.Alert(
+            snapshot.BossName + " · BOSS RECOGNIZED",
+            "No Phaseward mechanics available for this NPC",
+            Color.Parse("#78BFD2")));
     }
 
     private static (string Title, string Detail, Color Tint)? ActiveAlert(PhasewardSnapshot snapshot, DateTimeOffset now)
     {
+        if (snapshot.Stagger.Active)
+        {
+            string title = snapshot.Stagger.EstimatedFromOpcode
+                ? "STAGGER · ESTIMATED" : "BOSS STAGGERED";
+            string detail = snapshot.Stagger.ActiveRemainingSeconds is double seconds
+                ? $"~{seconds:0.0}s left · +5s estimated timing shift"
+                : "Boss control state · timing estimate";
+            return (title, detail, Color.Parse("#58D8EE"));
+        }
+
+        if (snapshot.Stagger.EstimatedEndFromOpcode &&
+            snapshot.Stagger.LastEndedAt is DateTimeOffset staggerEnd &&
+            now >= staggerEnd && (now - staggerEnd).TotalSeconds <= 2.5)
+            return ("STAGGER ENDED · ESTIMATED",
+                snapshot.Stagger.EstimatedLastDurationSeconds is double seconds
+                    ? $"Control-value zero after {seconds:0.0}s · provisional"
+                    : "Boss control-value zero · provisional",
+                Color.Parse("#72D9AE"));
+
         PhasewardCueStatus? hpAlert = snapshot.Cues
             .Where(cue => cue.TriggeredAt is not null &&
                           (now - cue.TriggeredAt.Value).TotalSeconds is >= 0 and <= 6)
@@ -113,6 +161,14 @@ public partial class DbmOverlayWindow : Window
 
     private static IEnumerable<PhasewardHudBar> BuildBars(PhasewardSnapshot snapshot)
     {
+        // Estimate the next Stagger only from repeated, consistent observations.
+        if (snapshot.Stagger.NextEstimatedSeconds is double next &&
+            !snapshot.Stagger.Active && next is > 0 and <= 180)
+            yield return new PhasewardHudBar(
+                $"Stagger · estimated ({snapshot.Stagger.SignalCount} signals)",
+                next, Math.Max(12, snapshot.Stagger.EstimatedCycleSeconds ?? 180),
+                Color.Parse("#58D8EE"), Estimated: true);
+
         // Predictive rules come only from cross-validated previous pulls.
         // They are conspicuously labelled estimates; actual observed casts remain authoritative.
         foreach (PhasewardLearnedPrediction prediction in snapshot.LearnedPredictions)
@@ -129,17 +185,20 @@ public partial class DbmOverlayWindow : Window
                     timer.SecondsRemaining, timer.AtSeconds, Color.Parse("#FF6475"));
 
         foreach (PhasewardCueStatus cue in snapshot.Cues)
-            if (!cue.Reached && cue.SecondsUntilEstimated is > 0 and <= 180)
+            if (!snapshot.IsResearchPreview && !snapshot.IsResearchMapping && !cue.Reached &&
+                cue.SecondsUntilEstimated is > 0 and <= 180)
                 yield return new PhasewardHudBar(
                     $"{cue.Name} · {cue.HpThreshold:0.#}% HP", cue.SecondsUntilEstimated.Value,
                     180, Color.Parse("#FFC76E"), Estimated: true);
 
         foreach (PhasewardMechanicStatus mechanic in snapshot.Mechanics)
-            if (mechanic.VerifiedTrigger && mechanic.CooldownSeconds is >= 3 &&
+            if ((mechanic.VerifiedTrigger || snapshot.IsResearchPreview || snapshot.IsResearchMapping) &&
+                mechanic.CooldownSeconds is >= 3 &&
                 mechanic.SecondsUntilPredicted is > 0 and <= 120)
-                yield return new PhasewardHudBar(UsefulName(mechanic),
+                yield return new PhasewardHudBar(
+                    snapshot.IsResearchPreview || snapshot.IsResearchMapping ? $"Research · {UsefulName(mechanic)}" : UsefulName(mechanic),
                     mechanic.SecondsUntilPredicted.Value, mechanic.CooldownSeconds.Value,
-                    Color.Parse("#3CD8FF"), Estimated: true);
+                    Color.Parse(snapshot.IsResearchPreview || snapshot.IsResearchMapping ? "#EFC071" : "#3CD8FF"), Estimated: true);
     }
 
     private static string UsefulName(PhasewardMechanicStatus mechanic)

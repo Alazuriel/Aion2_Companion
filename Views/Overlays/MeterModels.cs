@@ -8,7 +8,11 @@ using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Media;
 
-public enum MeterMode { Damage, Dps, Heal, Hps }
+// Nexforge Damage Taken Log Timeline v0.2
+public enum MeterMode { Damage, Dps, Heal, Hps, DamageTaken }
+
+// Incoming hostile -> party hits only. No fictitious boss spell names or icons.
+public sealed record IncomingDamageSample(double Time, long Amount, bool IsBossSource);
 
 public sealed class EncounterMob
 {
@@ -52,6 +56,10 @@ public sealed class PlayerStat
     public long BossDamage { get; init; }
     public long Healing { get; init; }
     public long BossHealing { get; init; }
+    // Nullable: old NSL logs do not contain damage-taken evidence.
+    public long? DamageTaken { get; init; }
+    public long? BossDamageTaken { get; init; }
+    public IReadOnlyList<IncomingDamageSample> IncomingDamageEvents { get; init; } = Array.Empty<IncomingDamageSample>();
     public IReadOnlyList<SkillEvent> Events { get; init; } = Array.Empty<SkillEvent>();
 
     public int DamageEventCount => Events.Count(entry => !entry.IsHeal);
@@ -82,6 +90,8 @@ public sealed class MeterSnapshot
     public bool IsEnraged => EnrageRemainingSeconds is <= 0;
     public long TotalDamage => Players.Sum(p => p.Damage);
     public long TotalHealing => Players.Sum(p => p.Healing);
+    public long TotalDamageTaken => Players.Sum(p => p.DamageTaken ?? 0);
+    public bool HasDamageTakenData => Players.Any(p => p.DamageTaken.HasValue);
 
     public MeterSnapshot ToBossOnly()
     {
@@ -106,6 +116,12 @@ public sealed class MeterSnapshot
                 BossDamage = player.BossDamage,
                 Healing = player.BossHealing,
                 BossHealing = player.BossHealing,
+                DamageTaken = player.BossDamageTaken,
+                BossDamageTaken = player.BossDamageTaken,
+                IncomingDamageEvents = player.IncomingDamageEvents
+                    .Where(e => e.IsBossSource && e.Time >= BossStartOffset)
+                    .Select(e => new IncomingDamageSample(
+                        Math.Max(0, e.Time - BossStartOffset), e.Amount, true)).ToArray(),
                 Events = player.Events
                     .Where(entry => entry.Time >= BossStartOffset && (entry.IsHeal || entry.IsBossTarget))
                     .Select(entry => new SkillEvent
@@ -176,7 +192,8 @@ public static class Meter
         MeterMode.Damage => LocalizationService.Get("Damage"),
         MeterMode.Dps => "DPS",
         MeterMode.Heal => LocalizationService.Get("Healing"),
-        _ => "HPS",
+        MeterMode.Hps => "HPS",
+        _ => "Damage Taken",
     };
 
     public static double Metric(PlayerStat p, MeterMode m) => m switch
@@ -184,7 +201,8 @@ public static class Meter
         MeterMode.Damage => p.Damage,
         MeterMode.Dps => p.Dps,
         MeterMode.Heal => p.Healing,
-        _ => p.Hps,
+        MeterMode.Hps => p.Hps,
+        _ => p.DamageTaken ?? 0,
     };
 
     public static string Num(double v)
@@ -222,7 +240,8 @@ public static class Meter
             MeterMode.Damage => Format(p.Dps, MeterMode.Dps),
             MeterMode.Dps => Num(p.Damage),
             MeterMode.Heal => Format(p.Hps, MeterMode.Hps),
-            _ => Num(p.Healing),
+            MeterMode.Hps => Num(p.Healing),
+            _ => "—",
         };
 
         return (primary, secondary);
@@ -240,7 +259,8 @@ public static class Meter
             MeterMode.Damage => $"{Num(s.TotalDamage)}  ({Format(dps, MeterMode.Dps)})",
             MeterMode.Dps => $"{Format(dps, MeterMode.Dps)}  ({Num(s.TotalDamage)})",
             MeterMode.Heal => $"{Num(s.TotalHealing)}  ({Format(hps, MeterMode.Hps)})",
-            _ => $"{Format(hps, MeterMode.Hps)}  ({Num(s.TotalHealing)})",
+            MeterMode.Hps => $"{Format(hps, MeterMode.Hps)}  ({Num(s.TotalHealing)})",
+            _ => s.HasDamageTakenData ? $"{Num(s.TotalDamageTaken)} TAKEN" : "TAKEN —",
         };
     }
 
@@ -248,6 +268,19 @@ public static class Meter
     // Sebzés/Gyógyítás: kumulatív összeg. DPS/HPS: 5 mp-es csúszóablak.
     public static double[] Series(PlayerStat p, MeterMode m, double duration)
     {
+        if (m == MeterMode.DamageTaken)
+        {
+            int count = Math.Max(1, (int)Math.Ceiling(duration));
+            var received = new double[count];
+            foreach (IncomingDamageSample e in p.IncomingDamageEvents)
+            {
+                if (e.Amount <= 0 || !double.IsFinite(e.Time) || e.Time < 0 ||
+                    e.Time > duration + 0.5) continue;
+                received[Math.Clamp((int)e.Time, 0, count - 1)] += e.Amount;
+            }
+            for (int i = 1; i < received.Length; i++) received[i] += received[i - 1];
+            return received;
+        }
         int n = Math.Max(1, (int)Math.Ceiling(duration));
         bool heal = m is MeterMode.Heal or MeterMode.Hps;
         var buckets = new double[n];

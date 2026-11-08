@@ -34,6 +34,10 @@ public sealed class StoredPlayerStat
     public long BossDamage { get; set; }
     public long Healing { get; set; }
     public long BossHealing { get; set; }
+    public long? DamageTaken { get; set; }
+    public long? BossDamageTaken { get; set; }
+    // Nexforge Damage Taken Log Timeline v0.2 — new logs have hit timestamps; legacy files have an empty list.
+    public List<IncomingDamageSample>? IncomingDamageEvents { get; set; } = new();
     public int? DeathCount { get; set; }
     public int? FrontHits { get; set; }
     public int? BackHits { get; set; }
@@ -75,6 +79,7 @@ public sealed class CombatLogEntry
 
     public long TotalDamage => Players.Sum(player => player.Damage);
     public long TotalHealing => Players.Sum(player => player.Healing);
+    public long TotalDamageTaken => Players.Sum(player => player.DamageTaken ?? 0);
 
     public MeterSnapshot ToSnapshot(bool bossOnly = false)
     {
@@ -106,6 +111,14 @@ public sealed class CombatLogEntry
                 ? player.BossHealing
                 : player.Healing,
             BossHealing = player.BossHealing,
+            DamageTaken = bossOnly && IsBossEncounter ? player.BossDamageTaken : player.DamageTaken,
+            BossDamageTaken = player.BossDamageTaken,
+            IncomingDamageEvents = (player.IncomingDamageEvents ?? new List<IncomingDamageSample>())
+                .Where(e => !bossOnly || !IsBossEncounter ||
+                    (e.IsBossSource && e.Time >= BossStartOffset))
+                .Select(e => bossOnly && IsBossEncounter
+                    ? new IncomingDamageSample(Math.Max(0, e.Time - BossStartOffset), e.Amount, true)
+                    : e).ToArray(),
             Events = (player.Events ?? new List<StoredSkillEvent>())
                 .Where(skillEvent => !bossOnly || !IsBossEncounter ||
                     skillEvent.Time >= BossStartOffset &&
@@ -197,6 +210,7 @@ public sealed class CombatLogStore
             snapshot.Players.All(player =>
                 player.Damage == 0 &&
                 player.Healing == 0 &&
+                (player.DamageTaken ?? 0) == 0 &&
                 player.Events.Count == 0))
         {
             return null;
@@ -241,6 +255,11 @@ public sealed class CombatLogStore
                 BossDamage = player.BossDamage,
                 Healing = player.Healing,
                 BossHealing = player.BossHealing,
+                DamageTaken = player.DamageTaken,
+                BossDamageTaken = player.BossDamageTaken,
+                IncomingDamageEvents = player.IncomingDamageEvents
+                    .Where(e => e.Amount > 0 && double.IsFinite(e.Time) && e.Time >= 0)
+                    .TakeLast(MaxEventsPerPlayerInLog).ToList(),
                 Events = player.Events.TakeLast(MaxEventsPerPlayerInLog).Select(skillEvent => new StoredSkillEvent
                 {
                     Time = skillEvent.Time,

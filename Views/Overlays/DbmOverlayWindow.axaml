@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="AION_2_Companion.Views.Overlays.DbmOverlayWindow"
-        Width="520" Height="340" MinWidth="360" MinHeight="220"
+        Width="260" Height="170" MinWidth="200" MinHeight="120"
         Title="Phaseward" Background="Transparent"
         TransparencyLevelHint="Transparent"
         ExtendClientAreaToDecorationsHint="True"

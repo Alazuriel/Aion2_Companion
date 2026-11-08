@@ -18,12 +18,12 @@ namespace AION_2_Companion.Core.Phaseward;
 
 /// <summary>
 /// Future Phaseward Community Learning transport. All outgoing messages are persisted once,
-/// with a stable UUID and exact JSON bytes. No production sends until VYREN #38 is deployed,
-/// staging-tested, and this gated client is explicitly released.
+/// with a stable UUID and exact JSON bytes. Production sending remains disabled until the
+/// matching server receiver has been deployed, staging-tested, and explicitly released.
 /// </summary>
 public static class PhasewardCommunityOutbox
 {
-    // SECURITY/RELEASE GATE. Not a user setting. Do not flip without VYREN + CEO approval.
+    // Security and release gate. This is not a user setting; enable it only after backend validation.
     public static bool BackendApprovedAndVerified => PhasewardCommunitySync.Shared.IsBackendReady;
     public const int MaxQueued = 100;
     public const int MaxBodyBytes = 128 * 1024;

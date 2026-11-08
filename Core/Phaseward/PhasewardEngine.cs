@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using AION_2_Companion.Core.Diagnostics;
+using AION_2_Companion.Core.GameData;
 using AION_2_Companion.Core;
 
 namespace AION_2_Companion.Core.Phaseward;
@@ -30,11 +31,29 @@ public sealed record PhasewardSnapshot(string State, string BossName, string Ins
 {
     public IReadOnlyList<PhasewardLearnedPrediction> LearnedPredictions { get; init; } =
         Array.Empty<PhasewardLearnedPrediction>();
+    public bool IsResearchMapping { get; init; }
+    public bool IsBorrowedDifficulty { get; init; }
+    public int MechanicsSourceNpcId { get; init; }
+    public bool HasMechanicsData { get; init; }
+    public bool IsResearchPreview { get; init; }
+    public int ResearchMeasuredIntervals { get; init; }
+    public double? ResearchAverageCooldownErrorSeconds { get; init; }
+    public PhasewardStaggerStatus Stagger { get; init; } = PhasewardStaggerStatus.Unknown;
 }
 
 public sealed class PhasewardEngine
 {
     private readonly PhasewardPack _pack;
+    private BossesDatabase? _bossCatalog;
+    private PhasewardPack? _additionalPreviewPack;
+    private bool _isResearchMapping;
+    private bool _isBorrowedDifficulty;
+    private int _mechanicsSourceNpcId;
+    private readonly PhasewardPack? _researchPreviewPack;
+    private bool _isResearchPreview;
+    private readonly Dictionary<string, DateTimeOffset> _researchLastCasts = new();
+    private int _researchMeasuredIntervals;
+    private double _researchTotalCooldownErrorSeconds;
     private PhasewardEncounter? _encounter;
     private int _templateId;
     private uint _runtimeId;
@@ -42,12 +61,102 @@ public sealed class PhasewardEngine
     private readonly Dictionary<string, DateTimeOffset> _lastSeen = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _cueTriggeredAt = new(StringComparer.Ordinal);
     private readonly Queue<(uint Current, long Maximum, DateTimeOffset At)> _healthSamples = new();
+    private readonly PhasewardStaggerTracker _stagger = new();
     private PhasewardLearningRecorder? _learning;
     private IReadOnlyList<PhasewardLearningAnalyzer.Rule> _learnedRules =
         Array.Empty<PhasewardLearningAnalyzer.Rule>();
     private readonly Dictionary<(string Kind, uint SkillId), DateTimeOffset> _liveSignals = new();
     private readonly HashSet<uint> _observedCasts = new();
-    public PhasewardEngine(PhasewardPack pack) => _pack = pack;
+    public PhasewardEngine(PhasewardPack pack, PhasewardPack? researchPreviewPack = null)
+    {
+        _pack = pack;
+        _researchPreviewPack = researchPreviewPack;
+    }
+
+    public uint CurrentBossRuntimeId => _runtimeId;
+
+    // Boss recognition is authoritative from AION2_Bosses.nfg. The Phaseward pack
+    // is optional content; it must never decide if an NPC is a real boss.
+    public void ConfigureBossCatalog(BossesDatabase? bosses, PhasewardPack? preview = null)
+    {
+        _bossCatalog = bosses;
+        _additionalPreviewPack = preview;
+    }
+
+    private static string IdentityKey(BossDefinition boss)
+    {
+        string name = boss.LocalizedName("en").Trim().ToUpperInvariant();
+        string instance = boss.Instance.Trim();
+        foreach (string suffix in new[] { " (Conquest)", " (Hard)", " (Normal)", " (Expert)" })
+            if (instance.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+            {
+                instance = instance[..^suffix.Length].TrimEnd();
+                break;
+            }
+        return name + "|" + instance.ToUpperInvariant();
+    }
+
+    private PhasewardEncounter? ResolveBossContent(int actualNpcId, PhasewardEncounter? directPreview)
+    {
+        // An unrelated NPC may be seen while a boss fight is active. Do not
+        // clear the active encounter's research flags until a valid new boss
+        // is actually resolved and accepted.
+        // The existing legacy behavior is retained only when the Bosses pack is unavailable.
+        // With a loaded Bosses pack, never activate an unknown NPC via display-name matching.
+        if (_bossCatalog is null)
+            return directPreview ?? _pack.Find(actualNpcId);
+
+        BossDefinition? actual = _bossCatalog.GetByTemplateId(actualNpcId);
+        if (actual is null) return null;
+
+        int contentNpcId = actualNpcId;
+        PhasewardEncounter? content = directPreview ?? _additionalPreviewPack?.Find(actualNpcId)
+                                        ?? _pack.Find(actualNpcId);
+        if (content is null)
+        {
+            // Difficulty variants are separate BossDefinition records in current packs.
+            // Only match same English name AND same instance, never numeric ID prefixes.
+            string identity = IdentityKey(actual);
+            var matches = _bossCatalog.Bosses
+                .Where(candidate => IdentityKey(candidate) == identity)
+                .SelectMany(candidate => candidate.TemplateIds)
+                .Distinct()
+                .Where(candidateId => candidateId != actualNpcId)
+                .Select(candidateId => new
+                {
+                    NpcId = candidateId,
+                    Data = _additionalPreviewPack?.Find(candidateId) ?? _pack.Find(candidateId)
+                })
+                .Where(candidate => candidate.Data is not null)
+                .ToArray();
+            // If multiple research records disagree, never guess which one applies.
+            var distinct = matches.Select(candidate => candidate.Data!.Id)
+                .Distinct(StringComparer.Ordinal).ToArray();
+            if (distinct.Length == 1)
+            {
+                var selected = matches.OrderBy(m => m.NpcId).First();
+                content = selected.Data;
+                contentNpcId = selected.NpcId;
+            }
+        }
+
+        _mechanicsSourceNpcId = content is null ? 0 : contentNpcId;
+        _isBorrowedDifficulty = content is not null && contentNpcId != actualNpcId;
+        _isResearchMapping = content is not null &&
+            (content.SourceKind.Equals("research_candidate", StringComparison.OrdinalIgnoreCase) ||
+             _isBorrowedDifficulty || ReferenceEquals(directPreview, content));
+
+        // Boss identity/name/instance are ALWAYS from Bosses.nfg. Source skills are
+        // attached as hypotheses, preserving the real runtime template ID.
+        return new PhasewardEncounter(
+            actual.Id,
+            actual.LocalizedName("en"), actual.Instance, [actualNpcId],
+            content?.Mechanics ?? [], content?.Cues ?? [],
+            content?.CommunityNotes ?? [], content?.FrenzyReferenceTimes ?? [])
+        {
+            SourceKind = content?.SourceKind ?? string.Empty
+        };
+    }
 
     public void ObserveBoss(
         int npcTemplateId,
@@ -57,9 +166,11 @@ public sealed class PhasewardEngine
         string? canonicalName = null)
     {
         if (runtimeId == 0) return;
-        PhasewardEncounter? match = _pack.Find(npcTemplateId, detectedName, canonicalName);
+        // The preview is selected only by exact NPC template ID, never by a guessed name.
+        PhasewardEncounter? previewMatch = _researchPreviewPack?.Find(npcTemplateId);
+        PhasewardEncounter? match = ResolveBossContent(npcTemplateId, previewMatch);
         if (match is null) return;
-        if (_runtimeId == runtimeId && ReferenceEquals(_encounter, match)) return;
+        if (_runtimeId == runtimeId && _templateId == npcTemplateId && _encounter is not null) return;
         _learning?.Finish();
         PhasewardDetailedTraceRecorder.Cancel(); // different boss / abandoned attempt
         // Load only PREVIOUS completed pulls. The current pull must never train itself.
@@ -70,12 +181,17 @@ public sealed class PhasewardEngine
             ? new PhasewardLearningRecorder(npcTemplateId, when) : null;
         _liveSignals.Clear();
         _observedCasts.Clear();
+        _researchLastCasts.Clear();
+        _researchMeasuredIntervals = 0;
+        _researchTotalCooldownErrorSeconds = 0;
         _encounter = match;
+        _isResearchPreview = previewMatch is not null;
         _templateId = npcTemplateId;
         _runtimeId = runtimeId;
         _engagedAt = when;
         PhasewardDetailedTraceRecorder.Begin(npcTemplateId, runtimeId, when);
         _lastSeen.Clear();
+        _stagger.Reset();
         _cueTriggeredAt.Clear();
         _healthSamples.Clear();
         DiagnosticRuntime.Breadcrumb("phaseward_boss_seen");
@@ -124,11 +240,54 @@ public sealed class PhasewardEngine
             if (_lastSeen.TryGetValue(mechanic.Id, out DateTimeOffset last) &&
                 (when < last || (when - last).TotalSeconds < 0.15))
                 continue;
+            if (_isResearchPreview && mechanic.CooldownSeconds is >= 3 &&
+                _researchLastCasts.TryGetValue(mechanic.Id, out DateTimeOffset previousCast))
+            {
+                double observedGap = (when - previousCast).TotalSeconds;
+                if (observedGap is >= 3 and <= 600)
+                {
+                    _researchMeasuredIntervals++;
+                    _researchTotalCooldownErrorSeconds += Math.Abs(
+                        observedGap - mechanic.CooldownSeconds.Value);
+                }
+            }
+            if (_isResearchPreview)
+                _researchLastCasts[mechanic.Id] = when;
             _lastSeen[mechanic.Id] = when;
             observed = true;
             DiagnosticRuntime.Breadcrumb("phaseward_event");
         }
         return observed;
+    }
+
+    // The NFG opcode is a preliminary signal until its boss/state fields are decoded.
+    public bool ObserveBossStaggerEstimated(DateTimeOffset when)
+    {
+        if (_encounter is null || _runtimeId == 0 ||
+            _engagedAt is null || when < _engagedAt.Value ||
+            (when - _engagedAt.Value).TotalHours > 2)
+            return false;
+        return _stagger.ObserveEstimatedOpcode(when);
+    }
+
+    // Separately record the tentative 364B end transition; this does not
+    // change the fixed +5s policy already counted at stagger onset.
+    public bool ObserveBossStaggerEndEstimated(uint actorRuntimeId, DateTimeOffset when)
+    {
+        if (_encounter is null || _runtimeId == 0 || actorRuntimeId != _runtimeId ||
+            _engagedAt is null || when < _engagedAt.Value ||
+            (when - _engagedAt.Value).TotalHours > 2)
+            return false;
+        return _stagger.ObserveEstimatedEnd(when);
+    }
+
+    public bool ObserveBossStagger(uint actorRuntimeId, bool active, DateTimeOffset when)
+    {
+        if (_encounter is null || _runtimeId == 0 || actorRuntimeId != _runtimeId ||
+            _engagedAt is null || when < _engagedAt.Value ||
+            (when - _engagedAt.Value).TotalHours > 2)
+            return false;
+        return _stagger.Observe(active, when);
     }
 
     public void ObserveBossHealth(uint runtimeId, uint current, long maximum, DateTimeOffset when)
@@ -179,11 +338,19 @@ public sealed class PhasewardEngine
         _learnedRules = Array.Empty<PhasewardLearningAnalyzer.Rule>();
         _liveSignals.Clear();
         _observedCasts.Clear();
+        _researchLastCasts.Clear();
+        _researchMeasuredIntervals = 0;
+        _researchTotalCooldownErrorSeconds = 0;
         _encounter = null;
+        _isResearchPreview = false;
+        _isResearchMapping = false;
+        _isBorrowedDifficulty = false;
+        _mechanicsSourceNpcId = 0;
         _templateId = 0;
         _runtimeId = 0;
         _engagedAt = null;
         _lastSeen.Clear();
+        _stagger.Reset();
         _cueTriggeredAt.Clear();
         _healthSamples.Clear();
     }
@@ -195,8 +362,10 @@ public sealed class PhasewardEngine
         var statuses = _encounter.Mechanics.Select(mechanic =>
         {
             DateTimeOffset? seen = _lastSeen.TryGetValue(mechanic.Id, out var at) ? at : null;
+            // Estimate 5 seconds of interrupted boss action, only after the last mechanic.
+            double staggerDelayForMechanic = 0; // Research mode; do not move skill timers.
             double? remaining = seen is not null && mechanic.CooldownSeconds is > 0
-                ? (seen.Value.AddSeconds(mechanic.CooldownSeconds.Value) - now).TotalSeconds
+                ? (seen.Value.AddSeconds(mechanic.CooldownSeconds.Value + staggerDelayForMechanic) - now).TotalSeconds
                 : null;
             bool elapsed = remaining is <= 0;
             double? countdown = remaining is > 0 ? remaining : null;
@@ -204,7 +373,7 @@ public sealed class PhasewardEngine
                 : mechanic.HpThresholds.Length > 0 ? "hp"
                 : mechanic.BossLines.Length > 0 ? "speech"
                 : "guide";
-            return new PhasewardMechanicStatus(mechanic.Name, mechanic.SkillIds.Length > 0,
+            return new PhasewardMechanicStatus(mechanic.Name, !_isResearchMapping && !_isResearchPreview && mechanic.SkillIds.Length > 0,
                 mechanic.CastSeconds, mechanic.CooldownSeconds, countdown, seen, elapsed,
                 trigger, mechanic.BossLines, mechanic.Notes);
         }).ToArray();
@@ -221,7 +390,17 @@ public sealed class PhasewardEngine
             _templateId, _runtimeId, _engagedAt, statuses, cues, timers,
             _encounter.CommunityNotes, _encounter.FrenzyReferenceTimes, hpPercent)
         {
-            LearnedPredictions = BuildLearnedPredictions(now, hpPercent)
+            IsResearchPreview = _isResearchPreview,
+            ResearchMeasuredIntervals = _researchMeasuredIntervals,
+            ResearchAverageCooldownErrorSeconds = _researchMeasuredIntervals == 0 ? null :
+                _researchTotalCooldownErrorSeconds / _researchMeasuredIntervals,
+            IsResearchMapping = _isResearchMapping,
+            IsBorrowedDifficulty = _isBorrowedDifficulty,
+            MechanicsSourceNpcId = _mechanicsSourceNpcId,
+            HasMechanicsData = statuses.Length > 0 || cues.Length > 0,
+            LearnedPredictions = _isResearchMapping || _isResearchPreview
+                ? Array.Empty<PhasewardLearnedPrediction>() : BuildLearnedPredictions(now, hpPercent),
+            Stagger = _stagger.Snapshot(now)
         };
     }
 
@@ -272,8 +451,11 @@ public sealed class PhasewardEngine
                     priority = 1;
                     break;
                 case PhasewardLearningAnalyzer.RuleKind.PullTime:
-                    secondsRemaining = (_engagedAt.Value.AddSeconds(rule.Value) - now).TotalSeconds;
-                    basis = "pull time";
+                    double staggerDelay = 0; // Stagger research mode: no predictive timer shift.
+                    secondsRemaining = (_engagedAt.Value.AddSeconds(rule.Value + staggerDelay) - now).TotalSeconds;
+                    basis = staggerDelay > 0
+                        ? $"pull time · Stagger +{staggerDelay:0}s (estimated)"
+                        : "pull time";
                     priority = 2;
                     window = Math.Max(30, rule.Value);
                     break;

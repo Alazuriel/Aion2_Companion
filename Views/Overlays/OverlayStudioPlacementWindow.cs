@@ -18,7 +18,7 @@ internal sealed class OverlayStudioPlacementWindow : Window
     private readonly DispatcherTimer? _demoTimer;
     private StackPanel? _demoRows;
     private TextBlock? _demoBadge;
-    private double _demoSeconds = 17;
+    private double _demoSeconds = 5;
     private bool _applying;
     private bool _resizing;
     private Point _resizeOrigin;
@@ -130,24 +130,14 @@ internal sealed class OverlayStudioPlacementWindow : Window
     {
         if (_demoRows is null || _demoBadge is null) return;
         _demoSeconds -= 0.25;
-        if (_demoSeconds <= 0) _demoSeconds = 17;
+        if (_demoSeconds <= 0) _demoSeconds = 5;
         _demoBadge.Text = LocalizationService.Get("PwDemo");
         _demoRows.Children.Clear();
-        // Real HUD row component, sample values only; never touches actual combat data.
-        var examples = new[]
-        {
-            new PhasewardHudBar(LocalizationService.Get("PwDemoMechanic"), _demoSeconds,
-                17, Color.Parse("#3CD8FF")),
-            new PhasewardHudBar(LocalizationService.Get("PwDemoSkillTwo"), _demoSeconds + 10,
-                38, Color.Parse("#FFC76E")),
-            new PhasewardHudBar(LocalizationService.Get("PwDemoSkillThree"), _demoSeconds + 25,
-                60, Color.Parse("#3CD8FF")),
-            new PhasewardHudBar(LocalizationService.Get("PwDemoSkillFour"), _demoSeconds + 48,
-                90, Color.Parse("#B88CFF"))
-        };
-        int count = PhasewardHudVisuals.VisibleRows(Math.Max(220, Bounds.Height) - 35, false, 4);
-        for (int i = 0; i < Math.Min(count, examples.Length); i++)
-            _demoRows.Children.Add(PhasewardHudVisuals.Row(examples[i], i == 0));
+        // Studio demonstration matches the live HUD: Stagger only, fake timer.
+        // This demonstration NEVER invokes the real detection engine.
+        _demoRows.Children.Add(PhasewardHudVisuals.Row(
+            new PhasewardHudBar("STAGGER", _demoSeconds, 5,
+                Color.Parse("#58D8EE")), nearest: true));
     }
 
     public void Apply(StudioWidget widget)

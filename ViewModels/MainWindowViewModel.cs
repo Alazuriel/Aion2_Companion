@@ -49,6 +49,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private long _bossStartTimestamp;
     private long _bossLastHitTimestamp;
     private readonly BossHpTracker _bossHpTracker = new();
+    private readonly BossHpWipeDetector _bossHpWipeDetector = new();
     private long _lastRejectedHpDiagnostic;
     private int _suppressedRejectedHpPackets;
     private MeterSnapshot _lastBossSnapshot = new();
@@ -209,6 +210,10 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         public long BossDamage { get; set; }
         public long TotalHealing { get; set; }
         public long BossHealing { get; set; }
+        // Independent of outgoing damage/healing. Actor=hostile, Target=party player.
+        public long TotalDamageTaken { get; set; }
+        public long BossDamageTaken { get; set; }
+        public List<IncomingDamageSample> IncomingDamageEvents { get; } = new();
 
         public byte? ClassId { get; set; }
         public string ClassName { get; set; } = "";
@@ -355,6 +360,26 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
                     sample.RawValue,
                     hpBoss.MaxHp,
                     frame.Time);
+
+                // A boss HP snap-back is a wipe CANDIDATE until a second
+                // near-maximum sample confirms it. No single-packet wipe.
+                bool eligibleForWipe = _fightActive && !_fightEndPending &&
+                    hp.Target == _currentBossRuntimeId &&
+                    _fightTargets.Contains(hp.Target) &&
+                    _bossStartTimestamp > 0 &&
+                    (Stopwatch.GetTimestamp() - _bossStartTimestamp) /
+                    (double)Stopwatch.Frequency >= 3.0;
+                BossHpResetStatus wipe = _bossHpWipeDetector.Observe(
+                    hp.Target, sample.RawValue, hpBoss.MaxHp, frame.Time,
+                    eligibleForWipe);
+                if (wipe == BossHpResetStatus.Candidate)
+                    DebugConsole.Log("phaseward", $"[BOSS HP RESET?] Candidate boss={hp.Target}");
+                if (wipe == BossHpResetStatus.Confirmed)
+                {
+                    DebugConsole.Log("phaseward", $"[BOSS WIPE] Confirmed HP reset boss={hp.Target}");
+                    FinalizeCombat("BossHpResetWipe");
+                    return;
+                }
             }
 
             if (sample.RawValue == 0)
@@ -676,6 +701,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
             $"Remaining={Math.Max(0, (expiry - now) / (double)Stopwatch.Frequency):F2}s");
 
         // A régi statisztikát még NEM mentjük, és nem is veszítjük el.
+        _bossHpWipeDetector.Reset();
         _fightActive = false;
         _fightEndPending = false;
         _fightEndRequestedAt = 0;
@@ -753,6 +779,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         _MobsInCombat.Add(targetId);
 
         _bossHpTracker.Remove(targetId);
+        _bossHpWipeDetector.Reset();
 
         DebugConsole.Log("dpstime",
             $"[FIGHT RESTORED] Target={targetId} | " +
@@ -824,7 +851,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         if (finalSnapshot.IsBossEncounter)
             _lastBossSnapshot = BuildSnapshot(bossOnly: true);
 
-        SaveFightToCombatLog(completed: true);
+        SaveFightToCombatLog(completed: reason != "BossHpResetWipe");
         CountDps();
 
         foreach (uint target in _fightTargets)
@@ -835,7 +862,9 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         _deadFightTargets.Clear();
         // Normal finalized fight (including timeout/wipe with unknown outcome):
         // queue anonymized Phaseward observations only when Community Sync was opted in.
-        PhasewardHub.Current?.Reset(communityPullCompleted: true);
+        PhasewardHub.Current?.Reset(communityPullCompleted: true,
+            outcome: reason == "BossHpResetWipe" ? "wipe" : "unknown");
+        _bossHpWipeDetector.Reset();
         ScheduleAutomaticDpsOverlayHide();
     }
 
@@ -845,7 +874,8 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
             return;
 
         MeterSnapshot snapshot = BuildSnapshot();
-        if (snapshot.Duration <= 0 || snapshot.TotalDamage <= 0 && snapshot.TotalHealing <= 0)
+        if (snapshot.Duration <= 0 ||
+            (snapshot.TotalDamage <= 0 && snapshot.TotalHealing <= 0 && snapshot.TotalDamageTaken <= 0))
             return;
 
         long endedTimestamp = _fightEndTimestamp > 0
@@ -910,11 +940,63 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
             {
                 // The parser already decoded an actor+skill hit. No guessing from bytes.
                 PhasewardHub.Current?.ObserveBossDamage(hit.Actor, hit.Skill, capturedAt);
+                ObserveIncomingDamage(hit);
                 ApplyDamageHit(hit);
             }
         }
     }
     
+    // [Nexforge DamageTaken v0.1] Track only decoded, deduplicated enemy -> party hits.
+    // No guessed raw payload offsets and no changes to DPS, healing, or Phaseward.
+    // This v0.1 deliberately counts only actors inside the active fight; adds not
+    // yet associated with this fight may be missed rather than misattributed.
+    // Nexforge Damage Taken Log Timeline v0.2 — timestamped incoming samples.
+    private void ObserveIncomingDamage(DamageHit hit)
+    {
+        if (!_fightActive || _fightEndPending || hit.Damage == 0 ||
+            hit.Damage > DamageScanner.MaxAcceptedDamage || hit.Actor == hit.Target)
+            return;
+
+        if (!_fightTargets.Contains(hit.Actor) && hit.Actor != _currentBossRuntimeId)
+            return;
+        if (hit.Actor == _SelfId ||
+            PartyMembers.Any(p => p.Id != 0 && p.Id == hit.Actor))
+            return;
+
+        bool isSelf = _SelfId != 0 && hit.Target == _SelfId;
+        PartyMemberEntry? member = isSelf ? null :
+            PartyMembers.FirstOrDefault(p => p.Id != 0 && p.Id == hit.Target);
+        if (!isSelf && member is null)
+            return;
+
+        uint playerId = hit.Target;
+        if (!_damageByPlayer.TryGetValue(playerId, out PlayerDamageStats? stats))
+        {
+            stats = new PlayerDamageStats
+            {
+                Name = isSelf ? _selfName : member!.Name,
+                ClassId = isSelf ? _selfClassId : member?.ClassId,
+                ClassName = isSelf ? _selfClassName : member?.ClassName ?? "",
+                ClassColor = isSelf ? _selfClassColor : member?.ClassColor ?? "#9CA3AF",
+                ClassIcon = isSelf ? _selfClassIcon : member?.ClassIcon,
+            };
+            _damageByPlayer[playerId] = stats;
+        }
+        // Separate incoming stream: no boss skill IDs/names/icons are guessed.
+        // Keep the full counters even after the bounded event buffer is full.
+        stats.TotalDamageTaken += hit.Damage;
+        bool bossSource = _currentBossRuntimeId != 0 && hit.Actor == _currentBossRuntimeId;
+        if (bossSource) stats.BossDamageTaken += hit.Damage;
+        if (_fightStartTimestamp > 0 &&
+            stats.IncomingDamageEvents.Count < MaxStoredCombatEventsPerPlayer)
+        {
+            double at = Math.Max(0, (Stopwatch.GetTimestamp() - _fightStartTimestamp) /
+                (double)Stopwatch.Frequency);
+            if (double.IsFinite(at) && at <= 7200)
+                stats.IncomingDamageEvents.Add(new IncomingDamageSample(at, hit.Damage, bossSource));
+        }
+    }
+
     private void ApplyHealHit(DamageHit hit)
     {
         if (hit.Damage <= 0 || _SelfId == 0)
@@ -1022,6 +1104,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
         if (_MobsInCombat.Count == 0)
             return false;
 
+        _bossHpWipeDetector.Reset();
         _damageByPlayer.Clear();
         _playerDeaths = new PlayerDeathTracker();
         _fightTargets.Clear();
@@ -2034,9 +2117,15 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
 
         // Phaseward is loaded ONCE by ForgeDataLoader like all other NXFG datasets.
         // The VM only creates the UI/gameplay observer; it does not decode files.
-        if (_forgeDataLoader._phasewardPack is PhasewardPack pack)
+        PhasewardStaggerProtocol.Load();
+        PhasewardPack? approvedPhasewardPack = _forgeDataLoader._phasewardPack;
+        PhasewardPack? researchPreviewPack = _forgeDataLoader._researchPreviewPack;
+        if (approvedPhasewardPack is not null || researchPreviewPack is not null || _forgeDataLoader._bossesDatabase is not null)
         {
-            PhasewardHub.SetEngine(new PhasewardEngine(pack), _forgeDataLoader.PhasewardLoadStatus);
+            var engine = new PhasewardEngine(approvedPhasewardPack ?? new PhasewardPack(), researchPreviewPack);
+            engine.ConfigureBossCatalog(_forgeDataLoader._bossesDatabase, researchPreviewPack);
+            PhasewardHub.SetEngine(engine, _forgeDataLoader.PhasewardLoadStatus + " | " +
+                _forgeDataLoader.PhasewardResearchPreviewStatus);
             DiagnosticRuntime.Breadcrumb("phaseward_load");
         }
         else
@@ -2287,6 +2376,7 @@ private void ReplayPendingDamage(uint summonId, uint ownerId)
 
         if (!_fightActive)
         {
+            _bossHpWipeDetector.Reset();
             _damageByPlayer.Clear();
             _playerDeaths = new PlayerDeathTracker();
             _fightTargets.Clear();
@@ -2716,6 +2806,14 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
             BossDamage = st.BossDamage,
             Healing = bossOnly ? st.BossHealing : st.TotalHealing,
             BossHealing = st.BossHealing,
+            DamageTaken = bossOnly ? st.BossDamageTaken : st.TotalDamageTaken,
+            BossDamageTaken = st.BossDamageTaken,
+            IncomingDamageEvents = bossOnly
+                ? st.IncomingDamageEvents
+                    .Where(e => e.IsBossSource && e.Time >= bossStartOffset)
+                    .Select(e => new IncomingDamageSample(
+                        Math.Max(0, e.Time - bossStartOffset), e.Amount, true)).ToArray()
+                : st.IncomingDamageEvents.ToArray(),
             Events = bossOnly
                 ? st.SnapshotEvents
                     .Where(entry => entry.Time >= bossStartOffset && (entry.IsHeal || entry.IsBossTarget))
@@ -2851,6 +2949,7 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
     }
 
     private static bool RequiresRuntimeProcessing(Opcode opcode) =>
+        (opcode.Value == 0xE005 || opcode.Value == 0x364B) ||
         opcode == OpcodeId.PetList ||
         opcode == OpcodeId.PetAdded ||
         opcode == OpcodeId.PetLevel ||
@@ -2973,6 +3072,7 @@ private IReadOnlyList<EncounterMob> BuildEncounterMobs()
     private void ProcessDecodedFrameOnUi(WireFrame frame)
     {
         Opcode opcode = frame.Opcode;
+        PhasewardStaggerResearch.Observe(frame, Program.DeveloperMode);
 
 
         if (opcode == OpcodeId.PetList)

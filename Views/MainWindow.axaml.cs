@@ -43,6 +43,7 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _onboardingPulseTimer;
     private List<OnboardingStep> _onboardingSteps = new();
     private int _onboardingIndex = -1;
+    private string? _onboardingPageKey;
     private bool _onboardingPulseHigh;
     private string _characterDetailsReturnPage = "MyCharacters";
 
@@ -686,9 +687,11 @@ public partial class MainWindow : Window
         var all = new List<OnboardingStep>
         {
             new("Dashboard", "HomeNavButton", "OnboardingHomeTitle", "OnboardingHomeText", new Version(0, 1, 0)),
+            new("Account", "AccountNavButton", "OnboardingAccountTitle", "OnboardingAccountText", new Version(0, 2, 2)),
             new("Dashboard", "DpsNavButton", "OnboardingDpsTitle", "OnboardingDpsText", new Version(0, 1, 0)),
             new("CombatLog", "CombatLogNavButton", "OnboardingCombatLogTitle", "OnboardingCombatLogText", new Version(0, 1, 0)),
             new("EventTimers", "EventTimersNavButton", "OnboardingTimersTitle", "OnboardingTimersText", new Version(0, 1, 5)),
+            new("Leaderboards", "LeaderboardsNavButton", "OnboardingLeaderboardsTitle", "OnboardingLeaderboardsText", new Version(0, 2, 2)),
             new("Settings", "SettingsNavButton", "OnboardingSettingsTitle", "OnboardingSettingsText", new Version(0, 1, 0)),
             new("Support", "SupportNavButton", "OnboardingSupportTitle", "OnboardingSupportText", new Version(0, 1, 0)),
             new("Changelog", "ChangelogNavButton", "OnboardingChangelogTitle", "OnboardingChangelogText", new Version(0, 1, 0)),
@@ -705,6 +708,7 @@ public partial class MainWindow : Window
         }
 
         _onboardingIndex = 0;
+        _onboardingPageKey = null;
         this.FindControl<Grid>("OnboardingLayer")!.IsVisible = true;
         _onboardingPulseTimer.Start();
         ShowOnboardingStep();
@@ -716,7 +720,12 @@ public partial class MainWindow : Window
             return;
 
         OnboardingStep step = _onboardingSteps[_onboardingIndex];
-        ShowPage(step.PageKey);
+        // A language switch must not destroy and recreate the active tour page.
+        if (!string.Equals(_onboardingPageKey, step.PageKey, StringComparison.Ordinal))
+        {
+            ShowPage(step.PageKey);
+            _onboardingPageKey = step.PageKey;
+        }
         this.FindControl<TextBlock>("OnboardingCounter")!.Text =
             LocalizationService.Format("OnboardingStep", _onboardingIndex + 1, _onboardingSteps.Count);
         this.FindControl<TextBlock>("OnboardingTitle")!.Text = LocalizationService.Get(step.TitleKey);
@@ -743,13 +752,13 @@ public partial class MainWindow : Window
         if (origin is null)
             return;
 
-        const double gap = 7;
-        double x = Math.Max(0, origin.Value.X - gap);
-        double y = Math.Max(0, origin.Value.Y - gap);
-        double width = Math.Min(layer.Bounds.Width - x, target.Bounds.Width + gap * 2);
-        double height = Math.Min(layer.Bounds.Height - y, target.Bounds.Height + gap * 2);
         double fullWidth = layer.Bounds.Width;
         double fullHeight = layer.Bounds.Height;
+        const double gap = 7;
+        double x = Math.Clamp(origin.Value.X - gap, 0, fullWidth);
+        double y = Math.Clamp(origin.Value.Y - gap, 0, fullHeight);
+        double width = Math.Max(0, Math.Min(fullWidth - x, target.Bounds.Width + gap * 2));
+        double height = Math.Max(0, Math.Min(fullHeight - y, target.Bounds.Height + gap * 2));
 
         canvas.Width = fullWidth;
         canvas.Height = fullHeight;
@@ -761,13 +770,34 @@ public partial class MainWindow : Window
             fullWidth, Math.Max(0, fullHeight - y - height));
         SetCanvasRect(this.FindControl<Border>("OnboardingHighlight")!, x, y, width, height);
 
-        const double cardWidth = 380;
-        const double cardHeight = 270;
-        double cardX = x + width + 22;
-        if (cardX + cardWidth > fullWidth - 20)
-            cardX = Math.Max(20, x - cardWidth - 22);
-        double cardY = Math.Clamp(y + height / 2 - cardHeight / 2, 20, Math.Max(20, fullHeight - cardHeight - 20));
+        // Never position the help card outside the current window. Avoid a
+        // fixed height because NFL translations wrap differently per language.
+        const double margin = 16;
+        const double separation = 16;
         Border card = this.FindControl<Border>("OnboardingCard")!;
+        double cardWidth = Math.Min(380, Math.Max(0, fullWidth - margin * 2));
+        card.Width = cardWidth;
+        card.MaxHeight = Math.Max(0, fullHeight - margin * 2);
+        card.Measure(new Size(cardWidth, Math.Max(0, fullHeight - margin * 2)));
+        double cardHeight = Math.Min(card.DesiredSize.Height, card.MaxHeight);
+        double rightX = x + width + separation;
+        double leftX = x - cardWidth - separation;
+        bool fitsRight = rightX + cardWidth <= fullWidth - margin;
+        bool fitsLeft = leftX >= margin;
+
+        double cardX = fitsRight ? rightX : fitsLeft ? leftX : Math.Max(margin, (fullWidth - cardWidth) / 2);
+        double cardY = y + height / 2 - cardHeight / 2;
+        if (!fitsRight && !fitsLeft)
+        {
+            // Narrow windows: prefer below the highlighted control or above
+            // when more vertical space is available.
+            double belowY = y + height + separation;
+            double aboveY = y - cardHeight - separation;
+            cardY = belowY + cardHeight <= fullHeight - margin ? belowY
+                : aboveY >= margin ? aboveY
+                : Math.Max(margin, fullHeight - cardHeight - margin);
+        }
+        cardY = Math.Clamp(cardY, margin, Math.Max(margin, fullHeight - cardHeight - margin));
         Canvas.SetLeft(card, cardX);
         Canvas.SetTop(card, cardY);
     }
@@ -806,6 +836,7 @@ public partial class MainWindow : Window
     {
         CompanionSettings.LastSeenOnboardingVersion = ChangelogService.GetCurrentVersion();
         _onboardingIndex = -1;
+        _onboardingPageKey = null;
         _onboardingSteps.Clear();
         _onboardingPulseTimer.Stop();
         this.FindControl<Grid>("OnboardingLayer")!.IsVisible = false;

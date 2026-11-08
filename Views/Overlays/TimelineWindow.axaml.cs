@@ -226,7 +226,14 @@ public partial class TimelineWindow : Window
                 }
                 token.ThrowIfCancellationRequested();
                 int cellCount = Math.Max(1, (int)Math.Ceiling(duration / cellSeconds));
-                foreach (var group in selectedPlayer.Events.GroupBy(ev => ev.Skill, StringComparer.Ordinal))
+                // Nexforge Damage Taken Log Timeline v0.2: generic incoming hit samples, never fabricated boss skills.
+                SkillEvent[] sourceEvents = mode == MeterMode.DamageTaken
+                    ? selectedPlayer.IncomingDamageEvents.Select(e => new SkillEvent
+                    {
+                        Time = e.Time, Amount = e.Amount, Skill = "Incoming hit", IsHeal = false
+                    }).ToArray()
+                    : selectedPlayer.Events.ToArray();
+                foreach (var group in sourceEvents.GroupBy(ev => ev.Skill, StringComparer.Ordinal))
                 {
                     token.ThrowIfCancellationRequested();
                     var events = group.ToList();
@@ -239,7 +246,7 @@ public partial class TimelineWindow : Window
                     }
                     output.LaneBuckets[group.Key] = buckets;
                 }
-                output.SortedEvents = selectedPlayer.Events.OrderBy(ev => ev.Time).ToArray();
+                output.SortedEvents = sourceEvents.OrderBy(ev => ev.Time).ToArray();
                 token.ThrowIfCancellationRequested();
                 return output;
             }, token);
@@ -417,16 +424,21 @@ public partial class TimelineWindow : Window
         SetModeActive("ModeDamage", MeterMode.Damage);
         SetModeActive("ModeHps", MeterMode.Hps);
         SetModeActive("ModeHeal", MeterMode.Heal);
+        SetModeActive("ModeTaken", MeterMode.DamageTaken);
         this.FindControl<TextBlock>("ChartTitle")!.Text = _mode switch
         {
             MeterMode.Dps => "DPS Over Time",
             MeterMode.Hps => "HPS Over Time",
             MeterMode.Damage => "Total Damage Over Time",
+            MeterMode.DamageTaken => "Damage Taken Over Time",
             _ => "Total Healing Over Time",
         };
         this.FindControl<TextBlock>("ZoomText")!.Text = $"Zoom ×{_zoom:0.0}";
         this.FindControl<TextBlock>("ChartMeta")!.Text =
-            $"{_active.Count(x => x)} players · wheel to zoom · click for events";
+            _mode == MeterMode.DamageTaken &&
+            !_snapshot.Players.Any(p => p.IncomingDamageEvents.Count > 0)
+                ? "No incoming-hit timeline in this saved fight (old log / totals only)"
+                : $"{_active.Count(x => x)} players · wheel to zoom · click for events";
     }
 
     private void SetModeActive(string name, MeterMode m) =>
@@ -627,8 +639,13 @@ public partial class TimelineWindow : Window
         for (int i = first; i < Math.Min(lo, first + cap); i++)
         {
             var ev = _sortedEvents[i];
-            string suffix = ev.Crit ? "  CRIT" : ev.IsHeal ? "  HEAL" : "";
-            lines.Add($"{FormatTime(ev.Time)}  ·  {ev.Skill}  ·  {Meter.Num(ev.Amount)}{suffix}");
+            if (_mode == MeterMode.DamageTaken)
+                lines.Add($"{FormatTime(ev.Time)}  ·  Damage received  ·  {Meter.Num(ev.Amount)}");
+            else
+            {
+                string suffix = ev.Crit ? "  CRIT" : ev.IsHeal ? "  HEAL" : "";
+                lines.Add($"{FormatTime(ev.Time)}  ·  {ev.Skill}  ·  {Meter.Num(ev.Amount)}{suffix}");
+            }
         }
         if (total > cap) lines.Add($"… +{total - cap} events");
         listTb.Text = string.Join("\n", lines);
@@ -636,7 +653,8 @@ public partial class TimelineWindow : Window
 
     private void HideEventDetail()
     {
-        this.FindControl<TextBlock>("EventDetailTime")!.Text = "Select a skill event";
+        this.FindControl<TextBlock>("EventDetailTime")!.Text = _mode == MeterMode.DamageTaken
+            ? "Select an incoming hit" : "Select a skill event";
         this.FindControl<TextBlock>("EventDetailList")!.Text = string.Empty;
     }
 
@@ -804,7 +822,7 @@ public partial class TimelineWindow : Window
         Canvas.SetTop(marker, py - 4);
         c.Children.Add(marker);
 
-        bool cumulative = _mode is MeterMode.Damage or MeterMode.Heal;
+        bool cumulative = _mode is MeterMode.Damage or MeterMode.Heal or MeterMode.DamageTaken;
         string peakText = cumulative
             ? LocalizationService.Format("FinalTotal", Meter.Format(selMax, _mode))
             : LocalizationService.Format("PeakAt", Meter.Format(selMax, _mode), FormatTime(peak));
@@ -844,6 +862,8 @@ public partial class TimelineWindow : Window
         ticks.Children.Clear();
 
         this.FindControl<TextBlock>("LanesTitle")!.Text = $"{_player.Name} · ×{_zoom:0.0}";
+        this.FindControl<TextBlock>("LaneHeadingText")!.Text =
+            _mode == MeterMode.DamageTaken ? "Incoming hit timeline" : "Skill Timeline";
 
         double cellWidth = _cellSeconds * _pxPerSecond;
         int cellCount = Math.Max(1, (int)Math.Ceiling(Duration / _cellSeconds));
@@ -858,7 +878,8 @@ public partial class TimelineWindow : Window
 
         if (lanes.Count == 0)
         {
-            this.FindControl<TextBlock>("LaneCountLabel")!.Text = "0 skills";
+            this.FindControl<TextBlock>("LaneCountLabel")!.Text = _mode == MeterMode.DamageTaken
+                ? "No incoming hit events" : "0 skills";
             this.FindControl<Button>("LoadMoreSkillsButton")!.IsVisible = false;
             labels.Children.Add(new TextBlock
             {
@@ -871,8 +892,10 @@ public partial class TimelineWindow : Window
         }
 
         int visible = Math.Min(lanes.Count, _visibleSkillCount);
-        this.FindControl<TextBlock>("LaneCountLabel")!.Text = $"{visible} / {lanes.Count} skills";
-        this.FindControl<Button>("LoadMoreSkillsButton")!.IsVisible = visible < lanes.Count;
+        this.FindControl<TextBlock>("LaneCountLabel")!.Text = _mode == MeterMode.DamageTaken
+            ? $"{_player.IncomingDamageEvents.Count} hits" : $"{visible} / {lanes.Count} skills";
+        this.FindControl<Button>("LoadMoreSkillsButton")!.IsVisible =
+            _mode != MeterMode.DamageTaken && visible < lanes.Count;
 
         foreach (var lane in lanes.Take(visible))
         {

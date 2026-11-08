@@ -124,10 +124,14 @@ public partial class BossAssistantView : UserControl
             return;
         }
 
-        _mechanicsHeading.IsVisible = true;
+        _mechanicsHeading.IsVisible = Program.DeveloperMode;
         _state.Text = L("PwLive");
         _boss.Text = snapshot.BossName;
         _hint.Text = string.IsNullOrWhiteSpace(snapshot.Instance) ? L("PwDetected") : snapshot.Instance;
+        // Experimental casts/cooldowns/cues must not leak into normal UI.
+        // They are still processed by PhasewardEngine and available in Developer.
+        if (!Program.DeveloperMode)
+            return;
 
         // Only real, active countdowns from PhasewardHub; no fabricated time.
         foreach (var timer in snapshot.Timers.Where(x => !x.Elapsed && x.SecondsRemaining > 0)

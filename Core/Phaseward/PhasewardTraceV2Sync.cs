@@ -20,7 +20,7 @@ namespace AION_2_Companion.Core.Phaseward;
 /// <summary>
 /// Only sends the immutable v0.8 gzip/JSONL research trace. It does not query community models.
 /// V2 uploads are separate from the v1 600-event Community Sync consent and queue.
-/// Network endpoint/JSON request fields must be checked against VYREN's deployed receiver.
+/// Network endpoint and JSON request fields must match the deployed receiver.
 /// </summary>
 public sealed class PhasewardTraceV2Sync
 {

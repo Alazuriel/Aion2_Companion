@@ -253,7 +253,8 @@
           </StackPanel>
         </Border>
 
-        <Grid Grid.Row="2" ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
+        <!-- Nexforge Damage Taken Log Timeline v0.2 -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,*,*,*,*" ColumnSpacing="8">
           <Border Classes="tacticalCard" Padding="11,10" BorderBrush="#34747A">
             <Border.Background>
               <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
@@ -304,6 +305,14 @@
               <TextBlock Name="TotalHpsText" Classes="mono" FontSize="19" FontWeight="Bold"
                          Foreground="#76F4D2" TextTrimming="CharacterEllipsis"/>
               <Border Height="2" Background="#45E0D2" CornerRadius="2"/>
+            </StackPanel>
+          </Border>
+          <Border Grid.Column="4" Classes="tacticalCard" Padding="11,10" BorderBrush="#985B55">
+            <StackPanel Spacing="6">
+              <TextBlock Text="TOTAL TAKEN" Classes="tacticalLabel"/>
+              <TextBlock Name="TotalTakenText" Classes="mono" FontSize="19" FontWeight="Bold"
+                         Foreground="#FFB8A0" TextTrimming="CharacterEllipsis"/>
+              <Border Height="2" Background="#F38B78" CornerRadius="2"/>
             </StackPanel>
           </Border>
         </Grid>
@@ -375,7 +384,7 @@
                               MinHeight="30" Padding="9,4" Click="OpenTimelineClick"/>
                     </WrapPanel>
                   </Grid>
-                  <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*" ColumnSpacing="5">
+                  <Grid Grid.Row="1" ColumnDefinitions="*,*,*,*,*" ColumnSpacing="5">
                     <Border Background="#18334A" CornerRadius="9" Padding="8,8">
                       <StackPanel Spacing="4">
                         <TextBlock Text="DPS" Classes="tacticalLabel"/>
@@ -402,6 +411,13 @@
                         <TextBlock Text="{DynamicResource TotalHealing}" Classes="tacticalLabel" TextTrimming="CharacterEllipsis"/>
                         <TextBlock Name="PlayerHealingText" Text="—" Classes="mono" FontSize="14"
                                    Foreground="#B7F4D7" TextTrimming="CharacterEllipsis"/>
+                      </StackPanel>
+                    </Border>
+                    <Border Grid.Column="4" Background="#3C262C" CornerRadius="9" Padding="8,8">
+                      <StackPanel Spacing="4">
+                        <TextBlock Text="TAKEN" Classes="tacticalLabel"/>
+                        <TextBlock Name="PlayerTakenText" Text="—" Classes="mono" FontSize="14"
+                                   Foreground="#FFB8A0" TextTrimming="CharacterEllipsis"/>
                       </StackPanel>
                     </Border>
                   </Grid>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using AION_2_Companion.Core.GameData;
 using AION_2_Companion.Core.Wire;
 using AION_2_Companion.Core.Phaseward;
@@ -25,6 +26,8 @@ public class ForgeDataLoader
     public EventTimersDatabase? _eventTimersDatabase;
     public ServersDatabase? _serversDatabase;
     public PhasewardPack? _phasewardPack;
+    public PhasewardPack? _researchPreviewPack;
+    public string PhasewardResearchPreviewStatus { get; private set; } = "Disabled";
     public string PhasewardLoadStatus { get; private set; } = "Phaseward pack not loaded";
     
     private static T? TryLoad<T>(string path, Func<string, T> load, Func<T, string> info)
@@ -141,6 +144,44 @@ public class ForgeDataLoader
                 ? $"Phaseward NFG failed to load ({Path.GetFileName(phasewardPath)}); see ForgeData error log"
                 : $"Phaseward loaded: {_phasewardPack.Encounters.Count} bosses; " +
                   $"{_phasewardPack.AmbiguousBossNpcIds.Count} ambiguous NPC IDs excluded ({Path.GetFileName(phasewardPath)})";
+        // Optional local research preview: a deliberately named JSON sidecar.
+        // Original authenticated Phaseward NFG remains the authoritative default.
+        _researchPreviewPack = null;
+        string previewPath = Path.Combine(dataDir, "AION2_Phaseward.research-test.json");
+        if (File.Exists(previewPath))
+        {
+            try
+            {
+                var previewInfo = new FileInfo(previewPath);
+                if (previewInfo.Length is <= 0 or > 2_000_000)
+                    throw new InvalidDataException("Research preview JSON size is invalid.");
+                using JsonDocument previewJson = JsonDocument.Parse(File.ReadAllText(previewPath));
+                if (previewJson.RootElement.ValueKind != JsonValueKind.Array)
+                    throw new InvalidDataException("Research preview requires an array of boss candidates.");
+                int candidates = 0;
+                foreach (JsonElement boss in previewJson.RootElement.EnumerateArray())
+                {
+                    if (boss.ValueKind != JsonValueKind.Object ||
+                        !boss.TryGetProperty("source_kind", out JsonElement kind) ||
+                        kind.ValueKind != JsonValueKind.String ||
+                        kind.GetString() != "research_candidate")
+                        throw new InvalidDataException("Only research_candidate records are allowed in preview.");
+                    candidates++;
+                }
+                if (candidates is < 1 or > 100)
+                    throw new InvalidDataException("Research preview candidate count is invalid.");
+                _researchPreviewPack = PhasewardPack.FromJson(previewJson.RootElement);
+                PhasewardResearchPreviewStatus = $"Research loaded: {_researchPreviewPack.Encounters.Count} boss candidates (experimental)";
+                // Research load diagnostics are developer-only; loading is unchanged.
+                if (AION_2_Companion.Program.DeveloperMode)
+                    DebugConsole.Log("forgedata", $"[Phaseward] {PhasewardResearchPreviewStatus}");
+            }
+            catch (Exception ex)
+            {
+                PhasewardResearchPreviewStatus = $"Research preview disabled: {ex.Message}";
+                DebugConsole.Log("error", $"[Phaseward] {PhasewardResearchPreviewStatus}");
+            }
+        }
         PhasewardCatalog.Initialize(_phasewardPack);
 
         OpcodeCatalog.Initialize(_opcodesDatabase);

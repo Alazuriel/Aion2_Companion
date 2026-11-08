@@ -38,7 +38,7 @@ public sealed class CharactersViewModel : INotifyPropertyChanged, IDisposable
     // First five board coordinate and grade maps: factual grid metadata from
     // jonboy648/aion2-companion (research/daevanion_sorcerer.json, 2026-10-03).
     // c=Common, r=Rare, e=Epic/Legend, u=Unique, s=Start, .=no node.
-    // Ariel's layout is explicitly a PLACEHOLDER (uses Azphel's silhouette).
+    // Ariel currently reuses the Azphel board silhouette until its dedicated layout is available.
     private static readonly BoardDefinition[] Definitions =
     [
             new("Nezekan", 12, 88, 134, false, "ucc.rce.rcu/c.ecc.ccc.c/rcc.cec.ecr/.c..c.c.c.c/cceccccrccc/e..c.s.c..e/cccrccccecc/c.c.c.c..c./rce.cec.ccr/c.ccc.cce.c/ucr.ecr.ccu"),

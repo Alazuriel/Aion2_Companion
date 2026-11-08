@@ -27,7 +27,7 @@ public sealed record SubmissionParticipantRow(
 
 /// <summary>
 /// Desktop-only Leaderboard review. The server is the authority for ownership and approval.
-/// Group mode uses VYREN's versioned group-v2 contract. The server keeps its own
+/// Group mode uses the versioned group-v2 API contract. The server keeps its own
 /// feature flag, moderation and independent ownership validation.
 /// </summary>
 public partial class LeaderboardSubmissionDialog : Window
@@ -298,7 +298,7 @@ public partial class LeaderboardSubmissionDialog : Window
             errorKey = "UiSubmissionGroupBossCatalogMissing";
             return false;
         }
-        // An instance ID is optional under backend contract #35. Only pass
+        // An instance ID is optional. Only pass
         // already-canonical local values; the server resolves null by NPC ID.
         // Never generate dungeon slugs from the boss's display/location name.
         string? instance = GroupInstanceResolver.Resolve(

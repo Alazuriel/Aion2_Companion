@@ -55,7 +55,17 @@ public static class OverlayStudioStore
             {
                 var data = JsonSerializer.Deserialize<StudioLayout>(File.ReadAllText(FilePath));
                 if (data?.Widgets is not null && data.Presets is not null)
+                {
+                    // Keep custom layout sizes. Migrate only the old default 520x340.
+                    if (data.Widgets.TryGetValue(Phaseward, out var phaseward) &&
+                        phaseward.Width is >= 500 and <= 550 &&
+                        phaseward.Height is >= 320 and <= 360)
+                    {
+                        phaseward.Width = 260;
+                        phaseward.Height = 170;
+                    }
                     return _current = data;
+                }
             }
         }
         catch (Exception) { /* A bad local preference is not a reason to block game startup. */ }

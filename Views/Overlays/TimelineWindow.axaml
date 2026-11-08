@@ -83,6 +83,8 @@
               <Button Name="ModeDamage" Tag="Damage" Classes="tacticalTab" Content="✳   Total damage" Click="ModeClick"/>
               <Button Name="ModeHps" Tag="Hps" Classes="tacticalTab" Content="✚   HPS" Click="ModeClick"/>
               <Button Name="ModeHeal" Tag="Heal" Classes="tacticalTab" Content="♡   Total healing" Click="ModeClick"/>
+              <!-- Nexforge Damage Taken Log Timeline v0.2 -->
+              <Button Name="ModeTaken" Tag="DamageTaken" Classes="tacticalTab" Content="↓   Damage Taken" Click="ModeClick"/>
             </StackPanel>
           </Border>
 
@@ -127,7 +129,7 @@
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                   <StackPanel Orientation="Horizontal" Spacing="7">
                     <TextBlock Text="▱" FontSize="17" Foreground="#37DAED"/>
-                    <TextBlock Text="Skill Timeline" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock Name="LaneHeadingText" Text="Skill Timeline" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
                   </StackPanel>
                   <TextBlock Grid.Column="1" Name="LanesTitle" FontSize="10" Foreground="#96B4C6"
                              VerticalAlignment="Center"/>

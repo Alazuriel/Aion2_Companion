@@ -1,0 +1,1155 @@
+[
+  {
+    "boss_npc_id": 2350707,
+    "name": "NPC 2350707",
+    "instance": "Auto Research",
+    "source_kind": "research_candidate",
+    "mechanics": [
+      {
+        "id": "auto/2350707/1606061",
+        "name": "Skill #1606061",
+        "skill_ids": [
+          1606061
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 0.6
+      },
+      {
+        "id": "auto/2350707/1606050",
+        "name": "Skill #1606050",
+        "skill_ids": [
+          1606050
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 17.2
+      },
+      {
+        "id": "auto/2350707/1606010",
+        "name": "Skill #1606010",
+        "skill_ids": [
+          1606010
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350707/1606020",
+        "name": "Skill #1606020",
+        "skill_ids": [
+          1606020
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350707/1606070",
+        "name": "Skill #1606070",
+        "skill_ids": [
+          1606070
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 34.8
+      },
+      {
+        "id": "auto/2350707/1606100",
+        "name": "Skill #1606100",
+        "skill_ids": [
+          1606100
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 47.3
+      },
+      {
+        "id": "auto/2350707/1606060",
+        "name": "Skill #1606060",
+        "skill_ids": [
+          1606060
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 34.8
+      },
+      {
+        "id": "auto/2350707/1606030",
+        "name": "Skill #1606030",
+        "skill_ids": [
+          1606030
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350707/1606054",
+        "name": "Skill #1606054",
+        "skill_ids": [
+          1606054
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 35.1
+      },
+      {
+        "id": "auto/2350707/1606090",
+        "name": "Skill #1606090",
+        "skill_ids": [
+          1606090
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350707/1606096",
+        "name": "Skill #1606096",
+        "skill_ids": [
+          1606096
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350707/1000009",
+        "name": "Skill #1000009",
+        "skill_ids": [
+          1000009
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 66.6
+      },
+      {
+        "id": "auto/2350707/1001450",
+        "name": "Skill #1001450",
+        "skill_ids": [
+          1001450
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 66.6
+      },
+      {
+        "id": "auto/2350707/1606116",
+        "name": "Skill #1606116",
+        "skill_ids": [
+          1606116
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350707/1606000",
+        "name": "Skill #1606000",
+        "skill_ids": [
+          1606000
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      }
+    ],
+    "players_notes": [
+      {
+        "id": "auto/2350707/1606116/hp",
+        "name": "Skill #1606116 · HP phase",
+        "hp_thresholds_reported": [
+          0
+        ],
+        "source_evidence": "Research candidate, not verified"
+      }
+    ],
+    "community_notes": [
+      "Experimental, not approved for game alerts."
+    ]
+  },
+  {
+    "boss_npc_id": 2350708,
+    "name": "NPC 2350708",
+    "instance": "Auto Research",
+    "source_kind": "research_candidate",
+    "mechanics": [
+      {
+        "id": "auto/2350708/1606371",
+        "name": "Skill #1606371",
+        "skill_ids": [
+          1606371
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350708/1606401",
+        "name": "Skill #1606401",
+        "skill_ids": [
+          1606401
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 20.7
+      },
+      {
+        "id": "auto/2350708/1606390",
+        "name": "Skill #1606390",
+        "skill_ids": [
+          1606390
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350708/1606370",
+        "name": "Skill #1606370",
+        "skill_ids": [
+          1606370
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350708/1606450",
+        "name": "Skill #1606450",
+        "skill_ids": [
+          1606450
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 41.5
+      },
+      {
+        "id": "auto/2350708/1606400",
+        "name": "Skill #1606400",
+        "skill_ids": [
+          1606400
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 41.2
+      },
+      {
+        "id": "auto/2350708/1000009",
+        "name": "Skill #1000009",
+        "skill_ids": [
+          1000009
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 53.9
+      },
+      {
+        "id": "auto/2350708/1001450",
+        "name": "Skill #1001450",
+        "skill_ids": [
+          1001450
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 53.9
+      },
+      {
+        "id": "auto/2350708/1606410",
+        "name": "Skill #1606410",
+        "skill_ids": [
+          1606410
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350708/1606430",
+        "name": "Skill #1606430",
+        "skill_ids": [
+          1606430
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350708/1606440",
+        "name": "Skill #1606440",
+        "skill_ids": [
+          1606440
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350708/1606380",
+        "name": "Skill #1606380",
+        "skill_ids": [
+          1606380
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350708/1606381",
+        "name": "Skill #1606381",
+        "skill_ids": [
+          1606381
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350708/1606420",
+        "name": "Skill #1606420",
+        "skill_ids": [
+          1606420
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350708/1606421",
+        "name": "Skill #1606421",
+        "skill_ids": [
+          1606421
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      }
+    ],
+    "players_notes": [
+      {
+        "id": "auto/2350708/1606430/hp",
+        "name": "Skill #1606430 · HP phase",
+        "hp_thresholds_reported": [
+          46.6
+        ],
+        "source_evidence": "Research candidate, not verified"
+      }
+    ],
+    "community_notes": [
+      "Experimental, not approved for game alerts."
+    ]
+  },
+  {
+    "boss_npc_id": 2350709,
+    "name": "NPC 2350709",
+    "instance": "Auto Research",
+    "source_kind": "research_candidate",
+    "mechanics": [
+      {
+        "id": "auto/2350709/1801580",
+        "name": "Skill #1801580",
+        "skill_ids": [
+          1801580
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 5.1
+      },
+      {
+        "id": "auto/2350709/1801596",
+        "name": "Skill #1801596",
+        "skill_ids": [
+          1801596
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 15
+      },
+      {
+        "id": "auto/2350709/1801597",
+        "name": "Skill #1801597",
+        "skill_ids": [
+          1801597
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 15
+      },
+      {
+        "id": "auto/2350709/1801610",
+        "name": "Skill #1801610",
+        "skill_ids": [
+          1801610
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350709/1801620",
+        "name": "Skill #1801620",
+        "skill_ids": [
+          1801620
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350709/1801600",
+        "name": "Skill #1801600",
+        "skill_ids": [
+          1801600
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350709/1801697",
+        "name": "Skill #1801697",
+        "skill_ids": [
+          1801697
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 4
+      },
+      {
+        "id": "auto/2350709/1801770",
+        "name": "Skill #1801770",
+        "skill_ids": [
+          1801770
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 46.6
+      },
+      {
+        "id": "auto/2350709/1801630",
+        "name": "Skill #1801630",
+        "skill_ids": [
+          1801630
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350709/1000009",
+        "name": "Skill #1000009",
+        "skill_ids": [
+          1000009
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 72.2
+      },
+      {
+        "id": "auto/2350709/1001450",
+        "name": "Skill #1001450",
+        "skill_ids": [
+          1001450
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 72.2
+      },
+      {
+        "id": "auto/2350709/1801660",
+        "name": "Skill #1801660",
+        "skill_ids": [
+          1801660
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350709/1801650",
+        "name": "Skill #1801650",
+        "skill_ids": [
+          1801650
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 72.3
+      },
+      {
+        "id": "auto/2350709/1801730",
+        "name": "Skill #1801730",
+        "skill_ids": [
+          1801730
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350709/1801735",
+        "name": "Skill #1801735",
+        "skill_ids": [
+          1801735
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 77
+      },
+      {
+        "id": "auto/2350709/1801640",
+        "name": "Skill #1801640",
+        "skill_ids": [
+          1801640
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350709/1801665",
+        "name": "Skill #1801665",
+        "skill_ids": [
+          1801665
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 79.6
+      },
+      {
+        "id": "auto/2350709/1801670",
+        "name": "Skill #1801670",
+        "skill_ids": [
+          1801670
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 106.1
+      },
+      {
+        "id": "auto/2350709/1801692",
+        "name": "Skill #1801692",
+        "skill_ids": [
+          1801692
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 79.6
+      },
+      {
+        "id": "auto/2350709/1801720",
+        "name": "Skill #1801720",
+        "skill_ids": [
+          1801720
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 79.6
+      },
+      {
+        "id": "auto/2350709/1801593",
+        "name": "Skill #1801593",
+        "skill_ids": [
+          1801593
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 0.1
+      },
+      {
+        "id": "auto/2350709/1801594",
+        "name": "Skill #1801594",
+        "skill_ids": [
+          1801594
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 0.1
+      },
+      {
+        "id": "auto/2350709/1801595",
+        "name": "Skill #1801595",
+        "skill_ids": [
+          1801595
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 0.1
+      },
+      {
+        "id": "auto/2350709/1801751",
+        "name": "Skill #1801751",
+        "skill_ids": [
+          1801751
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ],
+        "cooldown_seconds": 87.4
+      },
+      {
+        "id": "auto/2350709/1801592",
+        "name": "Skill #1801592",
+        "skill_ids": [
+          1801592
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350709/1801743",
+        "name": "Skill #1801743",
+        "skill_ids": [
+          1801743
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350709/1801590",
+        "name": "Skill #1801590",
+        "skill_ids": [
+          1801590
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350709/1801680",
+        "name": "Skill #1801680",
+        "skill_ids": [
+          1801680
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350709/1801690",
+        "name": "Skill #1801690",
+        "skill_ids": [
+          1801690
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350709/1801696",
+        "name": "Skill #1801696",
+        "skill_ids": [
+          1801696
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350709/1801759",
+        "name": "Skill #1801759",
+        "skill_ids": [
+          1801759
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350709/1801766",
+        "name": "Skill #1801766",
+        "skill_ids": [
+          1801766
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350709/1801748",
+        "name": "Skill #1801748",
+        "skill_ids": [
+          1801748
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2350709/1801756",
+        "name": "Skill #1801756",
+        "skill_ids": [
+          1801756
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      }
+    ],
+    "players_notes": [
+      {
+        "id": "auto/2350709/1801697/hp",
+        "name": "Skill #1801697 · HP phase",
+        "hp_thresholds_reported": [
+          26.4
+        ],
+        "source_evidence": "Research candidate, not verified"
+      },
+      {
+        "id": "auto/2350709/1801730/hp",
+        "name": "Skill #1801730 · HP phase",
+        "hp_thresholds_reported": [
+          26
+        ],
+        "source_evidence": "Research candidate, not verified"
+      },
+      {
+        "id": "auto/2350709/1801593/hp",
+        "name": "Skill #1801593 · HP phase",
+        "hp_thresholds_reported": [
+          76.3
+        ],
+        "source_evidence": "Research candidate, not verified"
+      },
+      {
+        "id": "auto/2350709/1801594/hp",
+        "name": "Skill #1801594 · HP phase",
+        "hp_thresholds_reported": [
+          76.3
+        ],
+        "source_evidence": "Research candidate, not verified"
+      },
+      {
+        "id": "auto/2350709/1801595/hp",
+        "name": "Skill #1801595 · HP phase",
+        "hp_thresholds_reported": [
+          76.3
+        ],
+        "source_evidence": "Research candidate, not verified"
+      },
+      {
+        "id": "auto/2350709/1801592/hp",
+        "name": "Skill #1801592 · HP phase",
+        "hp_thresholds_reported": [
+          75.2
+        ],
+        "source_evidence": "Research candidate, not verified"
+      },
+      {
+        "id": "auto/2350709/1801590/hp",
+        "name": "Skill #1801590 · HP phase",
+        "hp_thresholds_reported": [
+          73.3
+        ],
+        "source_evidence": "Research candidate, not verified"
+      },
+      {
+        "id": "auto/2350709/1801680/hp",
+        "name": "Skill #1801680 · HP phase",
+        "hp_thresholds_reported": [
+          72
+        ],
+        "source_evidence": "Research candidate, not verified"
+      },
+      {
+        "id": "auto/2350709/1801690/hp",
+        "name": "Skill #1801690 · HP phase",
+        "hp_thresholds_reported": [
+          55.8
+        ],
+        "source_evidence": "Research candidate, not verified"
+      },
+      {
+        "id": "auto/2350709/1801696/hp",
+        "name": "Skill #1801696 · HP phase",
+        "hp_thresholds_reported": [
+          24.1
+        ],
+        "source_evidence": "Research candidate, not verified"
+      },
+      {
+        "id": "auto/2350709/1801759/hp",
+        "name": "Skill #1801759 · HP phase",
+        "hp_thresholds_reported": [
+          51.8
+        ],
+        "source_evidence": "Research candidate, not verified"
+      },
+      {
+        "id": "auto/2350709/1801766/hp",
+        "name": "Skill #1801766 · HP phase",
+        "hp_thresholds_reported": [
+          21.1
+        ],
+        "source_evidence": "Research candidate, not verified"
+      },
+      {
+        "id": "auto/2350709/1801748/hp",
+        "name": "Skill #1801748 · HP phase",
+        "hp_thresholds_reported": [
+          52.7
+        ],
+        "source_evidence": "Research candidate, not verified"
+      }
+    ],
+    "community_notes": [
+      "Experimental, not approved for game alerts."
+    ]
+  },
+  {
+    "boss_npc_id": 2340615,
+    "name": "NPC 2340615",
+    "instance": "Auto Research",
+    "source_kind": "research_candidate",
+    "mechanics": [
+      {
+        "id": "auto/2340615/1605672",
+        "name": "Skill #1605672",
+        "skill_ids": [
+          1605672
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340615/1605600",
+        "name": "Skill #1605600",
+        "skill_ids": [
+          1605600
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340615/1605616",
+        "name": "Skill #1605616",
+        "skill_ids": [
+          1605616
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340615/1605610",
+        "name": "Skill #1605610",
+        "skill_ids": [
+          1605610
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340615/1605620",
+        "name": "Skill #1605620",
+        "skill_ids": [
+          1605620
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340615/1605650",
+        "name": "Skill #1605650",
+        "skill_ids": [
+          1605650
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340615/1000009",
+        "name": "Skill #1000009",
+        "skill_ids": [
+          1000009
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340615/1001450",
+        "name": "Skill #1001450",
+        "skill_ids": [
+          1001450
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340615/1605671",
+        "name": "Skill #1605671",
+        "skill_ids": [
+          1605671
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340615/1605630",
+        "name": "Skill #1605630",
+        "skill_ids": [
+          1605630
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340615/1605670",
+        "name": "Skill #1605670",
+        "skill_ids": [
+          1605670
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340615/1605640",
+        "name": "Skill #1605640",
+        "skill_ids": [
+          1605640
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340615/1605660",
+        "name": "Skill #1605660",
+        "skill_ids": [
+          1605660
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340615/1605673",
+        "name": "Skill #1605673",
+        "skill_ids": [
+          1605673
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      }
+    ],
+    "players_notes": [],
+    "community_notes": [
+      "Experimental, not approved for game alerts."
+    ]
+  },
+  {
+    "boss_npc_id": 2340616,
+    "name": "NPC 2340616",
+    "instance": "Auto Research",
+    "source_kind": "research_candidate",
+    "mechanics": [
+      {
+        "id": "auto/2340616/1603270",
+        "name": "Skill #1603270",
+        "skill_ids": [
+          1603270
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340616/1603354",
+        "name": "Skill #1603354",
+        "skill_ids": [
+          1603354
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340616/1603290",
+        "name": "Skill #1603290",
+        "skill_ids": [
+          1603290
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340616/1603360",
+        "name": "Skill #1603360",
+        "skill_ids": [
+          1603360
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340616/1000009",
+        "name": "Skill #1000009",
+        "skill_ids": [
+          1000009
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340616/1001450",
+        "name": "Skill #1001450",
+        "skill_ids": [
+          1001450
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340616/1603240",
+        "name": "Skill #1603240",
+        "skill_ids": [
+          1603240
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340616/1603250",
+        "name": "Skill #1603250",
+        "skill_ids": [
+          1603250
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340616/1603260",
+        "name": "Skill #1603260",
+        "skill_ids": [
+          1603260
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340616/1603280",
+        "name": "Skill #1603280",
+        "skill_ids": [
+          1603280
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340616/1603330",
+        "name": "Skill #1603330",
+        "skill_ids": [
+          1603330
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340616/1603331",
+        "name": "Skill #1603331",
+        "skill_ids": [
+          1603331
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340616/1603340",
+        "name": "Skill #1603340",
+        "skill_ids": [
+          1603340
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340616/1603230",
+        "name": "Skill #1603230",
+        "skill_ids": [
+          1603230
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340616/1603350",
+        "name": "Skill #1603350",
+        "skill_ids": [
+          1603350
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      },
+      {
+        "id": "auto/2340616/1603355",
+        "name": "Skill #1603355",
+        "skill_ids": [
+          1603355
+        ],
+        "guide_warnings": [
+          "Research candidate; review required. Variant unknown"
+        ]
+      }
+    ],
+    "players_notes": [],
+    "community_notes": [
+      "Experimental, not approved for game alerts."
+    ]
+  }
+]

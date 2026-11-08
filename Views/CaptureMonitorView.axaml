@@ -19,6 +19,21 @@
         </Border>
       </Grid>
 
+      <!-- Developer-only Phaseward diagnostics: this page is accessible only in developer mode. -->
+      <Border Classes="panel" Padding="18">
+        <StackPanel Spacing="8">
+          <TextBlock Text="PHASEWARD · RESEARCH / MECHANICS" Classes="section"/>
+          <TextBlock Text="Data stays active. The live Phaseward HUD only shows Stagger."
+                     Classes="hint" TextWrapping="Wrap"/>
+          <TextBlock Name="PhasewardResearchStateText" Text="Checking research pack..."
+                     Classes="body" TextWrapping="Wrap"/>
+          <TextBlock Name="PhasewardResearchBossText" Text="Waiting for boss encounter"
+                     Classes="hint" TextWrapping="Wrap"/>
+          <TextBlock Name="PhasewardResearchSignalsText" Text="No matching casts/hits yet"
+                     Classes="mono" FontSize="11" TextWrapping="Wrap"/>
+        </StackPanel>
+      </Border>
+
       <!-- Adapter és műveletek -->
       <Border Classes="panel" Padding="18">
         <Grid ColumnDefinitions="*,176" ColumnSpacing="24">

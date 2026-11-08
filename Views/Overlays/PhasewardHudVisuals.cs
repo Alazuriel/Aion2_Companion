@@ -66,7 +66,7 @@ internal static class PhasewardHudVisuals
         var panel = new StackPanel { Spacing = 3 };
         panel.Children.Add(new TextBlock
         {
-            Text = title.ToUpperInvariant(), FontSize = 20, FontWeight = FontWeight.Bold,
+            Text = title.ToUpperInvariant(), FontSize = 15, FontWeight = FontWeight.Bold,
             Foreground = new SolidColorBrush(color), TextAlignment = TextAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis
         });
@@ -74,13 +74,13 @@ internal static class PhasewardHudVisuals
             panel.Children.Add(new TextBlock
             {
                 Text = detail.Length <= 100 ? detail : detail[..99] + "…",
-                FontSize = 11, Foreground = Brushes.White,
+                FontSize = 10, Foreground = Brushes.White,
                 TextAlignment = TextAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis
             });
         return new Border
         {
             Child = panel, CornerRadius = new CornerRadius(6),
-            Background = Brush.Parse("#CF251322"), Padding = new Thickness(9, 8),
+            Background = Brush.Parse("#CF251322"), Padding = new Thickness(6, 5),
             IsHitTestVisible = false
         };
     }
